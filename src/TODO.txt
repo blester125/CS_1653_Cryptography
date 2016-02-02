@@ -1,0 +1,6 @@
+[ ] Client.java - connect
+[ ] GroupThread.java  - CGROUP
+[ ]                  - DGROUP
+[ ]                  - LMEMBERS
+[ ]                  - AUSERTOGROUP
+[ ]                  - RUSERTOGROUP
