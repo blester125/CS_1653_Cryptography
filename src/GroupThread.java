@@ -110,7 +110,29 @@ public class GroupThread extends Thread
 				}
 				else if(message.getMessage().equals("CGROUP")) //Client wants to create a group
 				{
-				    /* TODO:  Write this handler */
+					/* TODO:  Write this handler */
+					if (message.getObjContents().size() < 2) 
+					{
+						response = new Envelope("FAIL");
+					}
+					else 
+					{
+				 		response = new Envlope("FAIL");
+				 		if (message.getObjContents().get(0) != null)
+				  	{
+				  		if (message.getObjContents().get(1) != null)
+				  		{
+				  			String groupName = (String)message.getObjContents().get(0);
+				  			UserToken yourToken = (UserToken)message.getObjContents().get(1);
+				  			List<String> members = listMembers(groupName, yourToken);
+				  			if (members != null) 
+				  			{
+				  				response = new Envelope("OK");
+				  				response.addObject(members);
+				  			}
+				  		}
+				  	}
+				  }
 				}
 				else if(message.getMessage().equals("DGROUP")) //Client wants to delete a group
 				{
@@ -268,4 +290,8 @@ public class GroupThread extends Thread
 		}
 	}
 	
+	private List<String> listMembers(String groupName, UserToken token)
+	{
+		
+	}
 }
