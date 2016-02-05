@@ -36,7 +36,37 @@ public class FileThread extends Thread
 				// Handler to list files that this user is allowed to see
 				if(e.getMessage().equals("LFILES"))
 				{
-				    /* TODO: Write this handler */
+				    //Do error handling
+				    if(e.getObjContents().size() < 1) {
+				    	response = new Envelope("FAIL-BADCONTENTS");
+				    }
+				    else {
+				    	if(e.getObjContents().get(0) == null) {
+				    		response = new Envelope("FAIL-BADTOKEN");
+				    	}
+				    	else {
+
+				    		//Prepare output list of file names and retrieve the token from the envelope
+						    ArrayList<String> filteredFiles = new ArrayList<String>();
+						    UserToken tok = (UserToken)e.getObjContents().get(0);
+
+						    //Get all files from the FileServer
+						    ArrayList<ShareFile> all = FileServer.fileList.getFiles();
+
+						    //Go through all files in the server, filter for only those in the right group
+						    for(ShareFile f : all){
+
+						    	if(tok.getGroups().contains(f.group))
+						    		filteredFiles.add(f.getGroup());
+						    }
+
+						    //form response, write it
+						    response = new Envelope("OK");
+						    response.addObject(filteredFiles);
+						    output.writeObject(response);
+
+				    	}
+				    }   	
 				}
 				if(e.getMessage().equals("UPLOADF"))
 				{
