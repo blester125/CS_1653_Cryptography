@@ -111,28 +111,6 @@ public class GroupThread extends Thread
 				else if(message.getMessage().equals("CGROUP")) //Client wants to create a group
 				{
 					/* TODO:  Write this handler */
-					if (message.getObjContents().size() < 2) 
-					{
-						response = new Envelope("FAIL");
-					}
-					else 
-					{
-				 		response = new Envlope("FAIL");
-				 		if (message.getObjContents().get(0) != null)
-				  	{
-				  		if (message.getObjContents().get(1) != null)
-				  		{
-				  			String groupName = (String)message.getObjContents().get(0);
-				  			UserToken yourToken = (UserToken)message.getObjContents().get(1);
-				  			List<String> members = listMembers(groupName, yourToken);
-				  			if (members != null) 
-				  			{
-				  				response = new Envelope("OK");
-				  				response.addObject(members);
-				  			}
-				  		}
-				  	}
-				  }
 				}
 				else if(message.getMessage().equals("DGROUP")) //Client wants to delete a group
 				{
@@ -140,7 +118,37 @@ public class GroupThread extends Thread
 				}
 				else if(message.getMessage().equals("LMEMBERS")) //Client wants a list of members in a group
 				{
-				    /* TODO:  Write this handler */
+					/* TODO:  Write this handler */
+					// If there isn't enough information in the envelope
+					if (message.getObjContents().size() < 2) 
+					{
+						response = new Envelope("FAIL");
+					}
+					else 
+					{
+						response = new Envlope("FAIL");
+						// If there is no groupName
+						if (message.getObjContents().get(0) != null)
+						{
+							//If there is no Token
+							if (message.getObjContents().get(1) != null)
+							{
+								// Extract groupName
+								String groupName = (String)message.getObjContents().get(0);
+								// Extract Token 
+								UserToken yourToken = (UserToken)message.getObjContents().get(1);
+								// Get the memeber list for this group
+								List<String> members = listMembers(groupName, yourToken);
+								// If a list was returned
+								if (members != null) 
+								{
+									// Craft the envelope
+									response = new Envelope("OK");
+									response.addObject(members);
+								}
+							}
+						}
+					}
 				}
 				else if(message.getMessage().equals("AUSERTOGROUP")) //Client wants to add user to a group
 				{
@@ -290,8 +298,32 @@ public class GroupThread extends Thread
 		}
 	}
 	
+	// Method to list the members in a group
 	private List<String> listMembers(String groupName, UserToken token)
 	{
-		
+		//Get the requester
+		String requester = token.getSubject();
+		// Does the requester exist?
+		if (my_gs.userList.checkUser(requester))
+		{
+			// Get the groups the requester belonges to
+			ArrayList<String> groups = my_gs.userList.getUserGroups(requester);
+			// is the user autherized to be in this group?
+			if (groups.contains(groupName))
+			{
+				// get the memebers of this group
+				return getGroupUsers(groupName);
+			}
+			// The user is not autherized to see this group
+			else 
+			{
+				return null;
+			}
+		}
+		// The requester doesn't exist
+		else
+		{
+			return null;
+		}
 	}
 }
