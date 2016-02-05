@@ -6,3 +6,6 @@
 [ ]                  - LMEMBERS
 [ ]                  - AUSERTOGROUP
 [ ]                  - RUSERTOGROUP
+
+[ ] GroupServer.java - group list
+[ ] ClientApp.java
