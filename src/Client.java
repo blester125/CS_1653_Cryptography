@@ -15,6 +15,22 @@ public abstract class Client {
 		System.out.println("attempting to connect");
 
 		/* TODO: Write this method */
+		try {
+			// Connect to the server
+			sock = new Socket(server, port);
+		    System.out.println("Connected to " + server + " on port " + port);
+		    
+		    // Setup I/O streams with the server
+		    output = new ObjectOutputStream(sock.getOutputStream());
+		    input = new ObjectInputStream(sock.getInputStream());
+		    
+			return true;
+		}
+		catch(Exception e) {
+			System.err.println(e.getMessage());
+			e.printStackTrace(System.err);
+			return false;
+		}
 
 	}
 
@@ -33,6 +49,7 @@ public abstract class Client {
 			{
 				Envelope message = new Envelope("DISCONNECT");
 				output.writeObject(message);
+				sock.close(); //close the socket
 			}
 			catch(Exception e)
 			{
