@@ -24,8 +24,8 @@ import java.util.*;
       return list.get(groupName).getUsers();
     }
 
-    public synchronized ArrayList<String> getGroupOwnership(String groupName) {
-      return list.get(groupName).getOwnership();
+    public synchronized String getGroupOwner(String groupName) {
+      return list.get(groupName).getOwner();
     }
 
     public synchronized void addUser(String groupName, String userName) {
@@ -36,18 +36,10 @@ import java.util.*;
       list.get(groupName).removeUser(userName);
     }
 
-    public synchronized void addOwnership(String groupName, String userName) {
-      list.get(groupName).addOwnership(userName);
-    }
-
-    public synchronized void removeOwnership(String groupName, String userName) {
-      list.get(groupName).removeOwnership(userName);
-    }
-
   class Group implements java.io.Serializable {
     private static final long serialVersionUID = -7700097447400932609L;
     private ArrayList<String> users;
-    private ArrayList<String> ownership;
+    private String owner;
 
     public Group() {
       users = new ArrayList<String>();
@@ -58,8 +50,8 @@ import java.util.*;
       return users;
     }
 
-    public ArrayList<String> getOwnership() {
-      return ownership;
+    public String getOwner() {
+      return owner;
     }
 
     public void addUser(String userName) {
@@ -73,19 +65,5 @@ import java.util.*;
         }
       }
     }
-
-    public void addOwnership(String userName) {
-      ownership.add(userName);
-    }
-
-    public void removeOwnership(String userName) {
-      if (!ownership.isEmpty()) {
-        if (ownership.contains(userName)) {
-          ownership.remove(ownership.indexOf(userName));
-        }
-      }
-    }
-
   }
-
-  }
+}
