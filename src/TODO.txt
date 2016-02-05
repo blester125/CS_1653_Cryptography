@@ -6,3 +6,7 @@
 [ ]                  - LMEMBERS
 [ ]                  - AUSERTOGROUP
 [ ]                  - RUSERTOGROUP
+
+Notes: 
+-may need FileServer reference in FileThread.java
+-need GroupList in GroupServer
