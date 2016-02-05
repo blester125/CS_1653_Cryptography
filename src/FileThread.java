@@ -68,10 +68,6 @@ public class FileThread extends Thread
 				    	}
 				    }   	
 				}
-
-
-
-				}
 				if(e.getMessage().equals("UPLOADF"))
 				{
 
