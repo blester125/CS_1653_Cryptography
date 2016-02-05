@@ -17,19 +17,19 @@ public class Token implements UserToken {
 	@Override
 	public String getIssuer() {
 		// TODO Auto-generated method stub
-		return issuer;
+		return this.issuer;
 	}
 
 	@Override
 	public String getSubject() {
 		// TODO Auto-generated method stub
-		return subject;
+		return this.subject;
 	}
 
 	@Override
 	public List<String> getGroups() {
 		// TODO Auto-generated method stub
-		return groups;
+		return this.groups;
 	}
 	
 }
