@@ -174,7 +174,7 @@ public class GroupThread extends Thread
 					}
 					else 
 					{
-						response = new Envlope("FAIL");
+						response = new Envelope("FAIL");
 						// If there is no groupName
 						if (message.getObjContents().get(0) != null)
 						{
@@ -406,7 +406,7 @@ public class GroupThread extends Thread
 			if (groups.contains(groupName))
 			{
 				// get the memebers of this group
-				return getGroupUsers(groupName);
+				return my_gs.groupList.getGroupUsers(groupName);
 			}
 			// The user is not autherized to see this group
 			else 
