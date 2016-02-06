@@ -28,11 +28,11 @@ import java.util.*;
       return groups.get(groupName).getOwner();
     }
 
-    public synchronized void addUser(String groupName, String userName) {
+    public synchronized void addMember(String groupName, String userName) {
       groups.get(groupName).addUser(userName);
     }
 
-    public synchronized void deleteUser(String groupName, String userName) {
+    public synchronized void removeMember(String groupName, String userName) {
       groups.get(groupName).removeUser(userName);
     }
 
