@@ -1,8 +1,8 @@
 [X] UserToken.java
 [X] Client.java - connect
 [X] GroupList.java
-[ ] GroupThread.java  - CGROUP
-[ ]                  - DGROUP
+[X] GroupThread.java  - CGROUP
+[X]                  - DGROUP
 [ ]                  - LMEMBERS
 [ ]                  - AUSERTOGROUP
 [ ]                  - RUSERTOGROUP
