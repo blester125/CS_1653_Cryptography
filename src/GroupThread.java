@@ -383,6 +383,10 @@ public class GroupThread extends Thread
 		{
 			// check if requester is the group's owner
 			if(my_gs.groupList.getGroupOwner(groupName).equals(requester)) {
+				// delete group from users
+				for(String user : my_gs.groupList.getGroupUsers(groupName)) {
+					my_gs.userList.removeGroup(user, groupName);
+				}
 				// delete the group
 				my_gs.groupList.deleteGroup(groupName);
 				return true;

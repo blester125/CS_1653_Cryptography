@@ -9,5 +9,3 @@
 
 [X] GroupServer.java - group list
 [ ] ClientApp.java
-[ ] UserList.java - this needs to possibly be refactored. A user should not have access
-to their group information
