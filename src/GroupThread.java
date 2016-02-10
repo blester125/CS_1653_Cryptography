@@ -50,7 +50,9 @@ public class GroupThread extends Thread
 						//Respond to the client. On error, the client will receive a null token
 						response = new Envelope("OK");
 						response.addObject(yourToken);
+						System.out.println(response);
 						output.writeObject(response);
+						
 					}
 				}
 				else if(message.getMessage().equals("CUSER")) //Client wants to create a user
@@ -228,11 +230,13 @@ public class GroupThread extends Thread
 	//Method to create tokens
 	private UserToken createToken(String username) 
 	{
+
 		//Check that user exists
 		if(my_gs.userList.checkUser(username))
 		{
 			//Issue a new token with server's name, user's name, and user's groups
 			UserToken yourToken = new Token(my_gs.name, username, my_gs.userList.getUserGroups(username));
+			System.out.println(yourToken);
 			return yourToken;
 		}
 		else

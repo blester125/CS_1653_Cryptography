@@ -8,6 +8,6 @@
 [ ]                  - RUSERTOGROUP
 
 [X] GroupServer.java - group list
-[ ] ClientApp.java
+[-] ClientApp.java - Group and File server functions still need mapped & listed
 [ ] UserList.java - this needs to possibly be refactored. A user should not have access
 to their group information

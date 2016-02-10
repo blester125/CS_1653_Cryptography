@@ -30,4 +30,9 @@ public class Envelope implements java.io.Serializable {
 		objContents.add(object);
 	}
 
+	@Override
+	public String toString() {
+		return "Envelope [msg=" + msg + ", objContents=" + objContents + "]";
+	}
+
 }

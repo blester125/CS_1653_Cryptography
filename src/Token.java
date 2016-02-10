@@ -4,14 +4,18 @@ import java.util.List;
 
 public class Token implements UserToken {
 	
+	private static final long serialVersionUID = 897646161548165146L;
+
 	private String issuer;
 	private String subject;
-	private List<String> groups;
+	private ArrayList<String> groups;
 	
-	Token(String issuer, String subject, List<String> groups) {
+	Token(String issuer, String subject, ArrayList<String> in_groups) {
 		this.issuer = issuer;
 		this.subject = subject;
-		this.groups = new ArrayList<String>(groups);
+		this.groups = new ArrayList<String>(in_groups.size());
+		for(String group : in_groups)
+			groups.add(group);
 	}
 	
 	@Override
@@ -30,6 +34,11 @@ public class Token implements UserToken {
 	public List<String> getGroups() {
 		// TODO Auto-generated method stub
 		return this.groups;
+	}
+
+	@Override
+	public String toString() {
+		return "Token [issuer=" + issuer + ", subject=" + subject + ", groups=" + groups + "]";
 	}
 	
 }
