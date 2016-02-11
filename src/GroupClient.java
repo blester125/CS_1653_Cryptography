@@ -168,6 +168,10 @@ public class GroupClient extends Client implements GroupClientInterface {
 	 {
 		 try
 		 {
+
+		 	 output.flush();
+		 	 output.reset();
+
 			 Envelope message = null, response = null;
 			 //Tell the server to return the member list
 			 message = new Envelope("LMEMBERS");
@@ -180,6 +184,9 @@ public class GroupClient extends Client implements GroupClientInterface {
 			 //If server indicates success, return the member list
 			 if(response.getMessage().equals("OK"))
 			 { 
+
+			 	System.out.println( response);
+
 				return (List<String>)response.getObjContents().get(0); //This cast creates compiler warnings. Sorry.
 			 }
 				

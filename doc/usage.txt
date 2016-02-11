@@ -17,7 +17,7 @@ USAGE:
 
  To reset the File server completely, delete FileList.bin and the shared_files 
  directory.
- To reset the Group Server, delete UserList.bin.
+ To reset the Group Server, delete UserList.bin and GroupList.bin.
  
  Note that this implementation supports server side directories.
 

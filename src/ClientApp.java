@@ -36,6 +36,7 @@ public class ClientApp {
 	private JPasswordField passwordField;
 	private String currentUsername;
 	JList loadedGroups;
+	JList loadedUsers;
 	int groupFlag = 0;
 	int userFlag = 0;
 
@@ -398,6 +399,17 @@ public class ClientApp {
 		gbc_btnRemoveUser.insets = new Insets(0, 0, 5, 0);
 		gbc_btnRemoveUser.gridx = 0;
 		gbc_btnRemoveUser.gridy = 3;
+		btnRemoveUser.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+
+					attemptRemoveFromGroup(usersListPanel);
+				}
+			}
+
+
+		);
 		groupFunctionsPanel.add(btnRemoveUser, gbc_btnRemoveUser);
 		
 		//View Groups button
@@ -633,6 +645,8 @@ public class ClientApp {
 	//a user is logged in.
 	public void attemptNewUser(){
 
+		UserToken currToken = RunClient.groupC.getToken(currentUsername);
+
 		//Construct a dialogue box to capture user input and do so.
 		JPanel newUserDialogue = new JPanel();
 		JTextField newUsernameField = new JTextField(20);
@@ -648,7 +662,7 @@ public class ClientApp {
 		if(dialogue == 0 && newUsername.length() > 0){
 
 			//Create new user with currently logged in user token. If fail, report and return
-			if(!RunClient.groupC.createUser(newUsername, RunClient.uToken)){
+			if(!RunClient.groupC.createUser(newUsername, currToken)){
 				JOptionPane.showMessageDialog(null, "The user could not be created.", "User Creation Failure", JOptionPane.OK_CANCEL_OPTION);
 				return;
 			}
@@ -665,6 +679,8 @@ public class ClientApp {
 	//a user is logged in.
 	public void attemptDeleteUser(){
 
+		UserToken currToken = RunClient.groupC.getToken(currentUsername);
+
 		//Construct a dialogue box to capture user input and do so.
 		JPanel deleteUserDialogue = new JPanel();
 		JTextField delUsernameField = new JTextField(20);
@@ -680,7 +696,7 @@ public class ClientApp {
 		if(dialogue == 0 && delUsername.length() > 0 && !(currentUsername.equals(delUsername))){
 
 			//Create new user with currently logged in user token. If fail, report and return
-			if(!RunClient.groupC.deleteUser(delUsername, RunClient.uToken)){
+			if(!RunClient.groupC.deleteUser(delUsername, currToken)){
 				JOptionPane.showMessageDialog(null, "The user could not be deleted.", "User Deletion Failure", JOptionPane.OK_CANCEL_OPTION);
 				return;
 			}
@@ -734,6 +750,8 @@ public class ClientApp {
 	//group based on their token 
 	public void populateUserList(JPanel usersListPanel){
 
+		ArrayList<String> members = null;
+
 		if(userFlag == 1){
 			usersListPanel.removeAll();
 			usersListPanel.updateUI();
@@ -755,7 +773,8 @@ public class ClientApp {
 			return;
 		}
 
-		ArrayList<String> members = (ArrayList<String>)RunClient.groupC.listMembers(currGroup, currToken);
+		members = (ArrayList<String>)RunClient.groupC.listMembers(currGroup, currToken);
+		System.out.println(members + "\n");
 
 		final JList usersListView = new JList(members.toArray());
 		usersListView.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -776,12 +795,15 @@ public class ClientApp {
 
 		usersListPanel.revalidate();
 		usersListPanel.repaint();
+
+		loadedUsers = usersListView;
 	}
 
 	//Creates a new group with a given name and gives
 	//the user who created it ownership rights.
 	public void attemptCreateGroup(JPanel groupsListPanel){
 
+		UserToken currToken = RunClient.groupC.getToken(currentUsername);
 
 		//Construct a dialogue box to capture user input and do so.
 		JPanel newGroupDialogue = new JPanel();
@@ -798,7 +820,7 @@ public class ClientApp {
 		if(dialogue == 0 && newGroup.length() > 0){
 
 			//Create new user with currently logged in user token. If fail, report and return
-			if(!RunClient.groupC.createGroup(newGroup, RunClient.uToken)){
+			if(!RunClient.groupC.createGroup(newGroup, currToken)){
 				JOptionPane.showMessageDialog(null, "The group could not be created.", "User Creation Failure", JOptionPane.OK_CANCEL_OPTION);
 				return;
 			}
@@ -815,7 +837,7 @@ public class ClientApp {
 		if(loadedGroups != null && loadedGroups.getSelectedValue() != null)
 			currGroup = (String)loadedGroups.getSelectedValue();
 		else{
-			JOptionPane.showMessageDialog(null, "Please select a group.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
+			JOptionPane.showMessageDialog(null, "Please select a group.", "Select Error", JOptionPane.OK_CANCEL_OPTION);
 			return;
 		}
 
@@ -836,7 +858,6 @@ public class ClientApp {
 	}
 
 	//Adds user to selected group
-	//NEED TO FINISH
 	public void attemptAddToGroup(JPanel usersListPanel){
 
 		String currGroup = "";
@@ -844,7 +865,7 @@ public class ClientApp {
 		if(loadedGroups != null && loadedGroups.getSelectedValue() != null)
 			currGroup = (String)loadedGroups.getSelectedValue();
 		else{
-			JOptionPane.showMessageDialog(null, "Please select a group.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
+			JOptionPane.showMessageDialog(null, "Please select a group.", "Select Error", JOptionPane.OK_CANCEL_OPTION);
 			return;
 		}
 
@@ -873,9 +894,51 @@ public class ClientApp {
 				JOptionPane.showMessageDialog(null, "The user could not be added.", "User Addition Failure", JOptionPane.OK_CANCEL_OPTION);
 				return;
 			}
+
+			populateUserList(usersListPanel);
 			
 		}
 
+	}
+
+	//Adds user to selected group
+	public void attemptRemoveFromGroup(JPanel usersListPanel){
+
+		String currGroup = "";
+
+		if(loadedGroups != null && loadedGroups.getSelectedValue() != null)
+			currGroup = (String)loadedGroups.getSelectedValue();
+		else{
+			JOptionPane.showMessageDialog(null, "Please select a group.", "Select Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+
+		String currUser = "";
+
+		if(loadedUsers != null && loadedUsers.getSelectedValue() != null)
+			currUser = (String)loadedUsers.getSelectedValue();
+		else{
+			JOptionPane.showMessageDialog(null, "Please select a user.", "Select Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+
+		UserToken currToken = RunClient.groupC.getToken(currentUsername);
+
+		if(currToken == null){
+			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+
+		if(currUser.length() > 0 && !(currentUsername.equals(currUser))){
+
+			if(!RunClient.groupC.deleteUserFromGroup(currUser, currGroup, currToken)){
+				JOptionPane.showMessageDialog(null, "The user could not be removed.", "User Remove Failure", JOptionPane.OK_CANCEL_OPTION);
+				return;
+			}
+
+			populateUserList(usersListPanel);
+			
+		}
 	}
 
 }
