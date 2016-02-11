@@ -17,12 +17,12 @@ public class FileClient extends Client implements FileClientInterface {
 			remotePath = filename;
 		}
 		Envelope env = new Envelope("DELETEF"); //Success
-	    env.addObject(remotePath);
-	    env.addObject(token);
-	    try {
+		env.addObject(remotePath);
+		env.addObject(token);
+		try {
 			output.writeObject(env);
-		    env = (Envelope)input.readObject();
-		    
+			env = (Envelope)input.readObject();
+		   
 			if (env.getMessage().compareTo("OK")==0) {
 				System.out.printf("File %s deleted successfully\n", filename);				
 			}
@@ -34,8 +34,7 @@ public class FileClient extends Client implements FileClientInterface {
 			e1.printStackTrace();
 		} catch (ClassNotFoundException e1) {
 			e1.printStackTrace();
-		}
-	    	
+		}  	
 		return true;
 	}
 
