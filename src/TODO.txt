@@ -3,9 +3,9 @@
 [X] GroupList.java
 [X] GroupThread.java  - CGROUP
 [X]                  - DGROUP
-[ ]                  - LMEMBERS
-[ ]                  - AUSERTOGROUP
-[ ]                  - RUSERTOGROUP
+[X]                  - LMEMBERS
+[X]                  - AUSERTOGROUP
+[X]                  - RUSERTOGROUP
 
 [X] GroupServer.java - group list
 <<<<<<< HEAD
@@ -13,5 +13,4 @@
 [ ] UserList.java - this needs to possibly be refactored. A user should not have access
 to their group information
 =======
-[ ] ClientApp.java
->>>>>>> origin/master
+

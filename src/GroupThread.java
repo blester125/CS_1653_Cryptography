@@ -202,11 +202,59 @@ public class GroupThread extends Thread
 				}
 				else if(message.getMessage().equals("AUSERTOGROUP")) //Client wants to add user to a group
 				{
-				    /* TODO:  Write this handler */
+					/* TODO:  Write this handler */
+					if (message.getObjContents().size() < 3)
+					{
+						response = new Envelope("FAIL");
+					}
+					else
+					{
+						response = new Envelope("FAIL");
+						if (message.getObjContents().get(0) != null)
+						{
+							if (message.getObjContents().get(1) != null)
+							{
+								if (message.getObjContents().get(2) != null)
+								{
+									String userName = (String)message.getObjContents().get(0);
+									String groupName = (String)message.getObjContents().get(1);
+									UserToken yourToken = (UserToken)message.getObjContents().get(2);
+									if (addUserToGroup(userName, groupName, yourToken))
+									{
+										response = new Envelope("OK");
+									}
+								}
+							}
+						}
+					}
 				}
 				else if(message.getMessage().equals("RUSERFROMGROUP")) //Client wants to remove user from a group
 				{
-				    /* TODO:  Write this handler */
+					/* TODO:  Write this handler */
+					if (message.getObjContents().size() < 3)
+					{
+						response = new Envelope("FAIL");
+					}
+					else
+					{
+						response = new Envelope("FAIL");
+						if (message.getObjContents().get(0) != null)
+						{
+							if (message.getObjContents().get(1) != null)
+							{
+								if (message.getObjContents().get(2) != null)
+								{
+									String userName = (String)message.getObjContents().get(0);
+									String groupName = (String)message.getObjContents().get(1);
+									UserToken yourToken = (UserToken)message.getObjContents().get(2);
+									if (deleteUserFromGroup(userName, groupName, yourToken))
+									{
+										response = new Envelope("OK");
+									}
+								}
+							}
+						}
+					}
 				}
 				else if(message.getMessage().equals("DISCONNECT")) //Client wants to disconnect
 				{
@@ -426,6 +474,86 @@ public class GroupThread extends Thread
 		else
 		{
 			return null;
+		}
+	}
+
+	private boolean addUserToGroup(String userName, String groupName, UserToken token)
+	{
+		String requester = token.getSubject();
+		if (my_gs.userList.checkUser(requester))
+		{
+			ArrayList<String> owns = my_gs.userList.getUserOwnership(requester);
+			if (owns.contains(groupName))
+			{
+				if (my_gs.userList.checkUser(userName))
+				{
+					ArrayList<String> users_in_group = my_gs.groupList.getGroupUsers(groupName);
+					if (!users_in_group.contains(userName))
+					{
+						//Add user to group
+						my_gs.groupList.addMember(groupName, userName);
+						// add group to user
+						my_gs.userList.addGroup(userName, groupName);
+						return true;
+					}
+					else
+					{ // User is already in the group
+						return false;
+					}
+				}
+				else
+				{ // user to be added doesn't exist
+					return false;
+				}
+			}
+			else
+			{ // requester doesn't own the group
+				return false;
+			}
+		}
+		else
+		{ // requester doesn't exist
+			return false;
+		}
+	}
+
+	private boolean deleteUserFromGroup(String userName, String groupName, UserToken token)
+	{
+		String requester = token.getSubject();
+		if (my_gs.userList.checkUser(requester))
+		{
+			ArrayList<String> owns = my_gs.userList.getUserOwnership(requester);
+			if (owns.contains(groupName))
+			{
+				if (my_gs.userList.checkUser(userName))
+				{
+					ArrayList<String> users_in_group = my_gs.groupList.getGroupUsers(groupName);
+					if (users_in_group.contains(userName))
+					{
+						//Add user to group
+						my_gs.groupList.removeMember(groupName, userName);
+						// add group to user
+						my_gs.userList.removeGroup(userName, groupName);
+						return true;
+					}
+					else
+					{ // User is not in the group
+						return false;
+					}
+				}
+				else
+				{ // user to be added doesn't exist
+					return false;
+				}
+			}
+			else
+			{ // requester doesn't own the group
+				return false;
+			}
+		}
+		else
+		{ // requester doesn't exist
+			return false;
 		}
 	}
 }
