@@ -41,6 +41,7 @@ public class GroupThread extends Thread
 					{
 						response = new Envelope("FAIL");
 						response.addObject(null);
+						System.out.println("SENT from GET: " + response);
 						output.writeObject(response);
 					}
 					else
@@ -50,7 +51,7 @@ public class GroupThread extends Thread
 						//Respond to the client. On error, the client will receive a null token
 						response = new Envelope("OK");
 						response.addObject(yourToken);
-						System.out.println(response);
+						System.out.println("SENT from GET: " + response);
 						output.writeObject(response);
 						
 					}
@@ -79,7 +80,7 @@ public class GroupThread extends Thread
 							}
 						}
 					}
-					
+					System.out.println("SENT from CUSER: " + response);
 					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("DUSER")) //Client wants to delete a user
@@ -107,7 +108,7 @@ public class GroupThread extends Thread
 							}
 						}
 					}
-					
+					System.out.println("SENT from DUSER: " + response);
 					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("CGROUP")) //Client wants to create a group
@@ -136,8 +137,8 @@ public class GroupThread extends Thread
 						}
 					}
 					
+					System.out.println("SENT from CGROUP: " + response);
 					output.writeObject(response);
-					System.out.println(response);
 
 				}
 				else if(message.getMessage().equals("DGROUP")) //Client wants to delete a group
@@ -164,7 +165,7 @@ public class GroupThread extends Thread
 							}
 						}
 					}
-					
+					System.out.println("SENT from DGROUP: " + response);
 					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("LMEMBERS")) //Client wants a list of members in a group
@@ -197,11 +198,14 @@ public class GroupThread extends Thread
 									// Craft the envelope
 									response = new Envelope("OK");
 									response.addObject(members);
-									System.out.println(response);
+									
 								}
 							}
 						}
 					}
+					System.out.println("SENT from LMEMBERS: " + response);
+					output.flush();
+					output.reset();
 					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("AUSERTOGROUP")) //Client wants to add user to a group
@@ -231,8 +235,8 @@ public class GroupThread extends Thread
 							}
 						}
 					}
+					System.out.println("SENT from AUSERTOGROUP: " + response);
 					output.writeObject(response);
-					System.out.println(response);
 				}
 				else if(message.getMessage().equals("RUSERFROMGROUP")) //Client wants to remove user from a group
 				{
@@ -261,8 +265,8 @@ public class GroupThread extends Thread
 							}
 						}
 					}
+					System.out.println("SENT from RUSERFROMGROUP: " + response);
 					output.writeObject(response);
-					System.out.println(response);
 				}
 				else if(message.getMessage().equals("DISCONNECT")) //Client wants to disconnect
 				{
@@ -272,6 +276,7 @@ public class GroupThread extends Thread
 				else
 				{
 					response = new Envelope("FAIL"); //Server does not understand client request
+					System.out.println("SENT from DISCONNECT: " + response);
 					output.writeObject(response);
 				}
 			}while(proceed);	
@@ -346,6 +351,7 @@ public class GroupThread extends Thread
 		if(my_gs.userList.checkUser(requester))
 		{
 			ArrayList<String> temp = my_gs.userList.getUserGroups(requester);
+
 			//requester needs to be an administer
 			if(temp.contains("ADMIN"))
 			{
@@ -365,7 +371,8 @@ public class GroupThread extends Thread
 					//If user is the owner, removeMember will automatically delete group!
 					for(int index = 0; index < deleteFromGroups.size(); index++)
 					{
-						my_gs.groupList.removeMember(username, deleteFromGroups.get(index));
+						System.out.println("index: " + index + ", group: " + deleteFromGroups.get(index));
+						my_gs.groupList.removeMember(deleteFromGroups.get(index), username);
 					}
 					
 					//If groups are owned, they must be deleted
@@ -482,7 +489,7 @@ public class GroupThread extends Thread
 		{
 			// Get the groups the requester belonges to
 			ArrayList<String> groups = my_gs.userList.getUserGroups(requester);
-			System.out.println(groups);
+
 			// is the user autherized to be in this group?
 			if (groups.contains(groupName))
 			{
