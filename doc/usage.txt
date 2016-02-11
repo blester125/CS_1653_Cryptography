@@ -1,19 +1,39 @@
 FileSharing Usage Information
 
 USAGE:
+
+ To start the client with all functionality, in three separate command windows
+ run the following commands:
+	java RunClient
+	java RunGroupServer 8080
+	java RunFileServer 8081
+ 
+ To start ClientApp: java RunClient
+ This GUI is designed to fulfill future functionality that is not yet
+ implemented for this phase (such as passwords, etc...). The Home tab handles
+ logins and creating/deleting users, Group Servers tab handles all 
+ GroupServer functionality, and File Servers tab handles all FileServer
+ functionality. 
+
  To start Group Server: java RunGroupServer [(optional) port number]
  When the group server is first started, there are no users or groups. Since 
  there must be an administer of the system, the user is prompted via the console
  to enter a username. This name becomes the first user and is a member of the
- ADMIN group.  Also, no groups exist.  The group server will by default
- run on port 8765, but a custom port can be passed as the first command line
- argument.
+ ADMIN group.  Also, no groups exist.  A custom port can be passed as the first 
+ command line argument.
+
+ The GUI Client defaults to connect to port 8080 for this phase. Please run 
+ RunGroupServer as:
+	java RunGroupServer 8080
 
  To start the File Server: java RunFileServer [(optional) port number]
  The file server will create a shared_files inside the working directory if one 
- does not exist. The file server is now online.  The file server will by default
- run on port 4321, but a custom port can be passed as the first command line
- argument.
+ does not exist. The file server is now online. A custom port can be passed as 
+ the first command line argument.
+ 
+ The GUI Client expects the FileServer to be a port number 1 greater than the
+ GroupServer FOR THIS PHASE ONLY. Please run RunFileServer as:
+	java RunFileServer 8081
 
  To reset the File server completely, delete FileList.bin and the shared_files 
  directory.
