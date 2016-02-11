@@ -1,0 +1,5 @@
+For extra Credit we created a GUI for the client application
+
+In accordance with the rule of least privilage we added the ability 
+for users list files only within a certain group in addition to all 
+of their files.
