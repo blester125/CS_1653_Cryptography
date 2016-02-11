@@ -112,7 +112,6 @@ public class GroupThread extends Thread
 				}
 				else if(message.getMessage().equals("CGROUP")) //Client wants to create a group
 				{
-					/* TODO:  Write this handler */
 					if(message.getObjContents().size() < 2)
 					{
 						response = new Envelope("FAIL");
@@ -140,7 +139,6 @@ public class GroupThread extends Thread
 				}
 				else if(message.getMessage().equals("DGROUP")) //Client wants to delete a group
 				{
-				    /* TODO:  Write this handler */
 					if(message.getObjContents().size() < 2)
 					{
 						response = new Envelope("FAIL");
@@ -168,7 +166,6 @@ public class GroupThread extends Thread
 				}
 				else if(message.getMessage().equals("LMEMBERS")) //Client wants a list of members in a group
 				{
-					/* TODO:  Write this handler */
 					// If there isn't enough information in the envelope
 					if (message.getObjContents().size() < 2) 
 					{
@@ -202,7 +199,7 @@ public class GroupThread extends Thread
 				}
 				else if(message.getMessage().equals("AUSERTOGROUP")) //Client wants to add user to a group
 				{
-					/* TODO:  Write this handler */
+					// Is there a userName, groupName, and Token in the Envelope
 					if (message.getObjContents().size() < 3)
 					{
 						response = new Envelope("FAIL");
@@ -230,7 +227,7 @@ public class GroupThread extends Thread
 				}
 				else if(message.getMessage().equals("RUSERFROMGROUP")) //Client wants to remove user from a group
 				{
-					/* TODO:  Write this handler */
+					// Is there a userName, groupName, and Token in the Envelope
 					if (message.getObjContents().size() < 3)
 					{
 						response = new Envelope("FAIL");
@@ -448,7 +445,12 @@ public class GroupThread extends Thread
 		return false;
 	}
 	
-	// Method to list the members in a group
+	/**
+	 * Lists the members in the specified group
+	 * @param groupName group to list the members of
+	 * @param token toek of the user requesting the list
+	 * @return List of strings on success, null on failure
+	 */
 	private List<String> listMembers(String groupName, UserToken token)
 	{
 		//Get the requester
@@ -477,6 +479,13 @@ public class GroupThread extends Thread
 		}
 	}
 
+	/**
+	 * Add specified user to specified group
+	 * @param userName user to be added to the group
+	 * @param groupName group for the user to be added to
+	 * @param token token of user requesting the addition
+	 * @return true in success, false on failure
+	 */
 	private boolean addUserToGroup(String userName, String groupName, UserToken token)
 	{
 		String requester = token.getSubject();
@@ -517,6 +526,13 @@ public class GroupThread extends Thread
 		}
 	}
 
+	/**
+	 * Delete specified user to specified group
+	 * @param userName user to be deleted from the group
+	 * @param groupName group for the user to be removed from
+	 * @param token token of user requesting the deletion
+	 * @return true in success, false on failure
+	 */
 	private boolean deleteUserFromGroup(String userName, String groupName, UserToken token)
 	{
 		String requester = token.getSubject();
@@ -530,9 +546,9 @@ public class GroupThread extends Thread
 					ArrayList<String> users_in_group = my_gs.groupList.getGroupUsers(groupName);
 					if (users_in_group.contains(userName))
 					{
-						//Add user to group
+						// remove user from group
 						my_gs.groupList.removeMember(groupName, userName);
-						// add group to user
+						// remove group from user
 						my_gs.userList.removeGroup(userName, groupName);
 						return true;
 					}
