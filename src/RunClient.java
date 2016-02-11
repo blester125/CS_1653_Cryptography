@@ -27,6 +27,7 @@ public class RunClient {
 					window.frmBrcSafeshare.addWindowListener(new WindowAdapter() {
 						public void windowClosing(WindowEvent event) {
 							groupC.disconnect();
+							fileC.disconnect();
 							System.exit(0);
 					}});
 				} catch (Exception e) {

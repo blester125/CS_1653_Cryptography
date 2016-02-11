@@ -127,6 +127,35 @@ public class FileClient extends Client implements FileClientInterface {
 				return null;
 			}
 	}
+	@SuppressWarnings("unchecked")
+	public List<String> listFiles(String groupName, UserToken token) {
+		 try
+		 {
+			 Envelope message = null, e = null;
+			 //Tell the server to return the member list
+			 message = new Envelope("LFILESG");
+			 message.addObject(groupName); // add groupname
+			 message.addObject(token); //Add requester's token
+			 output.writeObject(message); 
+			 
+			 e = (Envelope)input.readObject();
+			 
+			 //If server indicates success, return the member list
+			 if(e.getMessage().equals("OK"))
+			 { 
+				return (List<String>)e.getObjContents().get(0); //This cast creates compiler warnings. Sorry.
+			 }
+				
+			 return null;
+			 
+		 }
+		 catch(Exception e)
+			{
+				System.err.println("Error: " + e.getMessage());
+				e.printStackTrace(System.err);
+				return null;
+			}
+	}
 
 	public boolean upload(String sourceFile, String destFile, String group,
 			UserToken token) {

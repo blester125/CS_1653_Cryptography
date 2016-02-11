@@ -58,14 +58,60 @@ public class FileThread extends Thread
 						    for(ShareFile f : all){
 
 						    	if(tok.getGroups().contains(f.getGroup()))
-						    		filteredFiles.add(f.getGroup());
+						    		filteredFiles.add(f.getPath());
 						    }
 
 						    //form response, write it
 						    response = new Envelope("OK");
 						    response.addObject(filteredFiles);
 						    output.writeObject(response);
+						    System.out.println("SENT from LFILES: " + response);
+				    	}
+				    }   	
+				}
+				if(e.getMessage().equals("LFILESG")) //List only files in specified group
+				{
+				    //Do error handling
+				    if(e.getObjContents().size() < 1) {
+				    	response = new Envelope("FAIL-BADCONTENTS");
+				    }
+				    else {
+				    	if(e.getObjContents().get(0) == null) {
+				    		response = new Envelope("FAIL-BADTOKEN");
+				    	}
+				    	else {
 
+				    		//Prepare output list of file names and retrieve the token from the envelope
+						    ArrayList<String> finalFiles = new ArrayList<String>();
+						    ArrayList<ShareFile> filteredFiles = new ArrayList<ShareFile>();
+						    String groupName = (String)e.getObjContents().get(0);
+						    UserToken tok = (UserToken)e.getObjContents().get(1);
+
+
+						    //Get all files from the FileServer
+						    ArrayList<ShareFile> all = FileServer.fileList.getFiles();
+
+						    //Go through all files in the server, filter for only those in the right group
+						    for(ShareFile f : all){
+
+						    	if(tok.getGroups().contains(f.getGroup()))
+						    		filteredFiles.add(f);
+						    }
+
+						    //Go through all filtered files, only return one group's
+						    for(ShareFile f : filteredFiles){
+
+						    	if(f.getGroup().equals(groupName))
+						    		finalFiles.add(f.getPath());
+						    }
+
+
+
+						    //form response, write it
+						    response = new Envelope("OK");
+						    response.addObject(finalFiles);
+						    output.writeObject(response);
+						    System.out.println("SENT from LFILESG: " + response);
 				    	}
 				    }   	
 				}
@@ -95,10 +141,12 @@ public class FileThread extends Thread
 							if (FileServer.fileList.checkFile(remotePath)) {
 								System.out.printf("Error: file already exists at %s\n", remotePath);
 								response = new Envelope("FAIL-FILEEXISTS"); //Success
+								System.out.println("SENT from UPLOADF - FAIL-FILEEXISTS: " + response);
 							}
 							else if (!yourToken.getGroups().contains(group)) {
 								System.out.printf("Error: user missing valid token for group %s\n", group);
 								response = new Envelope("FAIL-UNAUTHORIZED"); //Success
+								System.out.println("SENT from UPLOADF - FAIL-UNAUTHORIZED: " + response);
 							}
 							else  {
 								File file = new File("shared_files/"+remotePath.replace('/', '_'));
@@ -108,12 +156,14 @@ public class FileThread extends Thread
 
 								response = new Envelope("READY"); //Success
 								output.writeObject(response);
+								System.out.println("SENT from UPLOADF - READY: " + response);
 
 								e = (Envelope)input.readObject();
 								while (e.getMessage().compareTo("CHUNK")==0) {
 									fos.write((byte[])e.getObjContents().get(0), 0, (Integer)e.getObjContents().get(1));
 									response = new Envelope("READY"); //Success
 									output.writeObject(response);
+									System.out.println("SENT from UPLOADF - READYCHUNK: " + response);
 									e = (Envelope)input.readObject();
 								}
 
@@ -132,6 +182,7 @@ public class FileThread extends Thread
 					}
 
 					output.writeObject(response);
+					System.out.println("SENT from UPLOADF: " + response);
 				}
 				else if (e.getMessage().compareTo("DOWNLOADF")==0) {
 
@@ -142,12 +193,14 @@ public class FileThread extends Thread
 						System.out.printf("Error: File %s doesn't exist\n", remotePath);
 						e = new Envelope("ERROR_FILEMISSING");
 						output.writeObject(e);
+						System.out.println("SENT from DOWNLOADF - ERROR_FILEMISSING: " + e);
 
 					}
 					else if (!t.getGroups().contains(sf.getGroup())){
 						System.out.printf("Error user %s doesn't have permission\n", t.getSubject());
 						e = new Envelope("ERROR_PERMISSION");
 						output.writeObject(e);
+						System.out.println("SENT from DOWNLOADF - ERROR_PERMISSION: " + e);
 					}
 					else {
 
@@ -158,6 +211,7 @@ public class FileThread extends Thread
 							System.out.printf("Error file %s missing from disk\n", "_"+remotePath.replace('/', '_'));
 							e = new Envelope("ERROR_NOTONDISK");
 							output.writeObject(e);
+							System.out.println("SENT from DOWNLOADF - ERROR_NOTONDISK: " + e);
 
 						}
 						else {
@@ -183,6 +237,7 @@ public class FileThread extends Thread
 								e.addObject(new Integer(n));
 
 								output.writeObject(e);
+								System.out.println("SENT from DOWNLOADF: " + e);
 
 								e = (Envelope)input.readObject();
 
@@ -196,10 +251,11 @@ public class FileThread extends Thread
 
 								e = new Envelope("EOF");
 								output.writeObject(e);
+								System.out.println("SENT from DOWNLOADF - EOF: " + e);
 
 								e = (Envelope)input.readObject();
 								if(e.getMessage().compareTo("OK")==0) {
-									System.out.printf("File data upload successful\n");
+									System.out.printf("File data download successful\n");
 								}
 								else {
 
@@ -268,6 +324,7 @@ public class FileThread extends Thread
 						}
 					}
 					output.writeObject(e);
+					System.out.println("SENT from DELETEF: " + e);
 
 				}
 				else if(e.getMessage().equals("DISCONNECT"))
