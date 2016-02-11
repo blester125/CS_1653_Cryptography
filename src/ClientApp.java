@@ -26,7 +26,9 @@ import javax.swing.JComponent;
 import javax.swing.JOptionPane;
 import javax.swing.DefaultListModel;
 import java.util.ArrayList;
+import java.io.File;
 
+@SuppressWarnings("unchecked")
 public class ClientApp {
 
 	public JFrame frmBrcSafeshare;
@@ -37,8 +39,12 @@ public class ClientApp {
 	private String currentUsername;
 	JList loadedGroups;
 	JList loadedUsers;
+	JList loadedFileGroups;
+	JList loadedFileList;
 	int groupFlag = 0;
 	int userFlag = 0;
+	int groupFileFlag = 0;
+	int fileFlag = 0;
 
 	/**
 	 * Launch the application. (Should always launch from RunClient, not here)
@@ -282,15 +288,6 @@ public class ClientApp {
 		gbc_lblUsers.gridy = 0;
 		usersListPanel.add(lblUsers, gbc_lblUsers);
 		
-		//Users lists
-		// JList usersListView = new JList();
-		// usersListView.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		// GridBagConstraints gbc_usersListView = new GridBagConstraints();
-		// gbc_usersListView.fill = GridBagConstraints.BOTH;
-		// gbc_usersListView.gridx = 0;
-		// gbc_usersListView.gridy = 1;
-		// usersListPanel.add(usersListView, gbc_usersListView);
-		
 		//groups panel
 		final JPanel groupsListPanel = new JPanel();
 		listsPane.setLeftComponent(groupsListPanel);
@@ -309,14 +306,6 @@ public class ClientApp {
 		gbc_lblGroups.gridy = 0;
 		groupsListPanel.add(lblGroups, gbc_lblGroups);
 		
-		//groups list
-		// final JList groupsListView = new JList();
-		// groupsListView.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		// GridBagConstraints gbc_groupsListView = new GridBagConstraints();
-		// gbc_groupsListView.fill = GridBagConstraints.BOTH;
-		// gbc_groupsListView.gridx = 0;
-		// gbc_groupsListView.gridy = 1;
-		// groupsListPanel.add(groupsListView, gbc_groupsListView);
 		
 		//group functionality panel
 		JPanel groupFunctionsPanel = new JPanel();
@@ -465,7 +454,7 @@ public class ClientApp {
 		fileServersPage.setRightComponent(fileListsPane);
 		
 		//Left pane for group lists
-		JPanel groupsPane = new JPanel();
+		final JPanel groupsPane = new JPanel();
 		fileListsPane.setLeftComponent(groupsPane);
 		GridBagLayout gbl_groupsPane = new GridBagLayout();
 		gbl_groupsPane.columnWidths = new int[]{100, 0};
@@ -483,17 +472,8 @@ public class ClientApp {
 		gbc_lblGroups_1.gridy = 0;
 		groupsPane.add(lblGroups_1, gbc_lblGroups_1);
 		
-		//groups list
-		JList groupsList = new JList();
-		groupsList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		GridBagConstraints gbc_groupsList = new GridBagConstraints();
-		gbc_groupsList.fill = GridBagConstraints.BOTH;
-		gbc_groupsList.gridx = 0;
-		gbc_groupsList.gridy = 1;
-		groupsPane.add(groupsList, gbc_groupsList);
-		
 		//Right pane for file list
-		JPanel filesPane = new JPanel();
+		final JPanel filesPane = new JPanel();
 		fileListsPane.setRightComponent(filesPane);
 		GridBagLayout gbl_filesPane = new GridBagLayout();
 		gbl_filesPane.columnWidths = new int[]{162, 0};
@@ -503,22 +483,13 @@ public class ClientApp {
 		filesPane.setLayout(gbl_filesPane);
 		
 		//File label
-		JLabel lblFiles = new JLabel("Files");
+		JLabel lblFiles = new JLabel();
 		GridBagConstraints gbc_lblFiles = new GridBagConstraints();
 		gbc_lblFiles.anchor = GridBagConstraints.NORTH;
 		gbc_lblFiles.insets = new Insets(0, 0, 5, 0);
 		gbc_lblFiles.gridx = 0;
 		gbc_lblFiles.gridy = 0;
 		filesPane.add(lblFiles, gbc_lblFiles);
-		
-		//Files list
-		JList filesList = new JList();
-		filesList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		GridBagConstraints gbc_filesList = new GridBagConstraints();
-		gbc_filesList.fill = GridBagConstraints.BOTH;
-		gbc_filesList.gridx = 0;
-		gbc_filesList.gridy = 1;
-		filesPane.add(filesList, gbc_filesList);
 		
 		//file operations pane
 		JPanel fileOperationsPane = new JPanel();
@@ -538,6 +509,17 @@ public class ClientApp {
 		gbc_btnUploadFile.insets = new Insets(0, 0, 5, 0);
 		gbc_btnUploadFile.gridx = 0;
 		gbc_btnUploadFile.gridy = 0;
+		btnUploadFile.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+
+					attemptFileUpload(filesPane);
+				}
+			}
+
+
+		);
 		fileOperationsPane.add(btnUploadFile, gbc_btnUploadFile);
 		
 		//download button
@@ -548,6 +530,17 @@ public class ClientApp {
 		gbc_btnDownloadFile.insets = new Insets(0, 0, 5, 0);
 		gbc_btnDownloadFile.gridx = 0;
 		gbc_btnDownloadFile.gridy = 1;
+		btnDownloadFile.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+
+					attemptFileDownload(filesPane);
+				}
+			}
+
+
+		);
 		fileOperationsPane.add(btnDownloadFile, gbc_btnDownloadFile);
 		
 		//delete button
@@ -558,6 +551,17 @@ public class ClientApp {
 		gbc_btnDeleteFile.insets = new Insets(0, 0, 5, 0);
 		gbc_btnDeleteFile.gridx = 0;
 		gbc_btnDeleteFile.gridy = 2;
+		btnDeleteFile.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+
+					attemptFileDelete(filesPane);
+				}
+			}
+
+
+		);
 		fileOperationsPane.add(btnDeleteFile, gbc_btnDeleteFile);
 		
 		//view groups button
@@ -568,16 +572,38 @@ public class ClientApp {
 		gbc_btnViewGroups_1.insets = new Insets(0, 0, 5, 0);
 		gbc_btnViewGroups_1.gridx = 0;
 		gbc_btnViewGroups_1.gridy = 4;
+		btnViewGroups_1.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+
+					fileListGroups(groupsPane);
+				}
+			}
+
+
+		);
 		fileOperationsPane.add(btnViewGroups_1, gbc_btnViewGroups_1);
 		
 		//view my files button
-		JButton btnViewMyFiles = new JButton("View My Files");
+		JButton btnViewMyFiles = new JButton("View Group Files");
 		GridBagConstraints gbc_btnViewMyFiles = new GridBagConstraints();
 		gbc_btnViewMyFiles.anchor = GridBagConstraints.NORTH;
 		gbc_btnViewMyFiles.fill = GridBagConstraints.HORIZONTAL;
 		gbc_btnViewMyFiles.insets = new Insets(0, 0, 5, 0);
 		gbc_btnViewMyFiles.gridx = 0;
 		gbc_btnViewMyFiles.gridy = 5;
+		btnViewMyFiles.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+
+					fileListPopulate(filesPane);
+				}
+			}
+
+
+		);
 		fileOperationsPane.add(btnViewMyFiles, gbc_btnViewMyFiles);
 		
 		//view all files button
@@ -587,6 +613,17 @@ public class ClientApp {
 		gbc_btnViewAllFiles.fill = GridBagConstraints.HORIZONTAL;
 		gbc_btnViewAllFiles.gridx = 0;
 		gbc_btnViewAllFiles.gridy = 6;
+		btnViewAllFiles.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+
+					viewAllFiles(filesPane);
+				}
+			}
+
+
+		);
 		fileOperationsPane.add(btnViewAllFiles, gbc_btnViewAllFiles);
 
 		//-------------------------------------------------------------------------
@@ -596,8 +633,6 @@ public class ClientApp {
 		tabbedPane.setEnabledAt(2, false);
 		btnNewUser.setEnabled(false);
 		btnDeleteUser.setEnabled(false);
-
-		
 	}
 
 	//Attempts to log in to the group server with the given username.
@@ -610,10 +645,13 @@ public class ClientApp {
 		String ipAddr = ipField.getText();
 		int port = Integer.parseInt(portField.getText());
 
+		String fileIp = ipAddr; //for now, fileserver at same address as groupserver
+		int filePort = port + 1; //for now, fileserver will always be +1 of groupserver (8081)
+
 		//Attempt to connect to group server
 		//If fail, alert of failure
 		if(!RunClient.groupC.connect(ipAddr, port)){
-			JOptionPane.showMessageDialog(null, "Connection failure. Could not connect to server at " + ipAddr + ":" + port + ".", "Connection Failure", JOptionPane.OK_CANCEL_OPTION);
+			JOptionPane.showMessageDialog(null, "Connection failure. Could not connect to GROUP server at " + ipAddr + ":" + port + ".", "Connection Failure", JOptionPane.OK_CANCEL_OPTION);
 			return;
 		}
 		else{
@@ -622,6 +660,12 @@ public class ClientApp {
 
 			if(RunClient.uToken == null){
 				JOptionPane.showMessageDialog(null, "That user does not exist.", "Incorrect Login", JOptionPane.OK_CANCEL_OPTION);
+				return;
+			}
+
+			//Attempt to connect to file server
+			if(!RunClient.fileC.connect(fileIp, filePort)){
+				JOptionPane.showMessageDialog(null, "Connection failure. Could not connect to FILE server at " + ipAddr + ":" + port + ".", "Connection Failure", JOptionPane.OK_CANCEL_OPTION);
 				return;
 			}
 
@@ -634,7 +678,6 @@ public class ClientApp {
 
 			currentUsername = username;
 		}
-
 	}
 
 	//Attempts to create a new user on the group server.
@@ -743,7 +786,6 @@ public class ClientApp {
 		groupFlag = 1;
 
 		loadedGroups = groupsListView;
-
 	}
 
 	//Populates the visable list with users from a selected
@@ -941,4 +983,270 @@ public class ClientApp {
 		}
 	}
 
+	//list groups in fileserver page
+	public void fileListGroups(JPanel groupsPane){
+
+		if(groupFileFlag == 1){
+			groupsPane.removeAll();
+			groupsPane.updateUI();
+		}
+
+		UserToken currToken = RunClient.groupC.getToken(currentUsername);
+
+		if(currToken == null){
+			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+
+		ArrayList<String> temp = (ArrayList<String>)currToken.getGroups();
+
+		final JList groupsList = new JList(temp.toArray());
+		groupsList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		GridBagConstraints gbc_groupsList = new GridBagConstraints();
+		gbc_groupsList.fill = GridBagConstraints.BOTH;
+		gbc_groupsList.gridx = 0;
+		gbc_groupsList.gridy = 1;
+		groupsPane.add(groupsList, gbc_groupsList);
+
+		//Group label
+		JLabel lblGroups_1 = new JLabel("Groups");
+		GridBagConstraints gbc_lblGroups_1 = new GridBagConstraints();
+		gbc_lblGroups_1.anchor = GridBagConstraints.NORTH;
+		gbc_lblGroups_1.insets = new Insets(0, 0, 5, 0);
+		gbc_lblGroups_1.gridx = 0;
+		gbc_lblGroups_1.gridy = 0;
+		groupsPane.add(lblGroups_1, gbc_lblGroups_1);
+
+		groupsPane.revalidate();
+		groupsPane.repaint();
+
+		groupFileFlag = 1;
+
+		loadedFileGroups = groupsList;
+	}
+
+	//list files in fileserver page
+	public void fileListPopulate(JPanel filesPane){
+
+		ArrayList<String> fileMembers = null;
+
+		if(fileFlag == 1){
+			filesPane.removeAll();
+			filesPane.updateUI();
+		}
+
+		String currGroup = "";
+
+		if(loadedFileGroups != null && loadedFileGroups.getSelectedValue() != null)
+			currGroup = (String)loadedFileGroups.getSelectedValue();
+		else{
+			JOptionPane.showMessageDialog(null, "Please select a group.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+
+		UserToken currToken = RunClient.groupC.getToken(currentUsername);
+
+		if(currToken == null){
+			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+
+		fileMembers = (ArrayList<String>)RunClient.fileC.listFiles(currGroup, currToken);
+		System.out.println(fileMembers + "\n");
+
+		
+		//Files list
+		final JList filesList = new JList(fileMembers.toArray());
+		filesList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		GridBagConstraints gbc_filesList = new GridBagConstraints();
+		gbc_filesList.fill = GridBagConstraints.BOTH;
+		gbc_filesList.gridx = 0;
+		gbc_filesList.gridy = 1;
+		filesPane.add(filesList, gbc_filesList);
+
+		//File label
+		JLabel lblFiles = new JLabel("" + currGroup + " Files");
+		GridBagConstraints gbc_lblFiles = new GridBagConstraints();
+		gbc_lblFiles.anchor = GridBagConstraints.NORTH;
+		gbc_lblFiles.insets = new Insets(0, 0, 5, 0);
+		gbc_lblFiles.gridx = 0;
+		gbc_lblFiles.gridy = 0;
+		filesPane.add(lblFiles, gbc_lblFiles);
+
+		filesPane.revalidate();
+		filesPane.repaint();
+
+		fileFlag = 1;
+
+		loadedFileList = filesList;
+	}
+
+	//view ALL files
+	public void viewAllFiles(JPanel filesPane){
+
+		ArrayList<String> fileMembers = null;
+
+		if(fileFlag == 1){
+			filesPane.removeAll();
+			filesPane.updateUI();
+		}
+
+		UserToken currToken = RunClient.groupC.getToken(currentUsername);
+
+		if(currToken == null){
+			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+
+		fileMembers = (ArrayList<String>)RunClient.fileC.listFiles(currToken);
+		System.out.println(fileMembers + "\n");
+
+		
+		//Files list
+		final JList filesList = new JList(fileMembers.toArray());
+		filesList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		GridBagConstraints gbc_filesList = new GridBagConstraints();
+		gbc_filesList.fill = GridBagConstraints.BOTH;
+		gbc_filesList.gridx = 0;
+		gbc_filesList.gridy = 1;
+		filesPane.add(filesList, gbc_filesList);
+
+		//File label
+		JLabel lblFiles = new JLabel("ALL Files");
+		GridBagConstraints gbc_lblFiles = new GridBagConstraints();
+		gbc_lblFiles.anchor = GridBagConstraints.NORTH;
+		gbc_lblFiles.insets = new Insets(0, 0, 5, 0);
+		gbc_lblFiles.gridx = 0;
+		gbc_lblFiles.gridy = 0;
+		filesPane.add(lblFiles, gbc_lblFiles);
+
+		filesPane.revalidate();
+		filesPane.repaint();
+
+		fileFlag = 1;
+
+		loadedFileList = filesList;
+	}
+
+	//upload file "to" specific group
+	public void attemptFileUpload(JPanel filesPane){
+
+		String currGroup = "";
+
+		if(loadedFileGroups != null && loadedFileGroups.getSelectedValue() != null)
+			currGroup = (String)loadedFileGroups.getSelectedValue();
+		else{
+			JOptionPane.showMessageDialog(null, "Please select a group.", "Select Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+
+		UserToken currToken = RunClient.groupC.getToken(currentUsername);
+
+		if(currToken == null){
+			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+
+		//Construct a dialogue box to capture user input and do so.
+		JPanel chooseFileDialogue = new JPanel();
+		JTextField chooseFileField = new JTextField(20);
+		JLabel fileDialogueLabel = new JLabel("Please enter a complete file path: ");
+
+		chooseFileDialogue.add(fileDialogueLabel);
+		chooseFileDialogue.add(chooseFileField);
+
+		int dialogue = JOptionPane.showOptionDialog(null, chooseFileDialogue, "Choose File", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, null, null);
+		
+		String chooseFile = chooseFileField.getText();
+		int tempSplit = chooseFile.lastIndexOf("/");
+		String destFile = chooseFile.substring(tempSplit + 1);
+
+		File tempTest = new File(chooseFile);
+
+		if(dialogue == 0 && chooseFile.length() > 0 && tempTest.exists()){
+
+			if(!RunClient.fileC.upload(chooseFile, destFile, currGroup, currToken)){
+				JOptionPane.showMessageDialog(null, "The file could not be uploaded.", "File Upload Failure", JOptionPane.OK_CANCEL_OPTION);
+				return;
+			}
+
+			System.out.println("File Uploaded!");
+			
+		}
+
+	}
+
+	//delete file
+	public void attemptFileDelete(JPanel filesPane){
+
+		String currFile = "";
+
+		if(loadedFileList != null && loadedFileList.getSelectedValue() != null)
+			currFile = (String)loadedFileList.getSelectedValue();
+		else{
+			JOptionPane.showMessageDialog(null, "Please select a file.", "Select Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+
+		UserToken currToken = RunClient.groupC.getToken(currentUsername);
+
+		if(currToken == null){
+			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+
+		if(currFile.length() > 0){
+
+			if(!RunClient.fileC.delete(currFile, currToken)){
+				JOptionPane.showMessageDialog(null, "The user could not be removed.", "User Remove Failure", JOptionPane.OK_CANCEL_OPTION);
+				return;
+			}
+
+			viewAllFiles(filesPane);
+			
+		}
+	}
+
+	//download file
+	public void attemptFileDownload(JPanel filesPane){
+
+		String currFile = "";
+
+		if(loadedFileList != null && loadedFileList.getSelectedValue() != null)
+			currFile = (String)loadedFileList.getSelectedValue();
+		else{
+			JOptionPane.showMessageDialog(null, "Please select a file.", "Select Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+
+		UserToken currToken = RunClient.groupC.getToken(currentUsername);
+
+		if(currToken == null){
+			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+
+		//Construct a dialogue box to capture user input and do so.
+		JPanel chooseFileDialogue = new JPanel();
+		JTextField chooseFileField = new JTextField(20);
+		JLabel fileDialogueLabel = new JLabel("Please enter a complete file path: ");
+
+		chooseFileDialogue.add(fileDialogueLabel);
+		chooseFileDialogue.add(chooseFileField);
+
+		int dialogue = JOptionPane.showOptionDialog(null, chooseFileDialogue, "Save File", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, null, null);
+		
+		String destFile = chooseFileField.getText();
+
+		if(currFile.length() > 0){
+
+			if(!RunClient.fileC.download(currFile, destFile, currToken)){
+				JOptionPane.showMessageDialog(null, "The user could not be removed.", "User Remove Failure", JOptionPane.OK_CANCEL_OPTION);
+				return;
+			}
+
+			viewAllFiles(filesPane);
+			
+		}
+	}
 }

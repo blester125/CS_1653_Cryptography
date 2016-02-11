@@ -9,8 +9,9 @@
 
 [X] GroupServer.java - group list
 <<<<<<< HEAD
-[-] ClientApp.java - Group and File server functions still need mapped & listed
-[ ] UserList.java - this needs to possibly be refactored. A user should not have access
+[X] ClientApp.java - Group and File server functions still need mapped & listed
+[X] UserList.java - this needs to possibly be refactored. A user should not have access
 to their group information
 =======
 
+[ ] Complete documentation and metadata
