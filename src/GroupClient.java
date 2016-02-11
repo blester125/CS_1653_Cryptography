@@ -115,6 +115,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 				message.addObject(groupname); //Add the group name string
 				message.addObject(token); //Add the requester's token
 				output.writeObject(message); 
+				//System.out.println("Sent: " + message);
 			
 				response = (Envelope)input.readObject();
 				

@@ -111,8 +111,9 @@ public class GroupThread extends Thread
 					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("CGROUP")) //Client wants to create a group
-				{
-					if(message.getObjContents().size() < 2)
+				{	
+					//System.out.println("rcvd: " + message + " " + message.getObjContents().size());
+					if(message.getObjContents().size() < 1) //size is always two+? not sure why this was set to < 2
 					{
 						response = new Envelope("FAIL");
 					}
@@ -136,10 +137,12 @@ public class GroupThread extends Thread
 					}
 					
 					output.writeObject(response);
+					System.out.println(response);
+
 				}
 				else if(message.getMessage().equals("DGROUP")) //Client wants to delete a group
 				{
-					if(message.getObjContents().size() < 2)
+					if(message.getObjContents().size() < 1)
 					{
 						response = new Envelope("FAIL");
 					}
@@ -186,16 +189,20 @@ public class GroupThread extends Thread
 								UserToken yourToken = (UserToken)message.getObjContents().get(1);
 								// Get the memeber list for this group
 								List<String> members = listMembers(groupName, yourToken);
+
+								System.out.println(groupName + " , " + yourToken + " , " + members);
 								// If a list was returned
 								if (members != null) 
 								{
 									// Craft the envelope
 									response = new Envelope("OK");
 									response.addObject(members);
+									System.out.println(response);
 								}
 							}
 						}
 					}
+					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("AUSERTOGROUP")) //Client wants to add user to a group
 				{
@@ -224,6 +231,8 @@ public class GroupThread extends Thread
 							}
 						}
 					}
+					output.writeObject(response);
+					System.out.println(response);
 				}
 				else if(message.getMessage().equals("RUSERFROMGROUP")) //Client wants to remove user from a group
 				{
@@ -252,6 +261,8 @@ public class GroupThread extends Thread
 							}
 						}
 					}
+					output.writeObject(response);
+					System.out.println(response);
 				}
 				else if(message.getMessage().equals("DISCONNECT")) //Client wants to disconnect
 				{
@@ -407,10 +418,18 @@ public class GroupThread extends Thread
 		
 		// Check if group does not exist
 		// this assumes all group names must be unique, regardless of owner
-		if(!my_gs.groupList.checkGroup(requester))
+		if(!my_gs.groupList.checkGroup(groupName))
 		{
-			my_gs.groupList.createGroup(groupName, requester);
-			return true;
+			
+			if(my_gs.userList.checkUser(requester)){
+				
+				my_gs.groupList.createGroup(groupName, requester);
+				my_gs.groupList.addMember(groupName, requester);
+				my_gs.userList.addGroup(requester, groupName);
+				my_gs.userList.addOwnership(requester, groupName);
+				return true;
+			}
+			return false;
 		}
 		else
 		{
@@ -427,6 +446,9 @@ public class GroupThread extends Thread
 	private boolean deleteGroup(String groupName, UserToken token) {
 		String requester = token.getSubject();
 		
+		if(groupName.equals("ADMIN"))
+			return false;
+
 		// check if group exists
 		if(my_gs.groupList.checkGroup(groupName))
 		{
@@ -460,6 +482,7 @@ public class GroupThread extends Thread
 		{
 			// Get the groups the requester belonges to
 			ArrayList<String> groups = my_gs.userList.getUserGroups(requester);
+			System.out.println(groups);
 			// is the user autherized to be in this group?
 			if (groups.contains(groupName))
 			{

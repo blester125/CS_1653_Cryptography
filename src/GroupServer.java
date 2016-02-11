@@ -33,9 +33,11 @@ public class GroupServer extends Server {
 		// Overwrote server.start() because if no user file exists, initial admin account needs to be created
 
 		String userFile = "UserList.bin";
+		String groupFile = "GroupList.bin";
 		Scanner console = new Scanner(System.in);
 		ObjectInputStream userStream;
 		ObjectInputStream groupStream;
+		String username = "";
 
 		//This runs a thread that saves the lists on program exit
 		Runtime runtime = Runtime.getRuntime();
@@ -53,7 +55,7 @@ public class GroupServer extends Server {
 			System.out.println("UserList File Does Not Exist. Creating UserList...");
 			System.out.println("No users currently exist. Your account will be the administrator.");
 			System.out.println("Enter new username : ");
-			String username = console.next();
+			username = console.next();
 
 			//Create a new list, add current user to the ADMIN group. They now own the ADMIN group.
 			userList = new UserList();
@@ -72,10 +74,43 @@ public class GroupServer extends Server {
 			System.exit(-1);
 		}
 
+		//Open group file to get group list
+		//self-implemented but cloned from above code
+		try
+		{
+			FileInputStream fis2 = new FileInputStream(groupFile);
+			groupStream = new ObjectInputStream(fis2);
+			groupList = (GroupList)groupStream.readObject();
+		}
+		catch(FileNotFoundException e)
+		{
+			System.out.println("GroupList File Does Not Exist. Creating GroupList...");
+			System.out.println("No groups currently exist. Your account will be the ADMIN.");
+			
+			//Create a new list, add current user to the ADMIN group. They now own the ADMIN group.
+			groupList = new GroupList();
+			groupList.createGroup("ADMIN", username);
+			groupList.addMember("ADMIN", username);
+			System.out.println("ADMIN group created.");
+		}
+		catch(IOException e)
+		{
+			System.out.println("Error reading from GroupList file");
+			System.exit(-1);
+		}
+		catch(ClassNotFoundException e)
+		{
+			System.out.println("Error reading from GroupList file");
+			System.exit(-1);
+		}
+
 		//Autosave Daemon. Saves lists every 5 minutes
 		AutoSave aSave = new AutoSave(this);
 		aSave.setDaemon(true);
 		aSave.start();
+
+		//Begin
+		System.out.println("Begin serving...\n\n");
 
 		//This block listens for connections and creates threads on new connections
 		try

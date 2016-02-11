@@ -24,6 +24,8 @@ import javax.swing.JPasswordField;
 import javax.swing.SwingUtilities;
 import javax.swing.JComponent;
 import javax.swing.JOptionPane;
+import javax.swing.DefaultListModel;
+import java.util.ArrayList;
 
 public class ClientApp {
 
@@ -33,6 +35,9 @@ public class ClientApp {
 	private JTextField portField;
 	private JPasswordField passwordField;
 	private String currentUsername;
+	JList loadedGroups;
+	int groupFlag = 0;
+	int userFlag = 0;
 
 	/**
 	 * Launch the application. (Should always launch from RunClient, not here)
@@ -259,7 +264,7 @@ public class ClientApp {
 		groupsPage.setRightComponent(listsPane);
 		
 		//user list panel
-		JPanel usersListPanel = new JPanel();
+		final JPanel usersListPanel = new JPanel();
 		listsPane.setRightComponent(usersListPanel);
 		GridBagLayout gbl_usersListPanel = new GridBagLayout();
 		gbl_usersListPanel.columnWidths = new int[]{162, 0};
@@ -277,16 +282,16 @@ public class ClientApp {
 		usersListPanel.add(lblUsers, gbc_lblUsers);
 		
 		//Users lists
-		JList usersListView = new JList();
-		usersListView.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		GridBagConstraints gbc_usersListView = new GridBagConstraints();
-		gbc_usersListView.fill = GridBagConstraints.BOTH;
-		gbc_usersListView.gridx = 0;
-		gbc_usersListView.gridy = 1;
-		usersListPanel.add(usersListView, gbc_usersListView);
+		// JList usersListView = new JList();
+		// usersListView.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		// GridBagConstraints gbc_usersListView = new GridBagConstraints();
+		// gbc_usersListView.fill = GridBagConstraints.BOTH;
+		// gbc_usersListView.gridx = 0;
+		// gbc_usersListView.gridy = 1;
+		// usersListPanel.add(usersListView, gbc_usersListView);
 		
 		//groups panel
-		JPanel groupsListPanel = new JPanel();
+		final JPanel groupsListPanel = new JPanel();
 		listsPane.setLeftComponent(groupsListPanel);
 		GridBagLayout gbl_groupsListPanel = new GridBagLayout();
 		gbl_groupsListPanel.columnWidths = new int[]{100, 0};
@@ -304,13 +309,13 @@ public class ClientApp {
 		groupsListPanel.add(lblGroups, gbc_lblGroups);
 		
 		//groups list
-		JList groupsListView = new JList();
-		groupsListView.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		GridBagConstraints gbc_groupsListView = new GridBagConstraints();
-		gbc_groupsListView.fill = GridBagConstraints.BOTH;
-		gbc_groupsListView.gridx = 0;
-		gbc_groupsListView.gridy = 1;
-		groupsListPanel.add(groupsListView, gbc_groupsListView);
+		// final JList groupsListView = new JList();
+		// groupsListView.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		// GridBagConstraints gbc_groupsListView = new GridBagConstraints();
+		// gbc_groupsListView.fill = GridBagConstraints.BOTH;
+		// gbc_groupsListView.gridx = 0;
+		// gbc_groupsListView.gridy = 1;
+		// groupsListPanel.add(groupsListView, gbc_groupsListView);
 		
 		//group functionality panel
 		JPanel groupFunctionsPanel = new JPanel();
@@ -330,6 +335,17 @@ public class ClientApp {
 		gbc_btnCreateGroup.insets = new Insets(0, 0, 5, 0);
 		gbc_btnCreateGroup.gridx = 0;
 		gbc_btnCreateGroup.gridy = 0;
+		btnCreateGroup.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+
+					attemptCreateGroup(groupsListPanel);
+				}
+			}
+
+
+		);
 		groupFunctionsPanel.add(btnCreateGroup, gbc_btnCreateGroup);
 		
 		//Delete Group Button
@@ -340,6 +356,17 @@ public class ClientApp {
 		gbc_btnDeleteGroup.insets = new Insets(0, 0, 5, 0);
 		gbc_btnDeleteGroup.gridx = 0;
 		gbc_btnDeleteGroup.gridy = 1;
+		btnDeleteGroup.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+
+					attemptDeleteGroup(groupsListPanel);
+				}
+			}
+
+
+		);
 		groupFunctionsPanel.add(btnDeleteGroup, gbc_btnDeleteGroup);
 		
 		//Add User to Group button
@@ -350,6 +377,17 @@ public class ClientApp {
 		gbc_btnAddUser.insets = new Insets(0, 0, 5, 0);
 		gbc_btnAddUser.gridx = 0;
 		gbc_btnAddUser.gridy = 2;
+		btnAddUser.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+
+					attemptAddToGroup(usersListPanel);
+				}
+			}
+
+
+		);
 		groupFunctionsPanel.add(btnAddUser, gbc_btnAddUser);
 		
 		//Remove User from Group button
@@ -370,6 +408,18 @@ public class ClientApp {
 		gbc_btnViewGroups.insets = new Insets(0, 0, 5, 0);
 		gbc_btnViewGroups.gridx = 0;
 		gbc_btnViewGroups.gridy = 5;
+		//attempt to connect to server
+		btnViewGroups.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+
+					populateGroupList(groupsListPanel);
+				}
+			}
+
+
+		);
 		groupFunctionsPanel.add(btnViewGroups, gbc_btnViewGroups);
 		
 		//View users button
@@ -379,6 +429,17 @@ public class ClientApp {
 		gbc_btnViewUsers.fill = GridBagConstraints.HORIZONTAL;
 		gbc_btnViewUsers.gridx = 0;
 		gbc_btnViewUsers.gridy = 6;
+		btnViewUsers.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+
+					populateUserList(usersListPanel);
+				}
+			}
+
+
+		);
 		groupFunctionsPanel.add(btnViewUsers, gbc_btnViewUsers);		
 		
 		//-------------------------------------------------------------------------------------
@@ -625,6 +686,196 @@ public class ClientApp {
 			}
 			
 		}
+	}
+
+	//Populates the visable list with a users groups based
+	//on their token 
+	public void populateGroupList(JPanel groupsListPanel){
+
+		if(groupFlag == 1){
+			groupsListPanel.removeAll();
+			groupsListPanel.updateUI();
+		}
+
+		UserToken currToken = RunClient.groupC.getToken(currentUsername);
+
+		if(currToken == null){
+			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+
+		ArrayList<String> temp = (ArrayList<String>)currToken.getGroups();
+
+		final JList groupsListView = new JList(temp.toArray());
+		groupsListView.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		GridBagConstraints gbc_groupsListView = new GridBagConstraints();
+		gbc_groupsListView.fill = GridBagConstraints.BOTH;
+		gbc_groupsListView.gridx = 0;
+		gbc_groupsListView.gridy = 1;
+		groupsListPanel.add(groupsListView, gbc_groupsListView);
+
+		JLabel lblGroups = new JLabel("Groups");
+		GridBagConstraints gbc_lblGroups = new GridBagConstraints();
+		gbc_lblGroups.insets = new Insets(0, 0, 5, 0);
+		gbc_lblGroups.gridx = 0;
+		gbc_lblGroups.gridy = 0;
+		groupsListPanel.add(lblGroups, gbc_lblGroups);
+
+		groupsListPanel.revalidate();
+		groupsListPanel.repaint();
+
+		groupFlag = 1;
+
+		loadedGroups = groupsListView;
+
+	}
+
+	//Populates the visable list with users from a selected
+	//group based on their token 
+	public void populateUserList(JPanel usersListPanel){
+
+		if(userFlag == 1){
+			usersListPanel.removeAll();
+			usersListPanel.updateUI();
+		}
+
+		String currGroup = "";
+
+		if(loadedGroups != null && loadedGroups.getSelectedValue() != null)
+			currGroup = (String)loadedGroups.getSelectedValue();
+		else{
+			JOptionPane.showMessageDialog(null, "Please select a group.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+
+		UserToken currToken = RunClient.groupC.getToken(currentUsername);
+
+		if(currToken == null){
+			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+
+		ArrayList<String> members = (ArrayList<String>)RunClient.groupC.listMembers(currGroup, currToken);
+
+		final JList usersListView = new JList(members.toArray());
+		usersListView.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		GridBagConstraints gbc_usersListView = new GridBagConstraints();
+		gbc_usersListView.fill = GridBagConstraints.BOTH;
+		gbc_usersListView.gridx = 0;
+		gbc_usersListView.gridy = 1;
+		usersListPanel.add(usersListView, gbc_usersListView);
+
+		JLabel lblUsers = new JLabel("Users");
+		GridBagConstraints gbc_lblUsers = new GridBagConstraints();
+		gbc_lblUsers.insets = new Insets(0, 0, 5, 0);
+		gbc_lblUsers.gridx = 0;
+		gbc_lblUsers.gridy = 0;
+		usersListPanel.add(lblUsers, gbc_lblUsers);
+
+		userFlag = 1;
+
+		usersListPanel.revalidate();
+		usersListPanel.repaint();
+	}
+
+	//Creates a new group with a given name and gives
+	//the user who created it ownership rights.
+	public void attemptCreateGroup(JPanel groupsListPanel){
+
+
+		//Construct a dialogue box to capture user input and do so.
+		JPanel newGroupDialogue = new JPanel();
+		JTextField newGroupField = new JTextField(20);
+		JLabel groupDialogueLabel = new JLabel("Please enter a group name: ");
+
+		newGroupDialogue.add(groupDialogueLabel);
+		newGroupDialogue.add(newGroupField);
+
+		int dialogue = JOptionPane.showOptionDialog(null, newGroupDialogue, "New Group Creation", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, null, null);
+		
+		String newGroup = newGroupField.getText();
+
+		if(dialogue == 0 && newGroup.length() > 0){
+
+			//Create new user with currently logged in user token. If fail, report and return
+			if(!RunClient.groupC.createGroup(newGroup, RunClient.uToken)){
+				JOptionPane.showMessageDialog(null, "The group could not be created.", "User Creation Failure", JOptionPane.OK_CANCEL_OPTION);
+				return;
+			}
+			
+			populateGroupList(groupsListPanel);
+		}
+	}
+
+	//Deletes a group that is selected
+	public void attemptDeleteGroup(JPanel groupsListPanel){
+
+		String currGroup = "";
+
+		if(loadedGroups != null && loadedGroups.getSelectedValue() != null)
+			currGroup = (String)loadedGroups.getSelectedValue();
+		else{
+			JOptionPane.showMessageDialog(null, "Please select a group.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+
+		UserToken currToken = RunClient.groupC.getToken(currentUsername);
+
+		if(currToken == null){
+			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+
+		int confirm = JOptionPane.showConfirmDialog(null, "Delete group " + currGroup + "?","Really?", JOptionPane.YES_NO_OPTION);
+		if (confirm == JOptionPane.YES_OPTION) {
+			if (RunClient.groupC.deleteGroup(currGroup, currToken)) {
+				populateGroupList(groupsListPanel);
+			} else
+				JOptionPane.showMessageDialog(null, "Did not delete " + currGroup + ".");
+		}
+	}
+
+	//Adds user to selected group
+	//NEED TO FINISH
+	public void attemptAddToGroup(JPanel usersListPanel){
+
+		String currGroup = "";
+
+		if(loadedGroups != null && loadedGroups.getSelectedValue() != null)
+			currGroup = (String)loadedGroups.getSelectedValue();
+		else{
+			JOptionPane.showMessageDialog(null, "Please select a group.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+
+		UserToken currToken = RunClient.groupC.getToken(currentUsername);
+
+		if(currToken == null){
+			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+
+		//Construct a dialogue box to capture user input and do so.
+		JPanel chooseUserDialogue = new JPanel();
+		JTextField chooseUsernameField = new JTextField(20);
+		JLabel usernameDialogueLabel = new JLabel("Please enter a username: ");
+
+		chooseUserDialogue.add(usernameDialogueLabel);
+		chooseUserDialogue.add(chooseUsernameField);
+
+		int dialogue = JOptionPane.showOptionDialog(null, chooseUserDialogue, "Choose User", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, null, null);
+		
+		String chooseUsername = chooseUsernameField.getText();
+
+		if(dialogue == 0 && chooseUsername.length() > 0 && !(currentUsername.equals(chooseUsername))){
+
+			if(!RunClient.groupC.addUserToGroup(chooseUsername, currGroup, currToken)){
+				JOptionPane.showMessageDialog(null, "The user could not be added.", "User Addition Failure", JOptionPane.OK_CANCEL_OPTION);
+				return;
+			}
+			
+		}
+
 	}
 
 }
