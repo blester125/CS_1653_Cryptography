@@ -51,13 +51,19 @@ public class ClientApp {
 	/**
 	 * Launch the application. (Should always launch from RunClient, not here)
 	 */
-	public static void main(String[] args) {
-		EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				try {
+	public static void main(String[] args) 
+	{
+		EventQueue.invokeLater(new Runnable() 
+		{
+			public void run() 
+			{
+				try 
+				{
 					ClientApp window = new ClientApp();
 					window.frmBrcSafeshare.setVisible(true);
-				} catch (Exception e) {
+				} 
+				catch (Exception e) 
+				{
 					e.printStackTrace();
 				}
 			}
@@ -67,7 +73,8 @@ public class ClientApp {
 	/**
 	 * Initialize the GUI when called.
 	 */
-	public ClientApp() {
+	public ClientApp() 
+	{
 		initialize();
 	}
 
@@ -284,6 +291,7 @@ public class ClientApp {
 		homePage.add(btnFileServer, gbc_btnFileServer);
 
 		//Login button
+		final JButton btnLogout = new JButton("Logout");
 		final JButton btnLogin = new JButton("Login");
 		GridBagConstraints gbc_btnLogin = new GridBagConstraints();
 		gbc_btnLogin.anchor = GridBagConstraints.NORTH;
@@ -298,7 +306,7 @@ public class ClientApp {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
 
-					attemptLogin(usernameField, ipField, portField, btnLogin, btnNewUser, tabbedPane, btnDeleteUser, btnFileServer);
+					attemptLogin(usernameField, ipField, portField, btnLogin, btnNewUser, tabbedPane, btnDeleteUser, btnFileServer, btnLogout);
 
 				}
 			}
@@ -307,6 +315,29 @@ public class ClientApp {
 		);
 
 		homePage.add(btnLogin, gbc_btnLogin);
+
+		GridBagConstraints gbc_btnLogout = new GridBagConstraints();
+		gbc_btnLogout.anchor = GridBagConstraints.NORTH;
+		gbc_btnLogout.fill = GridBagConstraints.HORIZONTAL;
+		gbc_btnLogout.insets = new Insets(0, 0, 5, 0);
+		gbc_btnLogout.gridx = 3;
+		gbc_btnLogout.gridy = 6;
+
+		//attempt to connect to server
+		btnLogout.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+
+					attemptLogout(btnLogin, btnNewUser, tabbedPane, btnDeleteUser, btnFileServer);
+
+				}
+			}
+
+
+		);
+
+		homePage.add(btnLogout, gbc_btnLogout);
 		
 		/*//explanation label
 		JLabel lblthisPageDoes = new JLabel("(This page does not have full functionality yet)");
@@ -701,12 +732,13 @@ public class ClientApp {
 		btnNewUser.setEnabled(false);
 		btnDeleteUser.setEnabled(false);
 		btnFileServer.setEnabled(false);
+		btnLogout.setEnabled(false);
 	}
 
 	//Attempts to log in to the group server with the given username.
 	//Eventually will need authentication via password as well, but 
 	//this is not required for phase 2.
-	public void attemptLogin(JTextField usernameField, JTextField ipField, JTextField portField, JButton btnLogin, JButton btnNewUser, JTabbedPane tabbedPane, JButton btnDeleteUser, JButton btnFileServer){
+	public void attemptLogin(JTextField usernameField, JTextField ipField, JTextField portField, JButton btnLogin, JButton btnNewUser, JTabbedPane tabbedPane, JButton btnDeleteUser, JButton btnFileServer, JButton btnLogout){
 
 		//Pull information from fields
 		String username = usernameField.getText();
@@ -729,12 +761,17 @@ public class ClientApp {
 			}
 
 			//Enable navigation to application resources.
+			usernameField.setEnabled(false);
+			ipField.setEnabled(false);
+			portField.setEnabled(false);
+			passwordField.setEnabled(false);
+
 			btnLogin.setEnabled(false);
 			btnNewUser.setEnabled(true);
 			btnDeleteUser.setEnabled(true);
 			tabbedPane.setEnabledAt(1,true);
 			btnFileServer.setEnabled(true);
-
+			btnLogout.setEnabled(true);
 			currentUsername = username;
 		}
 	}
@@ -751,6 +788,26 @@ public class ClientApp {
 			return;
 		}
 		tabbedPane.setEnabledAt(2,true);
+	}
+
+	public void attemptLogout(JButton btnLogin, JButton btnNewUser, JTabbedPane tabbedPane, JButton btnDeleteUser, JButton btnFileServer) {
+		if (RunClient.fileC.isConnected()) {
+			RunClient.fileC.disconnect();
+		}
+		if (RunClient.groupC.isConnected()) {
+			RunClient.groupC.disconnect();
+		}
+		usernameField.setEnabled(true);
+		ipField.setEnabled(true);
+		portField.setEnabled(true);
+		passwordField.setEnabled(true);
+
+		tabbedPane.setEnabledAt(1, false);
+		tabbedPane.setEnabledAt(2, false);
+		btnNewUser.setEnabled(false);
+		btnDeleteUser.setEnabled(false);
+		btnFileServer.setEnabled(false);
+		btnLogin.setEnabled(true);
 	}
 
 	//Attempts to create a new user on the group server.

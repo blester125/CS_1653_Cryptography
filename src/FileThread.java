@@ -57,8 +57,12 @@ public class FileThread extends Thread
 						    //Go through all files in the server, filter for only those in the right group
 						    for(ShareFile f : all){
 
-						    	if(tok.getGroups().contains(f.getGroup()))
-						    		filteredFiles.add(f.getPath());
+						    	if(tok.getGroups().contains(f.getGroup())) 
+						    	{
+						    		String path = f.getPath();
+						    		path = path.substring(0, path.length() - f.getGroup().length());
+						    		filteredFiles.add(path);
+						    	}
 						    }
 
 						    //form response, write it
@@ -71,50 +75,54 @@ public class FileThread extends Thread
 				}
 				if(e.getMessage().equals("LFILESG")) //List only files in specified group
 				{
-				    //Do error handling
-				    if(e.getObjContents().size() < 1) {
-				    	response = new Envelope("FAIL-BADCONTENTS");
-				    }
-				    else {
-				    	if(e.getObjContents().get(0) == null) {
-				    		response = new Envelope("FAIL-BADTOKEN");
-				    	}
-				    	else {
+			    //Do error handling
+			    if(e.getObjContents().size() < 1) 
+			    {
+			    	response = new Envelope("FAIL-BADCONTENTS");
+			    }
+			    else 
+			    {
+			    	if(e.getObjContents().get(0) == null) 
+			    	{
+			    		response = new Envelope("FAIL-BADTOKEN");
+			    	}
+			    	else 
+			    	{
+			    		//Prepare output list of file names and retrieve the token from the envelope
+					    ArrayList<String> finalFiles = new ArrayList<String>();
+					    ArrayList<ShareFile> filteredFiles = new ArrayList<ShareFile>();
+					    String groupName = (String)e.getObjContents().get(0);
+					    UserToken tok = (UserToken)e.getObjContents().get(1);
 
-				    		//Prepare output list of file names and retrieve the token from the envelope
-						    ArrayList<String> finalFiles = new ArrayList<String>();
-						    ArrayList<ShareFile> filteredFiles = new ArrayList<ShareFile>();
-						    String groupName = (String)e.getObjContents().get(0);
-						    UserToken tok = (UserToken)e.getObjContents().get(1);
 
+					    //Get all files from the FileServer
+					    ArrayList<ShareFile> all = FileServer.fileList.getFiles();
 
-						    //Get all files from the FileServer
-						    ArrayList<ShareFile> all = FileServer.fileList.getFiles();
-
-						    //Go through all files in the server, filter for only those in the right group
-						    for(ShareFile f : all){
-
+					    //Go through all files in the server, filter for only those in the right group
+					    for(ShareFile f : all)
+					    {
 						    	if(tok.getGroups().contains(f.getGroup()))
-						    		filteredFiles.add(f);
-						    }
-
-						    //Go through all filtered files, only return one group's
-						    for(ShareFile f : filteredFiles){
-
-						    	if(f.getGroup().equals(groupName))
-						    		finalFiles.add(f.getPath());
-						    }
-
-
-
-						    //form response, write it
-						    response = new Envelope("OK");
-						    response.addObject(finalFiles);
-						    output.writeObject(response);
-						    System.out.println("SENT from LFILESG: " + response);
-				    	}
-				    }   	
-				}
+					    		filteredFiles.add(f);
+					    }
+					    //Go through all filtered files, only return one group's
+					    for(ShareFile f : filteredFiles)
+					    {
+					    	if(f.getGroup().equals(groupName))
+					    	{
+					    		String path = f.getPath();
+					    		path = path.substring(0, path.length() - groupName.length());
+					    		finalFiles.add(path);
+					    	}
+					    }
+					  
+				    	//form response, write it
+				    	response = new Envelope("OK");
+				    	response.addObject(finalFiles);
+				    	output.writeObject(response);
+				  	  System.out.println("SENT from LFILESG: " + response);
+				  	}
+				  }
+				}   	
 				if(e.getMessage().equals("UPLOADF"))
 				{
 
@@ -136,6 +144,7 @@ public class FileThread extends Thread
 						else {
 							String remotePath = (String)e.getObjContents().get(0);
 							String group = (String)e.getObjContents().get(1);
+							remotePath = remotePath + group;
 							UserToken yourToken = (UserToken)e.getObjContents().get(2); //Extract token
 
 							if (FileServer.fileList.checkFile(remotePath)) {
