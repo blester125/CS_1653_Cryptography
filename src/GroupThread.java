@@ -346,6 +346,10 @@ public class GroupThread extends Thread
 	private boolean deleteUser(String username, UserToken yourToken)
 	{
 		String requester = yourToken.getSubject();
+
+		//can't delete yourself
+		if(requester.equals(username))
+			return false;
 		
 		//Does requester exist?
 		if(my_gs.userList.checkUser(requester))

@@ -773,6 +773,16 @@ public class ClientApp {
 			btnFileServer.setEnabled(true);
 			btnLogout.setEnabled(true);
 			currentUsername = username;
+
+			//redraw groups page
+			JSplitPane tempgroups = (JSplitPane)tabbedPane.getComponentAt(1);
+			JSplitPane tempgroupsRight = (JSplitPane)tempgroups.getRightComponent();
+			JPanel templeft = (JPanel)tempgroupsRight.getLeftComponent();
+			JPanel tempright = (JPanel)tempgroupsRight.getRightComponent();
+			templeft.removeAll();
+			templeft.updateUI();
+			tempright.removeAll();
+			tempright.updateUI();
 		}
 	}
 
@@ -788,6 +798,16 @@ public class ClientApp {
 			return;
 		}
 		tabbedPane.setEnabledAt(2,true);
+
+		//redraw files page
+		JSplitPane tempfiles = (JSplitPane)tabbedPane.getComponentAt(2);
+		JSplitPane tempfilesRight = (JSplitPane)tempfiles.getRightComponent();
+		JPanel templeft = (JPanel)tempfilesRight.getLeftComponent();
+		JPanel tempright = (JPanel)tempfilesRight.getRightComponent();
+		templeft.removeAll();
+		templeft.updateUI();
+		tempright.removeAll();
+		tempright.updateUI();
 	}
 
 	public void attemptLogout(JButton btnLogin, JButton btnNewUser, JTabbedPane tabbedPane, JButton btnDeleteUser, JButton btnFileServer) {
