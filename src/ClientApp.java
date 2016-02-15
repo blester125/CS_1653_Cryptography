@@ -35,6 +35,8 @@ public class ClientApp {
 	private JTextField usernameField;
 	private JTextField ipField;
 	private JTextField portField;
+	private JTextField fileIpField;
+	private JTextField filePortField;
 	private JPasswordField passwordField;
 	private String currentUsername;
 	JList loadedGroups;
@@ -177,22 +179,40 @@ public class ClientApp {
 		homePage.add(btnDeleteUser, gbc_btnDeleteUser);
 		
 		//IP Address Label
-		JLabel lblIpAddress = new JLabel("IP Address");
+		JLabel lblIpAddress = new JLabel("Group Address");
 		GridBagConstraints gbc_lblIpAddress = new GridBagConstraints();
 		gbc_lblIpAddress.anchor = GridBagConstraints.WEST;
 		gbc_lblIpAddress.insets = new Insets(0, 0, 5, 5);
 		gbc_lblIpAddress.gridx = 1;
 		gbc_lblIpAddress.gridy = 4;
 		homePage.add(lblIpAddress, gbc_lblIpAddress);
+
+		//File Address Label
+		JLabel lblFileAddress = new JLabel("File Address");
+		GridBagConstraints gbc_lblFileAddress = new GridBagConstraints();
+		gbc_lblFileAddress.anchor = GridBagConstraints.WEST;
+		gbc_lblFileAddress.insets = new Insets(0, 0, 5, 5);
+		gbc_lblFileAddress.gridx = 1;
+		gbc_lblFileAddress.gridy = 6;
+		homePage.add(lblFileAddress, gbc_lblFileAddress);
 		
 		//Port label
-		JLabel lblPort = new JLabel("Port");
+		JLabel lblPort = new JLabel("Group Port");
 		GridBagConstraints gbc_lblPort = new GridBagConstraints();
 		gbc_lblPort.anchor = GridBagConstraints.NORTHWEST;
 		gbc_lblPort.insets = new Insets(0, 0, 5, 5);
 		gbc_lblPort.gridx = 2;
 		gbc_lblPort.gridy = 4;
 		homePage.add(lblPort, gbc_lblPort);
+
+		//File Port label
+		JLabel lblFilePort = new JLabel("File Port");
+		GridBagConstraints gbc_lblFilePort = new GridBagConstraints();
+		gbc_lblFilePort.anchor = GridBagConstraints.NORTHWEST;
+		gbc_lblFilePort.insets = new Insets(0, 0, 5, 5);
+		gbc_lblFilePort.gridx = 2;
+		gbc_lblFilePort.gridy = 6;
+		homePage.add(lblFilePort, gbc_lblFilePort);
 		
 		//IP address text field
 		ipField = new JTextField();
@@ -215,6 +235,28 @@ public class ClientApp {
 		portField.setText("8080");
 		homePage.add(portField, gbc_portField);
 		portField.setColumns(10);
+
+		//File IP address text field
+		fileIpField = new JTextField();
+		GridBagConstraints gbc_fileIpField = new GridBagConstraints();
+		gbc_fileIpField.fill = GridBagConstraints.HORIZONTAL;
+		gbc_fileIpField.insets = new Insets(0, 0, 5, 5);
+		gbc_fileIpField.gridx = 1;
+		gbc_fileIpField.gridy = 7;
+		fileIpField.setText("localhost");
+		homePage.add(fileIpField, gbc_fileIpField);
+		fileIpField.setColumns(10);
+		
+		//File Port text field
+		filePortField = new JTextField();
+		GridBagConstraints gbc_filePortField = new GridBagConstraints();
+		gbc_filePortField.fill = GridBagConstraints.HORIZONTAL;
+		gbc_filePortField.insets = new Insets(0, 0, 5, 5);
+		gbc_filePortField.gridx = 2;
+		gbc_filePortField.gridy = 7;
+		filePortField.setText("8081");
+		homePage.add(filePortField, gbc_filePortField);
+		filePortField.setColumns(10);
 		
 		//Login button
 		final JButton btnLogin = new JButton("Login");
@@ -241,7 +283,7 @@ public class ClientApp {
 
 		homePage.add(btnLogin, gbc_btnLogin);
 		
-		//explanation label
+		/*//explanation label
 		JLabel lblthisPageDoes = new JLabel("(This page does not have full functionality yet)");
 		GridBagConstraints gbc_lblthisPageDoes = new GridBagConstraints();
 		gbc_lblthisPageDoes.anchor = GridBagConstraints.NORTHWEST;
@@ -250,7 +292,7 @@ public class ClientApp {
 		gbc_lblthisPageDoes.gridx = 1;
 		gbc_lblthisPageDoes.gridy = 7;
 		homePage.add(lblthisPageDoes, gbc_lblthisPageDoes);
-		
+		*/
 		//designer label
 		JLabel lblNewLabel = new JLabel("CS1653 Project - Brian Lester, Ryan Conley, Carmen Condeluci");
 		GridBagConstraints gbc_lblNewLabel = new GridBagConstraints();
@@ -645,8 +687,8 @@ public class ClientApp {
 		String ipAddr = ipField.getText();
 		int port = Integer.parseInt(portField.getText());
 
-		String fileIp = ipAddr; //for now, fileserver at same address as groupserver
-		int filePort = port + 1; //for now, fileserver will always be +1 of groupserver (8081)
+		String fileIp = fileIpField.getText();
+		int filePort = Integer.parseInt(filePortField.getText());
 
 		//Attempt to connect to group server
 		//If fail, alert of failure
