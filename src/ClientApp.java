@@ -258,6 +258,31 @@ public class ClientApp {
 		homePage.add(filePortField, gbc_filePortField);
 		filePortField.setColumns(10);
 		
+    // Fileserver button
+		final JButton btnFileServer = new JButton("File Server");
+		GridBagConstraints gbc_btnFileServer = new GridBagConstraints();
+		gbc_btnFileServer.anchor = GridBagConstraints.NORTH;
+		gbc_btnFileServer.fill = GridBagConstraints.HORIZONTAL;
+		gbc_btnFileServer.insets = new Insets(0, 0, 5, 0);
+		gbc_btnFileServer.gridx = 3;
+		gbc_btnFileServer.gridy = 7;
+
+		//attempt to connect to server
+		btnFileServer.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+
+					attemptFileConnection(fileIpField, filePortField, tabbedPane);
+
+				}
+			}
+
+
+		);
+
+		homePage.add(btnFileServer, gbc_btnFileServer);
+
 		//Login button
 		final JButton btnLogin = new JButton("Login");
 		GridBagConstraints gbc_btnLogin = new GridBagConstraints();
@@ -273,7 +298,7 @@ public class ClientApp {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
 
-					attemptLogin(usernameField, ipField, portField, btnLogin, btnNewUser, tabbedPane, btnDeleteUser);
+					attemptLogin(usernameField, ipField, portField, btnLogin, btnNewUser, tabbedPane, btnDeleteUser, btnFileServer);
 
 				}
 			}
@@ -675,20 +700,18 @@ public class ClientApp {
 		tabbedPane.setEnabledAt(2, false);
 		btnNewUser.setEnabled(false);
 		btnDeleteUser.setEnabled(false);
+		btnFileServer.setEnabled(false);
 	}
 
 	//Attempts to log in to the group server with the given username.
 	//Eventually will need authentication via password as well, but 
 	//this is not required for phase 2.
-	public void attemptLogin(JTextField usernameField, JTextField ipField, JTextField portField, JButton btnLogin, JButton btnNewUser, JTabbedPane tabbedPane, JButton btnDeleteUser){
+	public void attemptLogin(JTextField usernameField, JTextField ipField, JTextField portField, JButton btnLogin, JButton btnNewUser, JTabbedPane tabbedPane, JButton btnDeleteUser, JButton btnFileServer){
 
 		//Pull information from fields
 		String username = usernameField.getText();
 		String ipAddr = ipField.getText();
 		int port = Integer.parseInt(portField.getText());
-
-		String fileIp = fileIpField.getText();
-		int filePort = Integer.parseInt(filePortField.getText());
 
 		//Attempt to connect to group server
 		//If fail, alert of failure
@@ -705,21 +728,29 @@ public class ClientApp {
 				return;
 			}
 
-			//Attempt to connect to file server
-			if(!RunClient.fileC.connect(fileIp, filePort)){
-				JOptionPane.showMessageDialog(null, "Connection failure. Could not connect to FILE server at " + ipAddr + ":" + port + ".", "Connection Failure", JOptionPane.OK_CANCEL_OPTION);
-				return;
-			}
-
 			//Enable navigation to application resources.
 			btnLogin.setEnabled(false);
 			btnNewUser.setEnabled(true);
 			btnDeleteUser.setEnabled(true);
 			tabbedPane.setEnabledAt(1,true);
-			tabbedPane.setEnabledAt(2,true);
+			btnFileServer.setEnabled(true);
 
 			currentUsername = username;
 		}
+	}
+
+	public void attemptFileConnection(JTextField fileipField, JTextField filePortField, JTabbedPane tabbedPane) {
+		String ipAddr = fileIpField.getText();
+		int port = Integer.parseInt(filePortField.getText());
+		if(RunClient.fileC.isConnected()) {
+			RunClient.fileC.disconnect();
+		}
+		//Attempt to connect to file server
+		if(!RunClient.fileC.connect(ipAddr, port)){
+			JOptionPane.showMessageDialog(null, "Connection failure. Could not connect to FILE server at " + ipAddr + ":" + port + ".", "Connection Failure", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+		tabbedPane.setEnabledAt(2,true);
 	}
 
 	//Attempts to create a new user on the group server.
