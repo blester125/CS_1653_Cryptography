@@ -8,7 +8,7 @@ import java.util.List;
 
 public class FileClient extends Client implements FileClientInterface {
 
-	public boolean delete(String filename, UserToken token) {
+	public boolean delete(String filename, String group, UserToken token) {
 		String remotePath;
 		if (filename.charAt(0)=='/') {
 			remotePath = filename.substring(1);
@@ -16,6 +16,7 @@ public class FileClient extends Client implements FileClientInterface {
 		else {
 			remotePath = filename;
 		}
+		remotePath = remotePath + group;
 		Envelope env = new Envelope("DELETEF"); //Success
 		env.addObject(remotePath);
 		env.addObject(token);
@@ -38,13 +39,13 @@ public class FileClient extends Client implements FileClientInterface {
 		return true;
 	}
 
-	public boolean download(String sourceFile, String destFile, UserToken token) {
+	public boolean download(String sourceFile, String destFile, String group, UserToken token) {
 				if (sourceFile.charAt(0)=='/') {
 					sourceFile = sourceFile.substring(1);
 				}
-		
+				sourceFile = sourceFile + group;			
 				File file = new File(destFile);
-			    try {
+			    	try {
 			    				
 				
 				    if (!file.exists()) {

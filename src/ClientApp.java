@@ -206,7 +206,7 @@ public class ClientApp {
 		//Port label
 		JLabel lblPort = new JLabel("Group Port");
 		GridBagConstraints gbc_lblPort = new GridBagConstraints();
-		gbc_lblPort.anchor = GridBagConstraints.NORTHWEST;
+		gbc_lblPort.anchor = GridBagConstraints.WEST;
 		gbc_lblPort.insets = new Insets(0, 0, 5, 5);
 		gbc_lblPort.gridx = 2;
 		gbc_lblPort.gridy = 4;
@@ -215,7 +215,7 @@ public class ClientApp {
 		//File Port label
 		JLabel lblFilePort = new JLabel("File Port");
 		GridBagConstraints gbc_lblFilePort = new GridBagConstraints();
-		gbc_lblFilePort.anchor = GridBagConstraints.NORTHWEST;
+		gbc_lblFilePort.anchor = GridBagConstraints.WEST;
 		gbc_lblFilePort.insets = new Insets(0, 0, 5, 5);
 		gbc_lblFilePort.gridx = 2;
 		gbc_lblFilePort.gridy = 6;
@@ -265,8 +265,8 @@ public class ClientApp {
 		homePage.add(filePortField, gbc_filePortField);
 		filePortField.setColumns(10);
 		
-    // Fileserver button
-		final JButton btnFileServer = new JButton("File Server");
+		// Fileserver button
+		final JButton btnFileServer = new JButton("Connect To FS");
 		GridBagConstraints gbc_btnFileServer = new GridBagConstraints();
 		gbc_btnFileServer.anchor = GridBagConstraints.NORTH;
 		gbc_btnFileServer.fill = GridBagConstraints.HORIZONTAL;
@@ -1310,11 +1310,19 @@ public class ClientApp {
 	public void attemptFileDelete(JPanel filesPane){
 
 		String currFile = "";
+		String currGroup = "";
 
 		if(loadedFileList != null && loadedFileList.getSelectedValue() != null)
 			currFile = (String)loadedFileList.getSelectedValue();
 		else{
 			JOptionPane.showMessageDialog(null, "Please select a file.", "Select Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+
+		if(loadedFileGroups != null && loadedFileGroups.getSelectedValue() != null)
+			currGroup = (String)loadedFileGroups.getSelectedValue();
+		else{
+			JOptionPane.showMessageDialog(null, "Please select a group.", "Select Error", JOptionPane.OK_CANCEL_OPTION);
 			return;
 		}
 
@@ -1327,7 +1335,7 @@ public class ClientApp {
 
 		if(currFile.length() > 0){
 
-			if(!RunClient.fileC.delete(currFile, currToken)){
+			if(!RunClient.fileC.delete(currFile, currGroup, currToken)){
 				JOptionPane.showMessageDialog(null, "The user could not be removed.", "User Remove Failure", JOptionPane.OK_CANCEL_OPTION);
 				return;
 			}
@@ -1341,11 +1349,19 @@ public class ClientApp {
 	public void attemptFileDownload(JPanel filesPane){
 
 		String currFile = "";
+		String currGroup = "";
 
 		if(loadedFileList != null && loadedFileList.getSelectedValue() != null)
 			currFile = (String)loadedFileList.getSelectedValue();
 		else{
 			JOptionPane.showMessageDialog(null, "Please select a file.", "Select Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+
+		if(loadedFileGroups != null && loadedFileGroups.getSelectedValue() != null)
+			currGroup = (String)loadedFileGroups.getSelectedValue();
+		else{
+			JOptionPane.showMessageDialog(null, "Please select a group.", "Select Error", JOptionPane.OK_CANCEL_OPTION);
 			return;
 		}
 
@@ -1370,8 +1386,8 @@ public class ClientApp {
 
 		if(currFile.length() > 0){
 
-			if(!RunClient.fileC.download(currFile, destFile, currToken)){
-				JOptionPane.showMessageDialog(null, "The user could not be removed.", "User Remove Failure", JOptionPane.OK_CANCEL_OPTION);
+			if(!RunClient.fileC.download(currFile, destFile, currGroup, currToken)){
+				JOptionPane.showMessageDialog(null, "The File could not be downloaded.", "File Download Failure", JOptionPane.OK_CANCEL_OPTION);
 				return;
 			}
 
