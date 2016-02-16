@@ -27,7 +27,8 @@ USAGE:
 	java RunGroupServer 8080
  or else enter the port number that you specified when running the Group Server
  in the group port field. If the group server is being run on a different 
- machine please enter the machine's name in the Group address field.
+ machine please enter the machine's name in the Group address field. Click login 
+ to connect to the group server and gain access to various group operations.
 
  To start the File Server: java RunFileServer [(optional) port number]
  The file server will create a shared_files inside the working directory if one 
@@ -39,11 +40,20 @@ USAGE:
 	java RunFileServer 8081
  or else enter the port number that you specified when running the File Server 
  in the file port field. If the file server is being run on a different machine 
- please enter the machine's name in the FIle address field.
+ please enter the machine's name in the File address field and press connect. 
+ Press `connect to FS` to connect to the file server. If you want to connect to 
+ another file server enter the machine name and port number and click `connect 
+ to FS`. This will disconnect from the original file server and connect to the 
+ new one.
+
+ To switch users on the system click `Logout`. Enter a new username and click 
+ `Login`.
+
+ Group and File operations are preformed with buttons and text fields in the GUI. 
+ When selecting a group or file click on the group or file name in the list fields.
 
  To reset the File server completely, delete FileList.bin and the shared_files 
  directory.
  To reset the Group Server, delete UserList.bin and GroupList.bin.
  
  Note that this implementation supports server side directories.
-
