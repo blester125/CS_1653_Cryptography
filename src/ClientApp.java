@@ -1356,7 +1356,7 @@ public class ClientApp {
 		if(currFile.length() > 0){
 
 			if(!RunClient.fileC.delete(currFile, currGroup, currToken)){
-				JOptionPane.showMessageDialog(null, "The user could not be removed.", "User Remove Failure", JOptionPane.OK_CANCEL_OPTION);
+				JOptionPane.showMessageDialog(null, "The file could not be removed.", "User Remove Failure", JOptionPane.OK_CANCEL_OPTION);
 				return;
 			}
 
