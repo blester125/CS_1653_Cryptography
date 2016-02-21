@@ -161,19 +161,19 @@ public class FileThread extends Thread
 								File file;
 								FileOutputStream fos;
 								// check for Windows OS (uses '\' instead of '/' for path names)
-								if(System.getProperty("os.name").contains("Windows")) {
-									String tasdf = remotePath.replace('\\', '_');
-									file = new File("shared_files/"+remotePath.replace('\\', '_').replace(':', '_'));
-									file.createNewFile();
-									fos = new FileOutputStream(file);
-									System.out.printf("Successfully created file %s\n", remotePath.replace('\\', '_'));
-								}
-								else {
+								//if(System.getProperty("os.name").contains("Windows")) {
+								//	String tasdf = remotePath.replace('\\', '_');
+								//	file = new File("shared_files/"+remotePath.replace('\\', '_').replace(':', '_'));
+								//	file.createNewFile();
+								//	fos = new FileOutputStream(file);
+								//	System.out.printf("Successfully created file %s\n", remotePath.replace('\\', '_'));
+								//}
+								//else {
 									file = new File("shared_files/"+remotePath.replace('/', '_'));
 									file.createNewFile();
 									fos = new FileOutputStream(file);
 									System.out.printf("Successfully created file %s\n", remotePath.replace('/', '_'));
-								}
+								//}
 								
 
 								response = new Envelope("READY"); //Success
