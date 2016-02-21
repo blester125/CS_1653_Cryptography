@@ -481,7 +481,7 @@ public class GroupThread extends Thread
 	/**
 	 * Lists the members in the specified group
 	 * @param groupName group to list the members of
-	 * @param token toek of the user requesting the list
+	 * @param token token of the user requesting the list
 	 * @return List of strings on success, null on failure
 	 */
 	private List<String> listMembers(String groupName, UserToken token)
@@ -491,16 +491,17 @@ public class GroupThread extends Thread
 		// Does the requester exist?
 		if (my_gs.userList.checkUser(requester))
 		{
-			// Get the groups the requester belonges to
+			// Get the groups the requester belongs to
 			ArrayList<String> groups = my_gs.userList.getUserGroups(requester);
 
-			// is the user autherized to be in this group?
-			if (groups.contains(groupName))
+			// is the user authorized to be in this group?
+			// check requester is the owner of the group
+			if (groups.contains(groupName) && my_gs.groupList.getGroupOwner(groupName).equals(requester))
 			{
-				// get the memebers of this group
+				// get the members of this group
 				return my_gs.groupList.getGroupUsers(groupName);
 			}
-			// The user is not autherized to see this group
+			// The user is not authorized to see this group
 			else 
 			{
 				return null;
