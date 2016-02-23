@@ -42,14 +42,6 @@ proposed login method.</p>
     <section id="threat1">
       <h2>Threat T1: Unauthorized Token Issuance</h2>
 <!-- BEGIN CHANGES HERE -->
-WE NEED A CRYPTOGRAPHICALY SECURE RNG
-
-<p>Begin this section by describing threat T1. This may include describing
-examples of the threat being exploited by an adversary, a short discussion of
-why this threat is problematic and needs to be addressed, and/or diagrams
-showing how the threat might manifest in your group’s insecure
-implementation.</p>
-
 <p>
   Threat 1 (T1) is the threat of an Unauthorized Token Issuance. This threat can 
   be succinctly be described as the fact that user Alice cannot request (and then 
@@ -71,11 +63,9 @@ implementation.</p>
   User Bob to request a token and then Alice could copy the Token. This copy could 
   then be used on file servers to access Bob's files.
 </p>
-
 <p> We currently have two proposed solutions to solve this problem. The first is 
   a password protocol and the second is a public key cryptography solution.
 </p>
-
 <h3>Solution One: A password protocol.</h3>
 <p>
   Our first solution is use passwords to protect the system from Unauthorized 
@@ -104,6 +94,7 @@ implementation.</p>
   Hashing the password we would use SHA-1 because MD-5 is weak to some attacks. 
   The numbers b and s will be chosen with the java.security.SecureRandom library.
 </p>
+<p>
   This protocol sufficiently stops attacks of unauthorized Token assurance. The 
   user and the server use Diffie-Hellman to exchange secret keys. At this point 
   the communication between the two cannot be observed by a third party. Once this 
@@ -116,25 +107,42 @@ implementation.</p>
   previously. The user and server are the only ones that know this key K and 
   therefore being able to encrypt and decrypt things with K means that the person 
   knows K.  
-<p>
-
 </p>
 <h3>Solution Two: A public key cryptography protocol.</h3>
-
-<p>Next, provide a short description of the mechanism that you chose to
-implement to protect against this threat. For interactive protocols, it would be
-helpful to provide a diagram explaining the messages exchanged between
-participating principals (use html &lt;img&gt; tag to import such images). Be
-sure to explain any cryptographic choices that your group makes: What types of
-algorithms, modes of operation, and/or key lengths did you choose? Why? If
-shared keys are needed, how are they exchanged?</p>
-
-<p>Finally, provide a short argument addressing why your proposed mechanism
-sufficiently addresses this particular threat. This argument should address the
-correctness of your approach, as well as its overall security. For example, if
-your mechanism involves a key agreement or key exchange protocol, you should
-argue that both parties agree on the same key (correctnes) and that no other
-party can figure out the key (security).</p>
+<p>
+  Our first solution is use public key cryptography to protect the system from Unauthorized Token Issuance. In this solution the user's public key is submitted
+  to the GroupServer upon the creation of the user account. The user and server 
+  create a shared secret K using a signed Diffie-Hellman protocol. This method 
+  creates a shared K and authentices the user and server with each other. <br>
+  The protocol would look like so: <br>
+  <img src="images/publicauth.png">
+  <br> 
+  This protocol uses Diffie-Hellman to create a shared secret key, K, that is 
+  computed by both Bob and the Server with the formula g<sup>bs</sup> mod q. b is 
+  chosen by Bob with a cryptographically secure random number generator and s is 
+  chosen by the server with a cryptographically secure random number generator too.
+  Not only do these two messages create a shared key K they also authenticate the 
+  user and server to one another. The messages used in Diffie-Hellman will be 
+  signed with each participants private key K<sup>-1</sup>. The digital signatures 
+  will be done with 2048 bit key RSA because the NSA recently published about a 
+  break in 1024 as discussed in class. The symmetric key cryptography system 
+  would use AES with 128-bit keys. It would be set to any mode besides ECB 
+  (which is vulnerable to replay attacks), we would use CBC. The numbers b and s 
+  will be chosen with the java.security.SecureRandom library.
+</p>
+<p>
+  This protocol sufficiently stops attacks of unauthorized Token assurance. The 
+  user and the server use Diffie-Hellman to exchange secret keys. At this point 
+  the communication between the two cannot be observed by a third party. Assuming 
+  that each the user and the server are the only ones that know their own private 
+  keys then the ability to encrypt a message that can be decrypted with the senders 
+  public keys means that the sender is the real person. The rest of the communication 
+  that will occur between the user and the server will be encrypted by the shared 
+  key K. Knowing K if proof that the user is the same user that authenticated 
+  previously. The user and server are the only ones that know this key K and 
+  therefore being able to encrypt and decrypt things with K means that the person 
+  knows K.  
+</p>
 
 <!-- END CHANGES HERE -->
     </section>
