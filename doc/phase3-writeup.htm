@@ -166,7 +166,37 @@ TIME STAMP
       <h2>Threat T4: Information Leakage via Passive Monitoring</h2>
 <!-- BEGIN CHANGES HERE -->
 
-<p>Repeat the steps as for Threat T1.</p>
+<p>
+  This threat, information leakage via passive monitoring, is rather easy to 
+  defend against. This threat is can be thought of as two people talking in a room
+  and there being a third person in the room unseen who is listening to their 
+  conversation. In the context of our program this means that people could listen 
+  to and record the messages once a "DOWNLOADF" message is seen. This would allow 
+  the attacker to record the contents of a file being sent to the client even though
+  they are most likely not allowed to see this file.
+</p>
+<p>
+  Just how this problem can be framed in a real world scenario the 
+  solution can be found in the same way. In the real life example of an 
+  eavesdropper the two people talking would simply use another language that the 
+  eavesdropper doesn't know. In a similar way the client and the servers will speak 
+  there own language using encryption. At the beginning of all communication 
+  between the client and one of the servers they will use the Diffie-Hellman 
+  protocol to exchange a shared key K. They will then use this key K in symmetric 
+  key cryptography system using AES with 128-bit keys. It would be set to any 
+  mode besides ECB (which is vulnerable to replay attacks), we would use CBC. These
+  keys would be created for each session that a client connects to a server.
+</p>
+<p>
+  This protocol will stop eavesdroppers. At each exchange the user and the server 
+  generate a b and a s respectively. These number how ever are only transmitted 
+  in the form of g<sup>[b|s]</sup>mod q so an attacker who steal either or both 
+  of these they cannot recover g<sup>bs</sup> mod q (K). This means that K is a 
+  secret between the two parties and therefore if used for encryption then the 
+  third party will not be able to decrypt it. Creating a new key K for each session 
+  means that the encryption will be different every time so patterns cannot be used 
+  to guess at the content of the messages. 
+</p>
 
 <!-- END CHANGES HERE -->
     </section>
