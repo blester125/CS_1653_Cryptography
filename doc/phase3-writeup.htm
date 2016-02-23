@@ -11,6 +11,12 @@ header {
   text-align: center;
 }
 
+img.image {
+  display: block;
+  margin-left: auto;
+  margin-right: auto; }
+}
+
 /* END CHANGES HERE */
   </style>
   <body>
@@ -52,7 +58,7 @@ proposed login method.</p>
   ones that she is not supposed to access. In our current insecure implementation 
   a user can set their username to what ever they and that is what is sent to the 
   Group server. Exploiting this is as simple as typing a name in a box. </br>
-  <img src="images/FakeUser.png" alt="I am really User Alice"> 
+  <img src="images/FakeUser.png" alt="I am really User Alice" class="image"> 
   </br>In this case 
   Attacker Alice has entered User Bob's name in and will be requesting Bob's 
   Token instead of her own.
@@ -75,7 +81,7 @@ proposed login method.</p>
   Tokens issued later can be encrypted. This encryption will protect the Tokens 
   from being stolen later after the User Bob authenticates with the system. <br>
   The protocol would look like so: <br>
-  <img src="images/password.png">
+  <img src="images/password.png" class="image">
   <br>
   This protocol uses Diffie-Hellman to create a shared secret key, K, that is 
   computed by both Bob and the Server with the formula g<sup>bs</sup> mod q. b is 
@@ -106,7 +112,11 @@ proposed login method.</p>
   key K. Knowing K if proof that the user is the same user that authenticated 
   previously. The user and server are the only ones that know this key K and 
   therefore being able to encrypt and decrypt things with K means that the person 
-  knows K.  
+  knows K. The key exchange is secure because the user and the server 
+  generate a b and a s respectively. These number how ever are only transmitted 
+  in the form of g<sup>[b|s]</sup>mod q so an attacker who steal either or both 
+  of these they cannot recover g<sup>bs</sup> mod q (K). This means that K is a 
+  secret between the two parties.
 </p>
 <h3>Solution Two: A public key cryptography protocol.</h3>
 <p>
@@ -115,7 +125,7 @@ proposed login method.</p>
   create a shared secret K using a signed Diffie-Hellman protocol. This method 
   creates a shared K and authentices the user and server with each other. <br>
   The protocol would look like so: <br>
-  <img src="images/publicauth.png">
+  <img src="images/publicauth.png" class="image">
   <br> 
   This protocol uses Diffie-Hellman to create a shared secret key, K, that is 
   computed by both Bob and the Server with the formula g<sup>bs</sup> mod q. b is 
@@ -141,7 +151,11 @@ proposed login method.</p>
   key K. Knowing K if proof that the user is the same user that authenticated 
   previously. The user and server are the only ones that know this key K and 
   therefore being able to encrypt and decrypt things with K means that the person 
-  knows K.  
+  knows K. The key exchange is secure because the user and the server 
+  generate a b and a s respectively. These number how ever are only transmitted 
+  in the form of g<sup>[b|s]</sup>mod q so an attacker who steal either or both 
+  of these they cannot recover g<sup>bs</sup> mod q (K). This means that K is a 
+  secret between the two parties.
 </p>
 
 <!-- END CHANGES HERE -->
@@ -150,7 +164,11 @@ proposed login method.</p>
       <h2>Threat T2: Token Modification/Forgery</h2>
 <!-- BEGIN CHANGES HERE -->
 TIME STAMP
-<p>Repeat the steps as for Threat T1.</p>
+<p>
+  Token modification or forgery is a problem in the system that must be addressed. 
+  The first example of this would be users requesting a Token from the server and 
+  then 
+</p>
 
 <!-- END CHANGES HERE -->
     </section>
@@ -158,7 +176,35 @@ TIME STAMP
       <h2>Threat T3: Unauthorized File Servers</h2>
 <!-- BEGIN CHANGES HERE -->
 
-<p>Repeat the steps as for Threat T1.</p>
+<p>
+  An unauthorized file server is a large problem that this system faces. If a user
+  tries to connect to server s and instead connects to server s'. If the server s' 
+  is unauthorized it probably will not be trusted like a file server would be to 
+  behave correctly. This means that an untrusted file server could accept sensitive 
+  files for upload but then freely give these files to anyone that asks for them.
+  After authenticating a file server there needs to be a way to make sure that you 
+  are still communicating with the same server that you authenticated with.
+</p>
+<p>
+  This problem can be solved in the same way that SSH servers are authenticated. 
+  The client program will cache the keys of servers that it has connected to in 
+  the past. If the servers key is not cached a message displaying the key will be 
+  shown to the user. It is then the users responsibility to check that the server
+  they are connected to is really the server with said key.<br >
+  <img src="images/sshwarning.png" class="image">
+  <br>
+  Messages to the file server will be encrypted with the server key and sent. This 
+  encryption will be RSA. 
+</p>
+<p>
+  This solution works because the users will physically verify the servers. The 
+  fact that this is the way servers authenticate ssh means that this method is 
+  tried and true. To ensure that we are talking to the same server we authenticated 
+  with we used PSA public key cryptography. Assuming that the server is the only 
+  one with the other key then our encrypted messages will only be decrypt-able by 
+  the server we authenticated with, this means we are always talking to s and not 
+  s'. 
+</p>
 
 <!-- END CHANGES HERE -->
     </section>
