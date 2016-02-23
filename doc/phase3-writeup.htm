@@ -163,11 +163,36 @@ proposed login method.</p>
     <section id="threat2">
       <h2>Threat T2: Token Modification/Forgery</h2>
 <!-- BEGIN CHANGES HERE -->
-TIME STAMP
 <p>
   Token modification or forgery is a problem in the system that must be addressed. 
   The first example of this would be users requesting a Token from the server and 
-  then 
+  then adding extra groups that they are not allowed to access. This could allow 
+  non-ADMIN users to add themselves to the ADMIN and start deleting users or 
+  accessing files that other groups are trying to protect. Another scenario would 
+  be that users create their own Tokens from scratch that gave them the same kind of 
+  permissions as they did in the modification exploit. A final exploit in this 
+  category would be saving a Token that had access to a group g then once the user
+  was removed from group g for what ever reason it could be used to access group 
+  g again.  
+</p>
+<p>
+  The first two problems are solved in the same way. Digital signatures. When a 
+  Token is issued by the Group server it will be signed with its private key. Once
+  the client passes this signed token to the file server the file server can verify 
+  it with the servers public key. The second issue of replaying an old token can 
+  be solved with time stamps. The time the token was issued can be concatenated 
+  with the token before it was signed. If the file server receives a Token where 
+  the time stamp is far off from the current time the file server will know that 
+  something is up and can discard the request.
+</p>
+<p>
+  Assuming that the GroupServer is the only one with the private key then we know 
+  that a Token signed from the server will be real. Even if a middle party decrypts 
+  the Token with the servers public key and changes the Token they will not be 
+  able to sign it because they do not have the private key of the server. The time
+  stamp solution for ensures that very old tokens are not passed off as legitimate.
+  There are problems with the time stamp approach like if the attacker attacks the 
+  NTP. An attacker this motived seems difficult to deal with in the long run. 
 </p>
 
 <!-- END CHANGES HERE -->
@@ -255,10 +280,16 @@ proposed mechanisms, and commenting on the design process that your group
 followed. Did you discuss other ideas that didn’t pan out before settling on the
 above-documented approach? Did you end up designing a really interesting
 protocol suite that addresses multiple threats at once? Use this space to show
-off your hard work!</p>
+off your hard work!
+<br><br>
+Diagram of all the layers of security we'll use
+</p>
 
 <p>If your group did any extra credit, please discuss that in this section, as
-well.</p>
+well. 
+<br><br>
+Two factor Authentication?
+</p>
 
 <!-- END CHANGES HERE -->
     </section>
