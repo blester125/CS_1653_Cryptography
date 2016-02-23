@@ -39,7 +39,7 @@ Ryan Conley (rgc11) </br >
 <p>In order to address the threats posed in the Threats T1-T4 our group used a 
 wide variety of Cryptographic techniques. We use Symmetric key cryptography to 
 stop passive eavesdroppers, public key cryptography for mutual authentication, 
-digital signing for taken verification, and key exchange protocols such 
+digital signing for token verification, and key exchange protocols such 
 Diffie-Hellman to swap session keys. We also use Strong password protocols for a
 proposed login method.</p>
 
@@ -56,17 +56,17 @@ proposed login method.</p>
   happily responds with the Token of user Bob. Now when Alice makes a request to 
   the file server she can access all the files that Bob is supposed to including 
   ones that she is not supposed to access. In our current insecure implementation 
-  a user can set their username to what ever they and that is what is sent to the 
-  Group server. Exploiting this is as simple as typing a name in a box. </br>
+  a user can set their username to whatever they want and that is what is sent to the 
+  group server. Exploiting this is as simple as typing a name in a box. </br>
   <img src="images/FakeUser.png" alt="I am really User Alice" class="image"> 
   </br>In this case 
   Attacker Alice has entered User Bob's name in and will be requesting Bob's 
-  Token instead of her own.
+  token instead of her own.
   <br><br>
   This threat is not a one time threat. The system must defend from attacker 
-  Alice taking a Token bent for Bob after Bob has authenticated with the server 
+  Alice taking a token meant for Bob after Bob has authenticated with the server 
   the initial time. This is the simple scenario of Alice waiting for the actual 
-  User Bob to request a token and then Alice could copy the Token. This copy could 
+  user Bob to request a token and then Alice could copy the token. This copy could 
   then be used on file servers to access Bob's files.
 </p>
 <p> We currently have two proposed solutions to solve this problem. The first is 
@@ -94,28 +94,28 @@ proposed login method.</p>
   the server receives the message and decrypts it with the key it will hash the
   password concatenated with a salt that is associated with the username. The 
   server then compares this &lt;username, hash&gt; pair with its database. If the
-  entry exists then the server responses to Bob with his Token. This symmetric 
+  entry exists then the server responds to Bob with his Token. This symmetric 
   key cryptography system would use AES with 128-bit keys. It would be set to any 
   mode besides ECB (which is vulnerable to replay attacks), we would use CBC. For 
   Hashing the password we would use SHA-1 because MD-5 is weak to some attacks. 
   The numbers b and s will be chosen with the java.security.SecureRandom library.
 </p>
 <p>
-  This protocol sufficiently stops attacks of unauthorized Token assurance. The 
+  This protocol sufficiently stops attacks of unauthorized Token issuance. The 
   user and the server use Diffie-Hellman to exchange secret keys. At this point 
   the communication between the two cannot be observed by a third party. Once this 
-  secure communication channel has been set up the users password can be set to 
+  secure communication channel has been set up the users password can be sent to 
   the server. The server hashes this key and verifies that this user is the real 
   user. Assuming that this secret is known only by the user then this is 
   sufficient to prove that the user is authorized. The rest of the communication 
   that will occur between the user and the server will be encrypted by the shared 
-  key K. Knowing K if proof that the user is the same user that authenticated 
+  key K. Knowing K is proof that the user is the same user that authenticated 
   previously. The user and server are the only ones that know this key K and 
   therefore being able to encrypt and decrypt things with K means that the person 
   knows K. The key exchange is secure because the user and the server 
-  generate a b and a s respectively. These number how ever are only transmitted 
-  in the form of g<sup>[b|s]</sup>mod q so an attacker who steal either or both 
-  of these they cannot recover g<sup>bs</sup> mod q (K). This means that K is a 
+  generate a b and a s respectively. These numbers however are only transmitted 
+  in the form of g<sup>[b|s]</sup>mod q so an attacker who steals either or both 
+  of these then cannot recover g<sup>bs</sup> mod q (K). This means that K is a 
   secret between the two parties.
 </p>
 <h3>Solution Two: A public key cryptography protocol.</h3>
@@ -123,7 +123,7 @@ proposed login method.</p>
   Our first solution is use public key cryptography to protect the system from Unauthorized Token Issuance. In this solution the user's public key is submitted
   to the GroupServer upon the creation of the user account. The user and server 
   create a shared secret K using a signed Diffie-Hellman protocol. This method 
-  creates a shared K and authentices the user and server with each other. <br>
+  creates a shared K and authenticates the user and server with each other. <br>
   The protocol would look like so: <br>
   <img src="images/publicauth.png" class="image">
   <br> 
@@ -141,7 +141,7 @@ proposed login method.</p>
   will be chosen with the java.security.SecureRandom library.
 </p>
 <p>
-  This protocol sufficiently stops attacks of unauthorized Token assurance. The 
+  This protocol sufficiently stops attacks of unauthorized Token issuance. The 
   user and the server use Diffie-Hellman to exchange secret keys. At this point 
   the communication between the two cannot be observed by a third party. Assuming 
   that each the user and the server are the only ones that know their own private 
@@ -152,7 +152,7 @@ proposed login method.</p>
   previously. The user and server are the only ones that know this key K and 
   therefore being able to encrypt and decrypt things with K means that the person 
   knows K. The key exchange is secure because the user and the server 
-  generate a b and a s respectively. These number how ever are only transmitted 
+  generate a b and a s respectively. These numbers however are only transmitted 
   in the form of g<sup>[b|s]</sup>mod q so an attacker who steal either or both 
   of these they cannot recover g<sup>bs</sup> mod q (K). This means that K is a 
   secret between the two parties.
@@ -190,7 +190,7 @@ proposed login method.</p>
   that a Token signed from the server will be real. Even if a middle party decrypts 
   the Token with the servers public key and changes the Token they will not be 
   able to sign it because they do not have the private key of the server. The time
-  stamp solution for ensures that very old tokens are not passed off as legitimate.
+  stamp solution ensures that very old tokens are not passed off as legitimate.
   There are problems with the time stamp approach like if the attacker attacks the 
   NTP. An attacker this motived seems difficult to deal with in the long run. 
 </p>
@@ -239,7 +239,7 @@ proposed login method.</p>
 
 <p>
   This threat, information leakage via passive monitoring, is rather easy to 
-  defend against. This threat is can be thought of as two people talking in a room
+  defend against. This threat can be thought of as two people talking in a room
   and there being a third person in the room unseen who is listening to their 
   conversation. In the context of our program this means that people could listen 
   to and record the messages once a "DOWNLOADF" message is seen. This would allow 
