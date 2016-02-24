@@ -309,20 +309,20 @@ server, a "u" the user, and an "f" a file server.</p>
 <!-- BEGIN CHANGES HERE -->
 
 <p>
-  An unauthorized file server is a large problem that this system faces. If a user
+  An unauthorized file server is a large problem that this system faces. For example, a user
   tries to connect to server s and instead connects to server s'. If the server s' 
-  is unauthorized it probably will not be trusted like a file server would be to 
+  is unauthorized, it probably will not be trusted like a file server would be to 
   behave correctly. This means that an untrusted file server could accept sensitive 
-  files for upload but then freely give these files to anyone that asks for them.
-  After authenticating a file server there needs to be a way to make sure that you 
+  files for upload, but then freely give these files to anyone that asks for them.
+  After authenticating a file server, there needs to be a way to make sure that you 
   are still communicating with the same server that you authenticated with.
 </p>
 <p>
   This problem can be solved in the same way that SSH servers are authenticated. 
   The client program will cache the keys of servers that it has connected to in 
-  the past. If the servers key is not cached a message displaying the key will be 
+  the past. If the servers key is not cached, a message displaying the key will be 
   shown to the user. It is then the users responsibility to check that the server
-  they are connected to is really the server with said key.<br >
+  they are connected to is really the server with said key.<br><br>
   <img src="images/sshwarning.png" class="image">
   <br>
   Messages to the file server will be encrypted with the server key and sent. This 
@@ -330,12 +330,94 @@ server, a "u" the user, and an "f" a file server.</p>
 </p>
 <p>
   This solution works because the users will physically verify the servers. The 
-  fact that this is the way servers authenticate ssh means that this method is 
+  fact that this is the way servers authenticate SSH means that this method is 
   tried and true. To ensure that we are talking to the same server we authenticated 
-  with we used PSA public key cryptography. Assuming that the server is the only 
+  with we used RSA public key cryptography. Assuming that the server is the only 
   one with the other key then our encrypted messages will only be decrypt-able by 
   the server we authenticated with, this means we are always talking to s and not 
   s'. 
+</p>
+<p>
+  Before any sort of authentication with the file server takes place, Bob and 
+  the file server must first set up a secure communication over an insecure channel.
+  This is accomplished using the Diffie-Hellman protocol to create a shared session key,
+  K, that will be used for the remainder of their session for symmetric key cryptography.
+  This Diffie-Hellman protocol will use the values <b>p</b> = NUMBER and <b>q</b> = 
+  NUMBER, with the values of <b>b</b> and <b>s</b> being generated at random with the
+  java.security.SecureRandom library by Bob and the file server, respectively. 
+  Just like in our password authentication solution above, the secret session key 
+  <b>K</b> will be computed with <b>K</b> = g<sup>bs</sup> mod q. We will employ AES 
+  with 128-bit keys for our symmetric key cryptography system for this session key.
+  Again, AES would be used as a block cipher in CBC mode, as ECB is vulnerable to 
+  replay attacks. This per-session encryption will prevent a rogue file server from 
+  hijacking the connection after the file server has already been authenticated. 
+  By generating a new session key, <b>K</b>, each time a user connects to a file 
+  server, replay attacks are also defended against.
+</p>
+<p>
+  After this secure communication channel is established with its session key, 
+  Bob needs to verify that the file server he is connecting to is indeed 
+  the file server they claim to be. This can be accomplished with public key 
+  cryptography via RSA with 2048-bit keys, as 1024-bit RSA keys were recently proven 
+  by the NSA to be insecure. The file server first sends Bob its public RSA ey, 
+  <b>K<sub>s</sub></b>, encrypted with the session key, <b>K</b>. Upon receiving 
+  this message, Bob decrypts <b>K<sub>s</sub></b> and then checks his cached table 
+  of &lt;file_server_ip, public_RSA_key&gt; pairs for a match. 
+
+  <!-- explain why this is ok -->
+
+  <br><br>
+
+  If a match is found, Bob sends a message to the file server containing a challenge, 
+  <b>R1</b>, encrypted with the file server's public key, <b>K<sub>s</sub></b>. This 
+  is then further encrypted with the session key, <b>K</b>. The file server then 
+  decrypts this message using both the session key and its private RSA key, then 
+  sends back to Bob the challenge <b>R1</b> encrypted with the session key. If the 
+  challenge was successfully decrypted by the file server, Bob can be certain that 
+  the file server is legitimate and sends a message of success to the file server. 
+  From this point, all communication between Bob and the file server is secured using 
+  the session key until the connection is terminated.
+
+  <br><br>
+  The interactions between Bob and the file server are visually represented as follows:
+  <br><br>
+
+   <img src="images/matchfound.png" class="image">
+
+  <br><br>
+
+  If a match is NOT found, Bob will view a message with information regarding the 
+  file server he is attempting to authenticate, which would include the following: 
+
+  <ul>
+    <li>File Server IP Address</li>
+    <li>Recieved RSA Public Key</li>
+    <li>Cached RSA Public Key (if available)</li>
+    <li>Warnings and Directives</li>
+    <li>Options to Connect or Abort</li>
+  </ul>
+
+  If a pair exists in Bob's cache that includes a matching file server IP address, 
+  but a non-matching public RSA key, it can be concluded that the file server is 
+  most certainly illegitimate and the connection should be aborted. If a pair does 
+  NOT exist with any matches, this is the first connection of Bob to that particular 
+  file server, and the file server requires physical verification by Bob to continue 
+  the connection process.
+
+  <br><br>
+
+  If Bob selects to abort the connection to the file server, the session is terminated 
+  and the connection is dropped. If Bob selects to continue the connection process, he 
+  will send a a message to the file server containing a challenge, 
+  <b>R1</b>, encrypted with the file server's public key, <b>K<sub>s</sub></b>. This 
+  is then further encrypted with the session key, <b>K</b>. The file server then 
+  decrypts this message using both the session key and its private RSA key, then 
+  sends back to Bob the challenge <b>R1</b> encrypted with the session key. If the 
+  challenge was successfully decrypted by the file server, the file server 
+  is authenticated and Bob sends a message of success to the file server. Bob and the 
+  file server are then free to communicate using their session key until the 
+  connection is terminated.
+
 </p>
 
 <!-- END CHANGES HERE -->
