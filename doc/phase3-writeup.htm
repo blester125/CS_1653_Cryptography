@@ -50,112 +50,152 @@ proposed login method.</p>
 <!-- BEGIN CHANGES HERE -->
 <p>
   Threat 1 (T1) is the threat of an Unauthorized Token Issuance. This threat can 
-  be succinctly be described as the fact that user Alice cannot request (and then 
-  obtain) a token meant for user Bob. It is easy to imagine this scenario being 
-  exploited. Attacker Alice tells the Group server "Hi, I'm Bob." The group server 
-  happily responds with the Token of user Bob. Now when Alice makes a request to 
-  the file server she can access all the files that Bob is supposed to including 
+  be succinctly be described as user Alice requesting (and then 
+  obtaining) a token meant for user Bob. It is easy to imagine this scenario being 
+  exploited. Attacker Alice tells the Group server that her username is Bob. The 
+  group server happily responds with the Token of user Bob. Now when Alice makes a
+  request to the file server she can access all the files that Bob is supposed to 
+  including 
   ones that she is not supposed to access. In our current insecure implementation 
   a user can set their username to whatever they want and that is what is sent to the 
   group server. Exploiting this is as simple as typing a name in a box. </br>
-  <img src="images/FakeUser.png" alt="I am really User Alice" class="image"> 
+  <img src="images/FakeUser.png" title="I am really User Alice" class="image"> 
   </br>In this case 
-  Attacker Alice has entered User Bob's name in and will be requesting Bob's 
-  token instead of her own.
-  <br><br>
+  Attacker Alice has entered User Bob's name in the username field and will be 
+  requesting Bob's token instead of her own. In our implementation the request for 
+  a Token simply takes a user name and responds with that users Token. This means 
+  that Alice using Bob's name will give her Bob's Token.
+  <br>
   This threat is not a one time threat. The system must defend from attacker 
   Alice taking a token meant for Bob after Bob has authenticated with the server 
   the initial time. This is the simple scenario of Alice waiting for the actual 
   user Bob to request a token and then Alice could copy the token. This copy could 
   then be used on file servers to access Bob's files.
 </p>
-<p> We currently have two proposed solutions to solve this problem. The first is 
-  a password protocol and the second is a public key cryptography solution.
-</p>
-<h3>Solution One: A password protocol.</h3>
+
 <p>
-  Our first solution is use passwords to protect the system from Unauthorized 
-  Token Issuance. In this solution each user picks a password that must be 
-  provided to the GroupServer upon login to authenticate that they are the user 
-  they claim. The user and GroupServer will also exchange a shared key so that 
-  Tokens issued later can be encrypted. This encryption will protect the Tokens 
-  from being stolen later after the User Bob authenticates with the system. <br>
-  The protocol would look like so: <br>
-  <img src="images/password.png" class="image">
+  Our solution is use passwords to protect the system from Unauthorized 
+  Token Issuance. 
   <br>
-  This protocol uses Diffie-Hellman to create a shared secret key, K, that is 
-  computed by both Bob and the Server with the formula g<sup>bs</sup> mod q. b is 
-  chosen by Bob with a cryptographically secure random number generator and s is 
-  chosen by the server with a cryptographically secure random number generator too.
-  Once
-  this shared key is established the server still does not know if it is talking 
-  to Bob so it needs to authenticate that it is. This is done with a password. 
-  Using the shared key bob sends his username and password to the server. Once 
+  <!-- User Creation, Justify why ADMIN gives password to user, Describe the 
+    implementation of the newuser flag-->
+  In this solution an ADMIN picks a password that must be 
+  provided to the GroupServer upon user creation. This initial password will be 
+  given to the user by the ADMIN. 
+  The GroupServer will set a flag in the UserList that this user is new (a newuser 
+  flag). This 
+  will trigger a forced password change once the user logs on. 
+  <!-- Authentication Protocol 
+    Key Exchange
+    to Argue:
+      Diffie Hellman
+      Random number selection
+      Symmetric encryption to use AES
+  -->
+  <br>
+  Before the user actually authenticates with the server the two must set up secure
+  communication over an insecure channel. They do this using Diffie-Hellman to 
+  create a shared secret key, K that will be used for symmetric key cryptography.
+  This Diffie-Hellman protocol will use these values p = NUMBER and q = NUMBER.
+  The numbers b and s will be selected at random by Bob and the Server respectively 
+  using the java.security.SecureRandom library. The secret key K is computer with
+  K = g<sup>bs</sup> mod q. This symmetric key cryptography system would 
+  use AES with 128-bit keys. AES would be used as a block cypher in CBC mode. CBC 
+  is used because ECB is vulnerable to replay attacks.
+  This encryption will protect the Tokens from being stolen later after the User 
+  Bob authenticates with the system. In order to defend from replay attacks a new 
+  shared key K is created every time a user connects to the Group Server. 
+  <br>
+  <!--
+    Password Authentication
+    to Argue:
+      Salt generation
+      Hash Function
+      Hashed password || Salt storage
+  -->
+  Once this shared Key is established and therefore a secure communication channel 
+  is setup the server still needs to verify that the client it is talking too who 
+  is claiming to be Bob is really Bob. This is done with a password. Using the 
+  shared key Bob sends his username and password to the server. Once 
   the server receives the message and decrypts it with the key it will hash the
   password concatenated with a salt that is associated with the username. The 
-  server then compares this &lt;username, hash&gt; pair with its database. If the
-  entry exists then the server responds to Bob with his Token. This symmetric 
-  key cryptography system would use AES with 128-bit keys. It would be set to any 
-  mode besides ECB (which is vulnerable to replay attacks), we would use CBC. For 
-  Hashing the password we would use SHA-1 because MD-5 is weak to some attacks. 
-  The numbers b and s will be chosen with the java.security.SecureRandom library.
+  server then compares this &lt;username, hash&gt; pair with its database. Both 
+  the salt and the hash of the password concatenated with the salt will be stored 
+  in the User object associated with that user. The salt will be generated when 
+  the saved password is changed. The salt will be generated randomly with the 
+  java.security.SecureRandom library. The Hash will be computed using SHA-2 because
+  recently SHA-1 has been showing the same weakness that MD-5 did before it was 
+  broken. If the hash matches the saved hash then the server responds to Bob with 
+  his Token.
+  <br>The protocol would look like so: <br>
+  <img src="images/password.png" class="image">
+  <br>
+  When a user has a new user flag set then when the Server authenticates their 
+  password the server will also include a "Change Password" message. When this 
+  is received by the client the client will prompt the user to select a new 
+  password. Once this new password is chosen then it is encrypted and sent back 
+  to the server. The server decrypts this new password and will generate a new 
+  salt with the same secure random number generate as before. The Server 
+  concatenates the new password and the new salt and hashes it with SHA-2. Once 
+  this new hash is saved the newuser flag is unset and the server tells the client 
+  that the change was a success.
+  <br>The new user protocol would look like this</br>
+  <img src="images/newuser.png" class="image">  
 </p>
 <p>
+  <!-- Argument that this works
+    Need to argue for
+      Diffie-Hellman
+      Password
+      show it defending from replay attack
+      The new user flag is not a problem.
+  -->
+
   This protocol sufficiently stops attacks of unauthorized Token issuance. The 
-  user and the server use Diffie-Hellman to exchange secret keys. At this point 
-  the communication between the two cannot be observed by a third party. Once this 
-  secure communication channel has been set up the users password can be sent to 
-  the server. The server hashes this key and verifies that this user is the real 
-  user. Assuming that this secret is known only by the user then this is 
-  sufficient to prove that the user is authorized. The rest of the communication 
-  that will occur between the user and the server will be encrypted by the shared 
-  key K. Knowing K is proof that the user is the same user that authenticated 
-  previously. The user and server are the only ones that know this key K and 
-  therefore being able to encrypt and decrypt things with K means that the person 
-  knows K. The key exchange is secure because the user and the server 
-  generate a b and a s respectively. These numbers however are only transmitted 
-  in the form of g<sup>[b|s]</sup>mod q so an attacker who steals either or both 
-  of these then cannot recover g<sup>bs</sup> mod q (K). This means that K is a 
-  secret between the two parties.
-</p>
-<h3>Solution Two: A public key cryptography protocol.</h3>
-<p>
-  Our first solution is use public key cryptography to protect the system from Unauthorized Token Issuance. In this solution the user's public key is submitted
-  to the GroupServer upon the creation of the user account. The user and server 
-  create a shared secret K using a signed Diffie-Hellman protocol. This method 
-  creates a shared K and authenticates the user and server with each other. <br>
-  The protocol would look like so: <br>
-  <img src="images/publicauth.png" class="image">
-  <br> 
-  This protocol uses Diffie-Hellman to create a shared secret key, K, that is 
-  computed by both Bob and the Server with the formula g<sup>bs</sup> mod q. b is 
-  chosen by Bob with a cryptographically secure random number generator and s is 
-  chosen by the server with a cryptographically secure random number generator too.
-  Not only do these two messages create a shared key K they also authenticate the 
-  user and server to one another. The messages used in Diffie-Hellman will be 
-  signed with each participants private key K<sup>-1</sup>. The digital signatures 
-  will be done with 2048 bit key RSA because the NSA recently published about a 
-  break in 1024 as discussed in class. The symmetric key cryptography system 
-  would use AES with 128-bit keys. It would be set to any mode besides ECB 
-  (which is vulnerable to replay attacks), we would use CBC. The numbers b and s 
-  will be chosen with the java.security.SecureRandom library.
-</p>
-<p>
-  This protocol sufficiently stops attacks of unauthorized Token issuance. The 
-  user and the server use Diffie-Hellman to exchange secret keys. At this point 
-  the communication between the two cannot be observed by a third party. Assuming 
-  that each the user and the server are the only ones that know their own private 
-  keys then the ability to encrypt a message that can be decrypted with the senders 
-  public keys means that the sender is the real person. The rest of the communication 
-  that will occur between the user and the server will be encrypted by the shared 
-  key K. Knowing K if proof that the user is the same user that authenticated 
-  previously. The user and server are the only ones that know this key K and 
-  therefore being able to encrypt and decrypt things with K means that the person 
-  knows K. The key exchange is secure because the user and the server 
-  generate a b and a s respectively. These numbers however are only transmitted 
-  in the form of g<sup>[b|s]</sup>mod q so an attacker who steal either or both 
-  of these they cannot recover g<sup>bs</sup> mod q (K). This means that K is a 
-  secret between the two parties.
+  user and the server use Diffie-Hellman to exchange secret keys. The key exchange 
+  is secure because the user and the server generate a b and a s respectively. 
+  These numbers however are only transmitted in the form of g<sup>[b|s]</sup>mod q 
+  so an attacker who steals either or both of these then cannot recover 
+  g<sup>bs</sup> mod q (K). This means that K is a secret between the two parties.
+  At this point the communication between the two cannot be observed by a third 
+  party. 
+  <br>
+  Once this secure communication channel has been set up the users password can be 
+  sent to the server. This password system is sufficient to authenticate a user 
+  assuming that the user is the only person who knows their password. 
+  The server concatenates the password with the saved salt 
+  associated with the user. This result is then hashed using SHA-2. This hash is 
+  compared to the hash associated with the user. If the hash of the password plus 
+  salt matches the saved salt then the user is authenticated. Matching the hashes 
+  is sufficient to authenticate the user because SHA-2 is a cryptographically secure 
+  hash. This means that SHA-2 has second image resistance. This means that it is 
+  infeasible to find a second message y that hashes to the same value as the 
+  original value x. This means that if the hashes match the user must know the 
+  real password rather than generating a password that has a matching hash. Using 
+  a cryptographically secure hash also means that it has preimage resistance. This
+  means that if the Group server is ever compromised then it would be infeasible 
+  for attackers to recover the original passwords from the stolen hashes.  
+  <br>
+  Once established all communication that occurs between the user and the server 
+  will be encrypted by the shared key K. Knowing K is proof that the user is the 
+  same user that authenticated previously. The user and server are the only ones 
+  that know this key K and therefore being able to encrypt and decrypt things 
+  with K proves that user knows K. 
+  <br>
+  This system is safe from replay attacks. For example if an attacker steals the 
+  two messages that are stared. 
+  <br><img src="images/passwordreplay.png" class="image"><br>
+  Later the attacker sends these two messages to 
+  the server at a later time. This will not result in the attacker gaining access 
+  to the system. The server will choose a different value of s than it chose when 
+  the attacker recorded the messages. This means that the secret key K will be 
+  different than the K between Bob and the server and the server will not be able
+  to decrypt the message from the attacker because K is wrong.
+  <br>
+  In this scenario group servers are trusted which means that the newuser flag 
+  cannot be used to trigger a forced password reset by an attacker. Even if the 
+  newuser flag was somehow set it would not compromise the user account because 
+  the user needs to authenticate with the server before changing the password.
 </p>
 
 <!-- END CHANGES HERE -->
@@ -290,7 +330,45 @@ well.
 <br><br>
 Two factor Authentication?
 </p>
-
+<h3>Solution Two: A public key cryptography protocol.</h3>
+<p>
+  Our first solution is use public key cryptography to protect the system from Unauthorized Token Issuance. In this solution the user's public key is submitted
+  to the GroupServer upon the creation of the user account. The user and server 
+  create a shared secret K using a signed Diffie-Hellman protocol. This method 
+  creates a shared K and authenticates the user and server with each other. <br>
+  The protocol would look like so: <br>
+  <img src="images/publicauth.png" class="image">
+  <br> 
+  This protocol uses Diffie-Hellman to create a shared secret key, K, that is 
+  computed by both Bob and the Server with the formula g<sup>bs</sup> mod q. b is 
+  chosen by Bob with a cryptographically secure random number generator and s is 
+  chosen by the server with a cryptographically secure random number generator too.
+  Not only do these two messages create a shared key K they also authenticate the 
+  user and server to one another. The messages used in Diffie-Hellman will be 
+  signed with each participants private key K<sup>-1</sup>. The digital signatures 
+  will be done with 2048 bit key RSA because the NSA recently published about a 
+  break in 1024 as discussed in class. The symmetric key cryptography system 
+  would use AES with 128-bit keys. It would be set to any mode besides ECB 
+  (which is vulnerable to replay attacks), we would use CBC. The numbers b and s 
+  will be chosen with the java.security.SecureRandom library.
+</p>
+<p>
+  This protocol sufficiently stops attacks of unauthorized Token issuance. The 
+  user and the server use Diffie-Hellman to exchange secret keys. At this point 
+  the communication between the two cannot be observed by a third party. Assuming 
+  that each the user and the server are the only ones that know their own private 
+  keys then the ability to encrypt a message that can be decrypted with the senders 
+  public keys means that the sender is the real person. The rest of the communication 
+  that will occur between the user and the server will be encrypted by the shared 
+  key K. Knowing K if proof that the user is the same user that authenticated 
+  previously. The user and server are the only ones that know this key K and 
+  therefore being able to encrypt and decrypt things with K means that the person 
+  knows K. The key exchange is secure because the user and the server 
+  generate a b and a s respectively. These numbers however are only transmitted 
+  in the form of g<sup>[b|s]</sup>mod q so an attacker who steal either or both 
+  of these they cannot recover g<sup>bs</sup> mod q (K). This means that K is a 
+  secret between the two parties.
+</p>
 <!-- END CHANGES HERE -->
     </section>
   </body>
