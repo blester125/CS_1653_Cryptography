@@ -359,7 +359,7 @@ server, a "u" the user, and an "f" a file server.</p>
   Bob needs to verify that the file server he is connecting to is indeed 
   the file server they claim to be. This can be accomplished with public key 
   cryptography via RSA with 2048-bit keys, as 1024-bit RSA keys were recently proven 
-  by the NSA to be insecure. The file server first sends Bob its public RSA ey, 
+  by the NSA to be insecure. The file server first sends Bob its public RSA key, 
   <b>K<sub>s</sub></b>, encrypted with the session key, <b>K</b>. Upon receiving 
   this message, Bob decrypts <b>K<sub>s</sub></b> and then checks his cached table 
   of &lt;file_server_ip, public_RSA_key&gt; pairs for a match. 
@@ -418,9 +418,10 @@ server, a "u" the user, and an "f" a file server.</p>
   decrypts this message using both the session key and its private RSA key, then 
   sends back to Bob the challenge <b>R1</b> encrypted with the session key. If the 
   challenge was successfully decrypted by the file server, the file server 
-  is authenticated and Bob sends a message of success to the file server. Bob and the 
-  file server are then free to communicate using their session key until the 
-  connection is terminated.
+  is authenticated and Bob sends a message of success to the file server. Bob also 
+  adds a new pair to his cached table of &lt;file_server_ip, public_RSA_key&gt; 
+  to reflect the new verified server. Bob and the file server are then free to 
+  communicate using their session key until the connection is terminated.
 
   <br><br>
   This case is represented by the following diagram:
