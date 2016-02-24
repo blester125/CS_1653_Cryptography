@@ -41,7 +41,9 @@ wide variety of Cryptographic techniques. We use Symmetric key cryptography to
 stop passive eavesdroppers, public key cryptography for mutual authentication, 
 digital signing for token verification, and key exchange protocols such 
 Diffie-Hellman to swap session keys. We also use Strong password protocols for a
-proposed login method.</p>
+proposed login method. All notation used in this write-up is derived from
+the notation provided to us by Professor Banaan. A "g" represents the group
+server, a "u" the user, and an "f" a file server.</p>
 
 <!-- END CHANGES HERE -->
     </section>
@@ -58,14 +60,14 @@ proposed login method.</p>
   including 
   ones that she is not supposed to access. In our current insecure implementation 
   a user can set their username to whatever they want and that is what is sent to the 
-  group server. Exploiting this is as simple as typing a name in a box. </br></br>
+  group server. Exploiting this is as simple as typing a name in a box. </br>
   <img src="images/FakeUser.png" title="I am really User Alice" class="image"> 
-  </br>In this case, 
+  </br>In this case 
   Attacker Alice has entered User Bob's name in the username field and will be 
-  requesting Bob's token instead of her own. In our implementation, the request for 
-  a Token simply takes a user name and responds with that user's Token. This means 
+  requesting Bob's token instead of her own. In our implementation the request for 
+  a Token simply takes a user name and responds with that users Token. This means 
   that Alice using Bob's name will give her Bob's Token.
-  <br><br>
+  <br>
   This threat is not a one time threat. The system must defend from attacker 
   Alice taking a token meant for Bob after Bob has authenticated with the server 
   the initial time. This is the simple scenario of Alice waiting for the actual 
@@ -76,10 +78,10 @@ proposed login method.</p>
 <p>
   Our solution is use passwords to protect the system from Unauthorized 
   Token Issuance. 
-  <br><br>
+  <br>
   <!-- User Creation, Justify why ADMIN gives password to user, Describe the 
     implementation of the newuser flag-->
-  In this solution, an ADMIN selects a password that must be 
+  In this solution an ADMIN picks a password that must be 
   provided to the GroupServer upon user creation. This initial password will be 
   given to the user by the ADMIN. 
   The GroupServer will set a flag in the UserList that this user is new (a newuser 
@@ -92,20 +94,20 @@ proposed login method.</p>
       Random number selection
       Symmetric encryption to use AES
   -->
-  <br><br>
-  Before the user actually authenticates with the server, the two must set up secure
+  <br>
+  Before the user actually authenticates with the server the two must set up secure
   communication over an insecure channel. They do this using Diffie-Hellman to 
-  create a shared secret key, K, that will be used for symmetric key cryptography.
+  create a shared secret key, K that will be used for symmetric key cryptography.
   This Diffie-Hellman protocol will use these values p = NUMBER and q = NUMBER.
   The numbers b and s will be selected at random by Bob and the Server respectively 
-  using the java.security.SecureRandom library. The secret key K is computed with
+  using the java.security.SecureRandom library. The secret key K is computer with
   K = g<sup>bs</sup> mod q. This symmetric key cryptography system would 
   use AES with 128-bit keys. AES would be used as a block cypher in CBC mode. CBC 
   is used because ECB is vulnerable to replay attacks.
   This encryption will protect the Tokens from being stolen later after the User 
   Bob authenticates with the system. In order to defend from replay attacks a new 
   shared key K is created every time a user connects to the Group Server. 
-  <br><br>
+  <br>
   <!--
     Password Authentication
     to Argue:
@@ -114,10 +116,10 @@ proposed login method.</p>
       Hashed password || Salt storage
   -->
   Once this shared Key is established and therefore a secure communication channel 
-  is setup, the server still needs to verify that the client it is talking to, who 
-  is claiming to be Bob, is really Bob. This is done with a password. Using the 
+  is setup the server still needs to verify that the client it is talking too who 
+  is claiming to be Bob is really Bob. This is done with a password. Using the 
   shared key Bob sends his username and password to the server. Once 
-  the server receives the message and decrypts it with the key, it will hash the
+  the server receives the message and decrypts it with the key it will hash the
   password concatenated with a salt that is associated with the username. The 
   server then compares this &lt;username, hash&gt; pair with its database. Both 
   the salt and the hash of the password concatenated with the salt will be stored 
@@ -125,21 +127,21 @@ proposed login method.</p>
   the saved password is changed. The salt will be generated randomly with the 
   java.security.SecureRandom library. The Hash will be computed using SHA-2 because
   recently SHA-1 has been showing the same weakness that MD-5 did before it was 
-  broken. If the hash matches the saved hash, then the server responds to Bob with 
+  broken. If the hash matches the saved hash then the server responds to Bob with 
   his Token.
-  <br><br>The protocol would look like so: <br>
+  <br>The protocol would look like so: <br>
   <img src="images/password.png" class="image">
   <br>
-  When a user has a new user flag set, then when the Server authenticates their 
-  password it will also include a "Change Password" message. When this 
-  is received by the client, the client will prompt the user to select a new 
+  When a user has a new user flag set then when the Server authenticates their 
+  password the server will also include a "Change Password" message. When this 
+  is received by the client the client will prompt the user to select a new 
   password. Once this new password is chosen then it is encrypted and sent back 
   to the server. The server decrypts this new password and will generate a new 
   salt with the same secure random number generate as before. The Server 
   concatenates the new password and the new salt and hashes it with SHA-2. Once 
-  this new hash is saved, the newuser flag is unset and the server tells the client 
+  this new hash is saved the newuser flag is unset and the server tells the client 
   that the change was a success.
-  <br><br>The new user protocol would look like this:</br>
+  <br>The new user protocol would look like this</br>
   <img src="images/newuser.png" class="image">  
 </p>
 <p>
@@ -159,42 +161,42 @@ proposed login method.</p>
   g<sup>bs</sup> mod q (K). This means that K is a secret between the two parties.
   At this point the communication between the two cannot be observed by a third 
   party. 
-  <br><br>
-  Once this secure communication channel has been set up, the user's password can be 
+  <br>
+  Once this secure communication channel has been set up the users password can be 
   sent to the server. This password system is sufficient to authenticate a user 
   assuming that the user is the only person who knows their password. 
   The server concatenates the password with the saved salt 
   associated with the user. This result is then hashed using SHA-2. This hash is 
   compared to the hash associated with the user. If the hash of the password plus 
-  salt matches the saved salt, then the user is authenticated. Matching the hashes 
+  salt matches the saved salt then the user is authenticated. Matching the hashes 
   is sufficient to authenticate the user because SHA-2 is a cryptographically secure 
-  hash. This means that SHA-2 has second image resistance; it is 
+  hash. This means that SHA-2 has second image resistance. This means that it is 
   infeasible to find a second message y that hashes to the same value as the 
-  original value x. This means that if the hashes match, the user must know the 
+  original value x. This means that if the hashes match the user must know the 
   real password rather than generating a password that has a matching hash. Using 
   a cryptographically secure hash also means that it has preimage resistance. This
-  means that if the Group server is ever compromised, then it would be infeasible 
+  means that if the Group server is ever compromised then it would be infeasible 
   for attackers to recover the original passwords from the stolen hashes.  
-  <br><br>
-  Once established, all communication that occurs between the user and the server 
+  <br>
+  Once established all communication that occurs between the user and the server 
   will be encrypted by the shared key K. Knowing K is proof that the user is the 
   same user that authenticated previously. The user and server are the only ones 
-  that know this key K, and therefore being able to encrypt and decrypt things 
+  that know this key K and therefore being able to encrypt and decrypt things 
   with K proves that user knows K. 
-  <br><br>
+  <br>
   This system is safe from replay attacks. For example if an attacker steals the 
-  two messages that are starred. 
+  two messages that are stared. 
   <br><img src="images/passwordreplay.png" class="image"><br>
   Later the attacker sends these two messages to 
   the server at a later time. This will not result in the attacker gaining access 
   to the system. The server will choose a different value of s than it chose when 
   the attacker recorded the messages. This means that the secret key K will be 
   different than the K between Bob and the server and the server will not be able
-  to decrypt the message from the attacker, as their K is wrong.
-  <br><br>
-  In this scenario, group servers are trusted which means that the newuser flag 
+  to decrypt the message from the attacker because K is wrong.
+  <br>
+  In this scenario group servers are trusted which means that the newuser flag 
   cannot be used to trigger a forced password reset by an attacker. Even if the 
-  newuser flag was somehow set, it would not compromise the user account because 
+  newuser flag was somehow set it would not compromise the user account because 
   the user needs to authenticate with the server before changing the password.
 </p>
 
@@ -205,34 +207,99 @@ proposed login method.</p>
 <!-- BEGIN CHANGES HERE -->
 <p>
   Token modification or forgery is a problem in the system that must be addressed. 
-  The first example of this would be users requesting a Token from the server and 
-  then adding extra groups that they are not allowed to access. This could allow 
-  non-ADMIN users to add themselves to the ADMIN and start deleting users or 
-  accessing files that other groups are trying to protect. Another scenario would 
-  be that users create their own Tokens from scratch that gave them the same kind of 
-  permissions as they did in the modification exploit. A final exploit in this 
-  category would be saving a Token that had access to a group g then once the user
-  was removed from group g for what ever reason it could be used to access group 
-  g again.  
+  The first example of this would be users requesting a token from the server and 
+  then adding groups to their token that they are not members of, possible in the current
+  implementation due to the tokens being stored in memory as plaintext, without any signature. This could allow 
+  non-admin users to add themselves to the admin group and abuse those powers by accessing
+  files they are not allowed to, creating users, and deleting users. The attacker could also
+  add themselves to any other group in the group server, gaining access to files they should
+  not have access to and being able to upload files to the group, an abuse of this
+  ability being flooding the group's files to make it difficult to locate the group's valid
+  files, consuming the group's disk quota, and impersonating other valid documents with false copies.
+  Another scenario would be that users or attackers create their own 
+  tokens from scratch that grants them the same kind of 
+  permissions as they acquired in the modification exploit. A final exploit in this 
+  category would be saving a token that had access to a group g, then once the user
+  was removed from group g for whatever reason, this saved token could be used to access group 
+  g again taking advantage of the exploits outlined above. These threats can manifest themselves
+  in the current implementation by having the user edit their token before sending it 
+  to the file server. They can also save their tokens and reuse them at anytime. A token can be 
+  forged by knowing the issuer (which is trivial to discover) the username of the user you wish
+  to impersonate, and the names of the groups an attacker may desire access to. All of this information
+  is available. These modified, forged, or reused tokens can then be used with the file server.
 </p>
 <p>
-  The first two problems are solved in the same way. Digital signatures. When a 
-  Token is issued by the Group server it will be signed with its private key. Once
-  the client passes this signed token to the file server the file server can verify 
-  it with the servers public key. The second issue of replaying an old token can 
-  be solved with time stamps. The time the token was issued can be concatenated 
-  with the token before it was signed. If the file server receives a Token where 
-  the time stamp is far off from the current time the file server will know that 
-  something is up and can discard the request.
+  The first two problems of token modification and forgery are solved in the same way: digital signatures. 
+  When a token is issued by the group server it will be hashed, and this hash 
+  will be signed with the group server's private RSA key. The token is 
+  hashed because of the variable length of tokens,
+  which may be quite large due to variance in the size of the strings of the issuer, 
+  username, and group names, and the number of groups. In order for all of this to occur
+  there must be an agreeed upon serialization of the token between the group server and the file server
+  so that when the group server hashes the token and signs the hash, the file server is
+  able to hash the token in the same manner and compare its own hash with the 
+  decrypted hash of the group server. There also must be an agreed upon hashing algorithm
+  between the group server and the file server, so the hash will be created symmetrically. 
+  For our implementation we will be using the SHA-2 with a 256 bit digest (SHA-256),
+  which is, at the present moment, known to be secure and is forecasted to continue to be for
+  the near future (more than a couple of years). The serialization of the
+  token will occur by concatenating the 
+  issuer, followed by the user, followed by all of the groups the user belongs to.
+  It will appear as follows: issuer || user || groups
+  The authentication message the user sends to the file server along with its group token will
+  be the token itself concatenated with the signed hash of the token, and this message encrypted
+  with the symmetric key generated from the user-file server Diffie-Hellmann exchange.
+  Once the client passes this token along with the signed token to the 
+  file server the file server can verify it with the servers public key. 
+  A file server will have knowledge of the group server's
+  public RSA key upon its creation, to be entered by the user who creates the file server.
+  This is reasonable as by the nature of the key being public, there does not need to exist
+  any security in the distribution of this public key. This is reasonable in our
+  scenario to expect users who wish to create a new file server to have knowledge of the group server's
+  public key, as the user must have knowledge of the group server's public key in
+  order to authenticate the group server. The third issue mentioned of reusing an old token can 
+  be solved with timestamps. This acheives freshness for a token and mitigates the threat of
+  a replay attack of the token by only allowing a certain token to be used within a small
+  and reasonable frame of time for it to be transmitted securely over the network,
+  on the order of a couple of seconds. The time the token was issued can be concatenated 
+  with the token before it was signed. This changes the aformentioned serialization
+  by adding in the concatentation of the timestamp, which will also be used in the signed hash
+  the group server creates, and so the agreed upon scheme between the group server and file server
+  must be modified to account for this measure. It will be modified by appending
+  the previous token scheme to the timestamp. So the serialization and subsequent transmission
+  to the user to be used with the file server within the time frame will appear as follows:
+   { timestamp || token || [timestamp || token]K<sub>g/sub><sup>-1</sup> }K<sub>uf</sub>
+  If the file server receives a token where 
+  the timestamp is outside of the time frame given the current time, then the file server will know 
+  the token has been tampered with or that the received token is an expired token
+  attempting to be reused, and in both cases, the token is discarded by the file server
+  and the user attempting the connection is refused. By including the timestamp in the signed hash,
+  it guarantees the token cannot be tampered with without the file server being able
+  to verify its modification.
 </p>
 <p>
-  Assuming that the GroupServer is the only one with the private key then we know 
-  that a Token signed from the server will be real. Even if a middle party decrypts 
-  the Token with the servers public key and changes the Token they will not be 
-  able to sign it because they do not have the private key of the server. The time
-  stamp solution ensures that very old tokens are not passed off as legitimate.
-  There are problems with the time stamp approach like if the attacker attacks the 
-  NTP. An attacker this motived seems difficult to deal with in the long run. 
+  Assuming that the group server is the only one with the private key then we know 
+  that a hashed token signed from the server will have been issued by the group server. Even if a middle party decrypts 
+  the token with the server's public key and alters the token they will not be 
+  able to sign it properly because they do not have the private key of the server. The timestamp 
+  solution ensures that old tokens are not passed off as legitimate at a later time by checking
+  that the token is received by the file server within the time frame (a couple of seconds).
+  It is also then known that this timestamp has not been altered due to it being incorporated in the signed hash
+  of the entire authentication request. There are problems with the timestamp approach like if the attacker attacks the 
+  NTP and is able to change the time for the file server to be within the time frame for
+  which the token will be valid. An attacker this motived is able to bypass the described system,
+  so we rely on the assumption that the NTP and its connection to the file server is secure, and
+  this assumption can safely trusted to hold true.
+  Another concern is being certain that the group server and the file servers are in-sync, 
+  but the integrity of this is trusted to be maintained by the NTP, with all timestamps being UTC,
+  thus keeping any difference in times that may arise to be within a small and acceptable margin of error. 
+  Lastly, a man in the middle attacker who operates quick enough to pass along the authentication request
+  to the file server so as to be within the allowed time frame would be able to compromise
+  the system, this also proves problematic, in that the time frame cannot be made so small
+  that requests to the file server are thrown away when they are valid, but not so large
+  as to be able to be replayed. This is prevented by all communication between a client
+  and a server being precluded by the Diffie-Hellman protocol demonstrated prior, with all
+  subsequent communication being encrypted with the generated symmetric key.
 </p>
 
 <!-- END CHANGES HERE -->
