@@ -268,7 +268,7 @@ server, a "u" the user, and an "f" a file server.</p>
   must be modified to account for this measure. It will be modified by appending
   the previous token scheme to the timestamp. So the serialization and subsequent transmission
   to the user to be used with the file server within the time frame will appear as follows:
-   { timestamp || token || [timestamp || token]K<sub>g/sub><sup>-1</sup> }K<sub>uf</sub>
+   { timestamp || token || [timestamp || token]K<sub>g</sub><sup>-1</sup> }K<sub>uf</sub>
   If the file server receives a token where 
   the timestamp is outside of the time frame given the current time, then the file server will know 
   the token has been tampered with or that the received token is an expired token
