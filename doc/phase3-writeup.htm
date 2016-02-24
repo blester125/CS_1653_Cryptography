@@ -332,10 +332,10 @@ server, a "u" the user, and an "f" a file server.</p>
   This solution works because the users will physically verify the servers. The 
   fact that this is the way servers authenticate SSH means that this method is 
   tried and true. To ensure that we are talking to the same server we authenticated 
-  with we used RSA public key cryptography. Assuming that the server is the only 
-  one with the other key then our encrypted messages will only be decrypt-able by 
-  the server we authenticated with, this means we are always talking to s and not 
-  s'. 
+  with, we will use RSA public key cryptography in tandem with symmetric key 
+  cryptography. Assuming that the server is the only one with the other key then our 
+  encrypted messages will only be decrypt-able by the server we authenticated with, 
+  this means we are always talking to <b>s</b> and not <b>s'</b>. 
 </p>
 <p>
   Before any sort of authentication with the file server takes place, Bob and 
@@ -363,8 +363,6 @@ server, a "u" the user, and an "f" a file server.</p>
   <b>K<sub>s</sub></b>, encrypted with the session key, <b>K</b>. Upon receiving 
   this message, Bob decrypts <b>K<sub>s</sub></b> and then checks his cached table 
   of &lt;file_server_ip, public_RSA_key&gt; pairs for a match. 
-
-  <!-- explain why this is ok -->
 
   <br><br>
 
@@ -398,16 +396,22 @@ server, a "u" the user, and an "f" a file server.</p>
   </ul>
 
   If a pair exists in Bob's cache that includes a matching file server IP address, 
-  but a non-matching public RSA key, it can be concluded that the file server is 
-  most certainly illegitimate and the connection should be aborted. If a pair does 
+  but a mismatched public RSA key, it can be concluded that the file server is 
+  more than likely illegitimate and the connection should be aborted. If a pair does 
   NOT exist with any matches, this is the first connection of Bob to that particular 
   file server, and the file server requires physical verification by Bob to continue 
-  the connection process.
+  the connection process. However, if Bob selects to abort the connection to the file 
+  server, the session is terminated and the connection is dropped.
+
+  <br><br>
+  Both these cases can be represented by the following diagram:
+  <br><br>
+
+   <img src="images/mismatch.png" class="image">
 
   <br><br>
 
-  If Bob selects to abort the connection to the file server, the session is terminated 
-  and the connection is dropped. If Bob selects to continue the connection process, he 
+  If Bob selects to continue the connection process, he 
   will send a a message to the file server containing a challenge, 
   <b>R1</b>, encrypted with the file server's public key, <b>K<sub>s</sub></b>. This 
   is then further encrypted with the session key, <b>K</b>. The file server then 
@@ -417,6 +421,14 @@ server, a "u" the user, and an "f" a file server.</p>
   is authenticated and Bob sends a message of success to the file server. Bob and the 
   file server are then free to communicate using their session key until the 
   connection is terminated.
+
+  <br><br>
+  This case is represented by the following diagram:
+  <br><br>
+
+   <img src="images/physicalverify.png" class="image">
+
+  <br><br>
 
 </p>
 
