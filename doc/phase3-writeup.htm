@@ -330,9 +330,14 @@ well.
 <br><br>
 Two factor Authentication?
 </p>
-<h3>Solution Two: A public key cryptography protocol.</h3>
+<h3>Extra Credit: A public key cryptography authentication protocol.</h3>
 <p>
-  Our first solution is use public key cryptography to protect the system from Unauthorized Token Issuance. In this solution the user's public key is submitted
+  A system that uses public key cryptography to protect the system from Unauthorized 
+  Token Issuance and allows user to login with a RSA Public Key/Private Key pair.
+  This system allows for a user to use public key cryptography to log into the 
+  system rather than a username and password pair.
+  <br>
+  In this solution the user's public key is submitted
   to the GroupServer upon the creation of the user account. The user and server 
   create a shared secret K using a signed Diffie-Hellman protocol. This method 
   creates a shared K and authenticates the user and server with each other. <br>
