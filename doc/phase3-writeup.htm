@@ -542,12 +542,11 @@ server, a "u" the user, and an "f" a file server.</p>
       <h2>Discussion</h2>
 <!-- BEGIN CHANGES HERE -->
 
-<p>Conclude with a paragraph or two discussing the interplay between your
-proposed mechanisms, and commenting on the design process that your group
-followed. Did you discuss other ideas that didn’t pan out before settling on the
-above-documented approach? Did you end up designing a really interesting
-protocol suite that addresses multiple threats at once? Use this space to show
-off your hard work!
+<p>Below is a diagram of the full sweet in action. In order to make use that 
+  servers continue to talk to the same user that they authenticated they encrypt 
+  communication with symmetric session keys. This authentication protocol ends 
+  up covering threat 4 passive monitering because all communication is encrypted 
+  with a key that is not known by a third party.
 <br><br>
 <img src="images/full.png" class="image">
 </p>
