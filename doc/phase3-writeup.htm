@@ -134,7 +134,7 @@ server, a "u" the user, and an "f" a file server.</p>
   broken. If the hash matches the saved hash then the server responds to Bob with 
   his Token.
   <br>The protocol would look like so: <br>
-  <img src="images/password.png" class="image">
+  <img src="images/password.png" class="image" title="password change">
   
   When a user has a new user flag set then when the Server authenticates their 
   password the server will also include a "Change Password" message. When this 
@@ -146,7 +146,7 @@ server, a "u" the user, and an "f" a file server.</p>
   this new hash is saved the newuser flag is unset and the server tells the client 
   that the change was a success.
   <br>The new user protocol would look like this</br>
-  <img src="images/newuser.png" class="image">  
+  <img src="images/newuser.png" class="image" title="new user">  
 </p>
 <p>
   <!-- Argument that this works
@@ -192,7 +192,7 @@ server, a "u" the user, and an "f" a file server.</p>
   <br>
   This system is safe from replay attacks. For example if an attacker steals the 
   two messages that are stared. 
-  <br><img src="images/passwordreplay.png" class="image"><br>
+  <br><img src="images/passwordreplay.png" class="image" title="password replay"><br>
   Later the attacker sends these two messages to 
   the server at a later time. This will not result in the attacker gaining access 
   to the system. The server will choose a different value of s than it chose when 
@@ -282,7 +282,8 @@ server, a "u" the user, and an "f" a file server.</p>
   must be modified to account for this measure. It will be modified by appending
   the previous token scheme to the timestamp. So the serialization and subsequent transmission
   to the user to be used with the file server within the time frame will appear as follows:
-   { timestamp || token || [timestamp || token]K<sub>g</sub><sup>-1</sup> }K<sub>uf</sub>
+   { token || [token]K<sub>g</sub><sup>-1</sup> }K<sub>uf</sub>
+   Where the token = timestamp || issuer || user || groups
   If the file server receives a token where 
   the timestamp is outside of the time frame given the current time, then the file server will know 
   the token has been tampered with or that the received token is an expired token
@@ -291,7 +292,7 @@ server, a "u" the user, and an "f" a file server.</p>
   it guarantees the token cannot be tampered with without the file server being able
   to verify its modification.
   <br>An example of how this verification works:
-  <img src="images/TokenVerification.png" class="image">
+  <img src="images/TokenVerification.png" class="image" title="token verification">
 </p>
 <p>
   Assuming that the group server is the only one with the private key then we know 
@@ -339,7 +340,7 @@ server, a "u" the user, and an "f" a file server.</p>
   the past. If the servers key is not cached, a message displaying the key will be 
   shown to the user. It is then the users responsibility to check that the server
   they are connected to is really the server with said key.<br><br>
-  <img src="images/sshwarning.png" class="image">
+  <img src="images/sshwarning.png" class="image" title="ssh warning">
   <br>
   Messages to the file server will be encrypted with the server key and sent. This 
   encryption will be RSA. 
@@ -387,7 +388,7 @@ server, a "u" the user, and an "f" a file server.</p>
   The interactions between Bob and the file server are visually represented as follows:
   <br><br>
 
-   <img src="images/matchfound.png" class="image">
+   <img src="images/matchfound.png" class="image" title="match found">
 
   <br><br>
 
@@ -414,7 +415,7 @@ server, a "u" the user, and an "f" a file server.</p>
   Both these cases can be represented by the following diagram:
   <br><br>
 
-   <img src="images/mismatch.png" class="image">
+   <img src="images/mismatch.png" class="image" title="mismatch">
 
   <br><br>
 
@@ -434,7 +435,7 @@ server, a "u" the user, and an "f" a file server.</p>
   This case is represented by the following diagram:
   <br><br>
 
-   <img src="images/physicalverify.png" class="image">
+   <img src="images/physicalverify.png" class="image" title="physically verify">
 
   <br><br>
 
