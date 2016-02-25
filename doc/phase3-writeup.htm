@@ -552,11 +552,6 @@ off your hard work!
 Diagram of all the layers of security we'll use
 </p>
 
-<p>If your group did any extra credit, please discuss that in this section, as
-well. 
-<br><br>
-Two factor Authentication?
-</p>
 <h3>Extra Credit: A public key cryptography authentication protocol.</h3>
 <p>
   A system that uses public key cryptography to protect the system from Unauthorized 
@@ -603,8 +598,19 @@ Two factor Authentication?
 </p>
 <p>
   This protocol sufficiently stops attacks of unauthorized Token issuance. The 
-  user and the server use Diffie-Hellman to exchange secret keys. At this point 
-  the communication between the two cannot be observed by a third party. Assuming 
+  user and the server use Diffie-Hellman to exchange secret keys. The key exchange 
+  is secure because the user and the server generate a <b>b</b> and a <b>s</b>
+  respectively. 
+  These numbers however are only transmitted in the form of g<sup>[b|s]</sup>mod q 
+  so an attacker who steals either or both of these then cannot recover 
+  g<sup>bs</sup> mod q (K). This means that K is a secret between the two parties.
+  At this point the communication between the two cannot be observed by a third 
+  party. Diffie-Hellman is safe to use because figuring out g<sup>bs</sup> mod p 
+  from either message is the discrete log problem which is presumed to be hard.
+  At this point 
+  the communication between the two cannot be observed by a third party because it 
+  is encrypted with <b>K</b>. 
+  <br>Assuming 
   that each the user and the server are the only ones that know their own private 
   keys then the ability to encrypt a message that can be decrypted with the senders 
   public keys means that the sender is the real person. The rest of the communication 
@@ -612,11 +618,7 @@ Two factor Authentication?
   key K. Knowing K if proof that the user is the same user that authenticated 
   previously. The user and server are the only ones that know this key K and 
   therefore being able to encrypt and decrypt things with K means that the person 
-  knows K. The key exchange is secure because the user and the server 
-  generate a b and a s respectively. These numbers however are only transmitted 
-  in the form of g<sup>[b|s]</sup>mod q so an attacker who steal either or both 
-  of these they cannot recover g<sup>bs</sup> mod q (K). This means that K is a 
-  secret between the two parties.
+  knows K. 
 </p>
 <!-- END CHANGES HERE -->
     </section>
