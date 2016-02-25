@@ -512,9 +512,9 @@ server, a "u" the user, and an "f" a file server.</p>
   this means that g can produce all p-1 values depending on the exponent it is raised to. This is done to minimize
   the likelihood of guessing the power g was raised to modulo p. The value p is chosen to be
   a large prime number that is slightly less than a power of 2. This is mainly used
-  for encrypted key exchange protocols, where the number g<sup>random chosen number</sup> % p is
+  for encrypted key exchange protocols, where the number g<sup>random chosen number</sup> mod p is
   enrypted using a weak secret, making an attacker unable to throw out most of the guessed
-  weak secrets to decrypt the value g<sup>random chosen number</sup> % p. Our chosen
+  weak secrets to decrypt the value g<sup>random chosen number</sup> mod p. Our chosen
   value p here will be chosen to satisfy this property in order to allow for the system
   to remain extensible in the event that such changes are chosen to implemented.
 </p>
@@ -564,24 +564,41 @@ Two factor Authentication?
   system rather than a username and password pair.
   <br>
   In this solution the user's public key is submitted
-  to the GroupServer upon the creation of the user account. The user and server 
+  to the GroupServer upon the creation of the user account or at the request of 
+  an authenticated client. The user and server 
   create a shared secret K using a signed Diffie-Hellman protocol. This method 
   creates a shared K and authenticates the user and server with each other. <br>
   The protocol would look like so: <br>
   <img src="images/publicauth.png" class="image">
   <br> 
-  This protocol uses Diffie-Hellman to create a shared secret key, <b>K</b>, that is 
-  computed by both Bob and the Server with the formula g<sup>bs</sup> mod q. b is 
-  chosen by Bob with a cryptographically secure random number generator and s is 
-  chosen by the server with a cryptographically secure random number generator too.
-  Not only do these two messages create a shared key K they also authenticate the 
-  user and server to one another. The messages used in Diffie-Hellman will be 
-  signed with each participants private key K<sup>-1</sup>. The digital signatures 
+  This protocol uses Diffie-Hellman to create a shared secret key, <b>K</b>, that 
+  will be used for symmetric key cryptography. This Diffie-Hellman protocol will 
+  use these values <b>g</b> = NUMBER and <b>q</b> = NUMBER. The numbers <b>b</b> 
+  and <b>s</b> will be selected at random by Bob and the Server respectively 
+  using the java.security.SecureRandom library. The secret key <b>K</b> is computed
+  with <b>K</b> = g<sup>bs</sup> mod q. This symmetric key cryptography system would 
+  use AES with 128-bit keys. AES would be used as a block cypher in CBC mode. CBC 
+  is used because ECB is vulnerable to replay attacks. This encryption will protect 
+  the Tokens from being stolen later after the User Bob authenticates with the system. 
+  In order to defend from replay attacks a new shared key <b>K</b> is created every 
+  time a user connects to the Group Server. While this symmetric key is being 
+  generated both the user and the server are also authenticating with each other 
+  because signed Diffie-Hellman is being used. The user will send 
+  g<sup>b</sup> mod q in the message and then send it again but it (or a hash of it)
+  will be signed with the users private key K<sub>b</sub><sup>-1</sup>. The server 
+  will decrypt it with the users public key which would be saved in the User object 
+  in the UserList and compare the two. If they match this means that the user is 
+  who they say they are. The server will respond to the user with g<sup>s</sup> mod q
+  and again but g<sup>s</sup> mod q or a hash of it will be signed with the servers
+  private key K<sub>s</sub><sup>-1</sup>. The user will decrypt g<sup>s</sup> mod q
+  with the servers public key. If the recievied g<sup>s</sup> mod q matches the 
+  decrypted one then the server is who they say they are and each party has 
+  authenticated themselves to the other. Finally a fixed String like "Success" will 
+  be sent from the user to the server encrypted with the shared secret key <b>K</b>
+  so that the server knows that the user authenticated it and successfully computed 
+  the symmetric key. The digital signatures 
   will be done with 2048 bit key RSA because the NSA recently published about a 
-  break in 1024 as discussed in class. The symmetric key cryptography system 
-  would use AES with 128-bit keys. It would be set to any mode besides ECB 
-  (which is vulnerable to replay attacks), we would use CBC. The numbers b and s 
-  will be chosen with the java.security.SecureRandom library.
+  break in 1024 as discussed in class.
 </p>
 <p>
   This protocol sufficiently stops attacks of unauthorized Token issuance. The 
