@@ -40,9 +40,8 @@ Ryan Conley (rgc11) </br >
 wide variety of Cryptographic techniques. We use Symmetric key cryptography to 
 stop passive eavesdroppers, public key cryptography for mutual authentication, 
 digital signing for token verification, and key exchange protocols such 
-Diffie-Hellman to swap session keys. We also use Strong password protocols for a
-proposed login method. All notation used in this write-up is derived from
-the notation provided to us by Professor Banaan. A "g" represents the group
+Diffie-Hellman to swap session keys. All notation used in this write-up is derived from
+the notation provided to us by Professor Garrison. A "g" represents the group
 server, a "u" the user, and an "f" a file server.</p>
 
 <!-- END CHANGES HERE -->
@@ -55,11 +54,11 @@ server, a "u" the user, and an "f" a file server.</p>
   be succinctly be described as user Alice requesting (and then 
   obtaining) a token meant for user Bob. It is easy to imagine this scenario being 
   exploited. Attacker Alice tells the Group server that her username is Bob. The 
-  group server responds with the token of user Bob. Now when Alice makes a
+  Group server responds with the token of user Bob. Now when Alice makes a
   request to the file server she can access all the files that only Bob is supposed to. 
   In our current insecure implementation 
-  a user can set their username to whatever they want and that is what is sent to the 
-  group server. Exploiting this is as simple as typing a name in a box. </br>
+  a user can set their username to whatever they want and that is sent to the 
+  Group server. Exploiting this is as simple as typing a name in a box. </br>
   <img src="images/FakeUser.png" title="I am really User Alice" class="image"> 
   </br>In this case 
   Attacker Alice has entered User Bob's name in the username field and will be 
@@ -83,8 +82,8 @@ server, a "u" the user, and an "f" a file server.</p>
   In this solution an ADMIN picks a password that must be 
   provided to the group server upon user creation. This initial password will be 
   given to the user by the ADMIN. 
-  The group server will set a flag in the User List that this user is new (a new user 
-  flag). This 
+  The Group server will set a flag in the UserList that this user needs a new 
+  password (a newPassword flag). This 
   will trigger a forced password change once the user logs on. 
   <!-- Authentication Protocol 
     Key Exchange
@@ -98,7 +97,8 @@ server, a "u" the user, and an "f" a file server.</p>
   communication over an insecure channel. They do this using Diffie-Hellman to 
   create a shared secret key, <b>K</b> that will be used for symmetric key 
   cryptography.
-  This Diffie-Hellman protocol will use these values <b>g</b> = NUMBER and <b>p</b>
+  This Diffie-Hellman protocol will use these values <b>g</b> = NUMBER and 
+  <b>q</b>
    = NUMBER.
   The numbers <b>b</b> and <b>s</b> will be selected at random by Bob and 
   the Server respectively 
@@ -107,7 +107,7 @@ server, a "u" the user, and an "f" a file server.</p>
   <b>K</b> = g<sup>bs</sup> mod q. This symmetric key cryptography system would 
   use AES with 128-bit keys. AES would be used as a block cypher in CBC mode. CBC 
   is used because ECB is vulnerable to replay attacks.
-  This encryption will protect the tokens from being stolen later after the User 
+  This encryption will protect the tokens from being stolen later after the user 
   Bob authenticates with the system. In order to defend from replay attacks a new 
   shared key <b>K</b> is created every time a user connects to the group server. 
   <br>
@@ -118,33 +118,34 @@ server, a "u" the user, and an "f" a file server.</p>
       Hash Function
       Hashed password || Salt storage
   -->
-  Once this shared Key is established and therefore a secure communication channel 
-  is setup the server still needs to verify that the client it is talking to who 
-  is claiming to be Bob is really Bob. This is done with a password. Using the 
+  Once this shared key is established and therefore a secure communication channel 
+  is setup the server still needs to verify that the client is who they are claiming to be. This is done with a password. Using the 
   shared key Bob sends his username and password to the server. Once 
   the server receives the message and decrypts it with the key it will hash the
   password concatenated with a salt that is associated with the username. The 
   server then compares this &lt;username, hash&gt; pair with its database. Both 
   the salt and the hash of the password concatenated with the salt will be stored 
   in the User object associated with that user. The salt will be generated when 
-  the saved password is changed. The salt will be generated randomly with the 
+  the password is changed. The salt will be generated randomly with the 
   java.security.SecureRandom library. The Hash will be computed using SHA-2 because
   recently SHA-1 has been showing the same weakness that MD-5 did before it was 
   broken. If the hash matches the saved hash then the server responds to Bob with 
-  his token.
+  a success message. Later Bob can request a Token with a request that is 
+  encrypted with <b>K</b>. 
   <br>The protocol would look like so: <br>
   <img src="images/password.png" class="image" title="password change">
   
-  When a user has a new user flag set then when the server authenticates their 
+  When a user has the newPassword flag set then when the server authenticates their 
   password the server will also include a "Change Password" message. When this 
   is received by the client the client will prompt the user to select a new 
   password. Once this new password is chosen then it is encrypted and sent back 
   to the server. The server decrypts this new password and will generate a new 
   salt with the same secure random number generator as before. The group server 
   concatenates the new password and the new salt and hashes it with SHA-2. Once 
-  this new hash is saved the newuser flag is unset and the server tells the client 
-  that the change was a success.
-  <br>The new user protocol would look like this</br>
+  this new hash is saved the newPassword flag is unset and the server tells the client 
+  that the change was a success. Clients can also initiate this change password 
+  protocol provided they are already authenticated.
+  <br>The new password protocol would look like this</br>
   <img src="images/newuser.png" class="image" title="new user">  
 </p>
 <p>
@@ -162,7 +163,7 @@ server, a "u" the user, and an "f" a file server.</p>
   respectively. 
   These numbers however are only transmitted in the form of g<sup>[b|s]</sup>mod p 
   so an attacker who steals either or both of these then cannot recover 
-  g<sup>bs</sup> mod q (K). This means that K is a secret between the two parties.
+  g<sup>bs</sup> mod q (K). This means that <b>K</b> is a secret between the two parties.
   At this point the communication between the two cannot be observed by a third 
   party. Diffie-Hellman is safe to use because figuring out g<sup>bs</sup> mod p
   from either message is the discrete log problem which is presumed to be hard. 
@@ -175,40 +176,41 @@ server, a "u" the user, and an "f" a file server.</p>
   compared to the hash associated with the user. If the hash of the password plus 
   salt matches the saved hash then the user is authenticated. Matching the hashes 
   is sufficient to authenticate the user because SHA-2 is a cryptographically secure 
-  hash. This means that SHA-2 has second preimage resistance. This means that it is 
+  hash. This means that SHA-2 has collision resistance. This means that it is 
   infeasible to find a second message y that hashes to the same value as the 
   original value x. This means that if the hashes match the user must know the 
   real password rather than generating a password that has a matching hash. Using 
-  a cryptographically secure hash also means that it has preimage resistance and collision resistance. This
+  a cryptographically secure hash also means that it has preimage resistance. This
   means that if the group server is ever compromised then it would be infeasible 
-  for attackers to recover the original passwords from the stolen hashes or compute a colliding hash.  
+  for attackers to recover the original passwords from the stolen hashes.  
   <br>
   Once established all communication that occurs between the user and the server 
-  will be encrypted by the shared key K. Knowing K is proof that the user is the 
+  will be encrypted by the shared key <b>K</b>. Knowing <b>K</b> is proof that the user is the 
   same user that authenticated previously. The user and server are the only ones 
-  that know this key K and therefore being able to encrypt and decrypt things 
-  with K proves that user knows K. 
+  that know this key <b>K</b> and therefore being able to encrypt and decrypt things 
+  with <b>K</b> proves that user knows <b>K</b> and is therefore the same user. 
   <br>
   This system is safe from replay attacks. For example if an attacker steals the 
-  two messages that are shared. 
+  two messages that are stared. 
   <br><img src="images/passwordreplay.png" class="image" title="password replay"><br>
   Later the attacker sends these two messages to 
-  the server at a later time. This will not result in the attacker gaining access 
-  to the system. The server will choose a different value of s than it chose when 
-  the attacker recorded the messages. This means that the secret key K will be 
-  different than the K between Bob and the server and the server will not be able
-  to decrypt the message from the attacker because K is incorrect.
+  the server. This will not result in the attacker gaining access 
+  to the system. The server will choose a different value of <b>s</b> than it chose when 
+  the attacker recorded the messages. This means that the secret key <b>K</b> will be 
+  different than the <b>K</b> that was chosen between Bob and the server. This means the server will not be able
+  to decrypt the message from the attacker because the attacker is using the old 
+  <b>K</b> which is incorrect.
   <br>
-  In this scenario group servers are trusted which means that the new user flag 
+  In this scenario group servers are trusted which means that the newPassword flag 
   cannot be used to trigger a forced password reset by an attacker. Even if the 
-  newuser flag was somehow set it would not compromise the user account because 
+  newPassword flag was somehow set it would not compromise the user account because 
   the user needs to authenticate with the server before changing the password.
   <br>
   It is assumed that if the ADMIN of the system chose our system it is because 
   of the security that comes with it. Due to this assumption it is reasonable to 
   assume that the ADMIN will have some method of getting the default password to 
   the user, even email would work if it was encrypted. The main use of this 
-  system will be in a work setting where the users and admin are familiar so it is also 
+  system will be in a work setting where the users and ADMIN are familiar so it is also 
   reasonable to assume that the ADMIN could see the user face to face in order to
   disclose the default password to them.
 </p>
@@ -231,7 +233,7 @@ server, a "u" the user, and an "f" a file server.</p>
   <img src="images/insecure_token_modifcation_forgery.png" class="image" title="new user">  
   An abuse of this
   ability being flooding the group's files to make it difficult to locate the group's valid
-  files, consuming the group's disk quota, and impersonating other valid documents with false copies.
+  files, consuming the group's disk quota, impersonating other valid documents with false copies, or even stealing sensitive files.
   Another scenario would be that users or attackers create their own 
   tokens from scratch that grants them the same kind of 
   permissions as they acquired in the modification exploit. A final exploit in this 
@@ -273,15 +275,14 @@ server, a "u" the user, and an "f" a file server.</p>
   public RSA key upon the file server's creation, to be entered by the user who creates the file server.
   This is reasonable as by the nature of the key being public, there does not need to exist
   any security in the distribution of this public key. This is reasonable in our
-  scenario to expect users who wish to create a new file server to have knowledge of the group server's
-  public key, as the user must have knowledge of the group server's public key in
-  order to authenticate the group server. The third issue mentioned of reusing an old token can 
-  be solved with timestamps. This acheives freshness for a token and mitigates the threat of
+  scenario to expect users who wish to create a new file server to have knowledge of the Group server's
+  public key because there is only one Group server. The third issue mentioned of reusing an old token can 
+  be solved with timestamps. This achieves freshness for a token and mitigates the threat of
   a replay attack of the token by only allowing a certain token to be used within a small
   and reasonable frame of time for it to be transmitted securely over the network,
-  on the order of a couple of seconds. The time the token was issued can be concatenated 
-  with the token before it was signed. This changes the aformentioned serialization
-  by adding in the concatentation of the timestamp, which will also be used in the signed hash
+  on the order of a couple of seconds (about 30 seconds in our implementation). The time the token was issued will be added as a new field in the Token object.
+  This changes the aforementioned serialization
+  by adding in the concatenation of the timestamp, which will also be used in the signed hash
   the group server creates, and so the agreed upon scheme between the group server and file server
   must be modified to account for this measure. It will be modified by appending
   the previous token scheme to the timestamp. So the serialization and subsequent transmission
@@ -299,7 +300,7 @@ server, a "u" the user, and an "f" a file server.</p>
   <img src="images/TokenVerification.png" class="image" title="token verification">
 </p>
 <p>
-  Assuming that the group server is the only one with the private key then we know 
+  Assuming that the group server is the only one with its private key then we know 
   that a hashed token signed from the server only could have been issued by the group server. Even if a middle party decrypts 
   the token with the server's public key and alters the token they will not be 
   able to sign it properly because they do not have the private key of the server. The timestamp 
@@ -320,8 +321,7 @@ server, a "u" the user, and an "f" a file server.</p>
   the system, this also proves problematic in that the time frame cannot be made so short
   that requests to the file server are thrown away when they are valid, but not so large
   as to be able to be replayed. This is prevented by all communication between a client
-  and a server being precluded by the Diffie-Hellman protocol demonstrated prior, with all
-  subsequent communication being encrypted with the generated symmetric key. Now, if an attacker
+  and a server being encrypted with the generated symmetric key. Now, if an attacker
   were to obtain an encrypted token, it would be worthless as the new connection via file server
   would be using a different shared symmetric key. So we rely on the hardness of the discrete logarithm problem
   to keep the communication between server and user secure, and the timestamp so tokens expire
@@ -341,7 +341,8 @@ server, a "u" the user, and an "f" a file server.</p>
   tries to connect to server s and instead connects to server s'. If the server s' 
   is unauthorized, it probably will not be trusted like a file server would be to 
   behave correctly. This means that an untrusted file server could accept sensitive 
-  files for upload, but then freely give these files to anyone that asks for them.
+  files for upload, but then freely give these files to anyone that asks for them
+  or even distribute them on the web.
   After authenticating a file server, there needs to be a way to make sure that you 
   are still communicating with the same server that you authenticated with.
 </p>
@@ -362,7 +363,7 @@ server, a "u" the user, and an "f" a file server.</p>
   Before any sort of authentication with the file server takes place, Bob and 
   the file server must first set up a secure communication over an insecure channel.
   This is accomplished using the Diffie-Hellman protocol to create a shared session key,
-  K, that will be used for the remainder of their session for symmetric key cryptography.
+  <b>K</b>, that will be used for the remainder of their session for symmetric key cryptography.
   This Diffie-Hellman protocol will use the values <b>g</b> = NUMBER and <b>q</b> = 
   NUMBER, with the values of <b>b</b> and <b>s</b> being generated at random with the
   java.security.SecureRandom library by Bob and the file server, respectively. 
@@ -416,7 +417,7 @@ server, a "u" the user, and an "f" a file server.</p>
     <li>Options to Connect or Abort</li>
   </ul>
 
-  If a pair exists in Bob's cache that includes a matching file server IP address, 
+  If a pair exists in Bob's cache that includes a matching file server Hostname, 
   but a mismatched public RSA key, it can be concluded that the file server is 
   more than likely illegitimate (or has updated its key, in which case, this must
   be verified with an admin physically) and the connection should be aborted. If a pair does 
@@ -454,15 +455,15 @@ server, a "u" the user, and an "f" a file server.</p>
   <br><br>
 
   <p>
-  This solution works because the users will physically verify the servers. The 
-  fact that this is similar to the way servers authenticate SSH means that this method is 
+  This solution works because the users will physically verify the servers. This
+  is similar to the way servers authenticate SSH and that method is 
   "tried and true". To ensure that we are talking to the same server we authenticated 
   with, we have used RSA public key cryptography in tandem with symmetric key 
-  cryptography. Assuming that the server is the only one with the other key, then our 
+  cryptography. Assuming that the server is the only other one with the session key, then our 
   encrypted messages will only be decrypt-able by the server we authenticated with, 
   this means we are always talking to <b>s</b> and not <b>s'</b>. Both during and after 
   the authentication process, we can ensure safe communication between the user and the 
-  file server with the Diffie-Hellman protocol, as it is proven safe by the discrete 
+  file server with the Diffie-Hellman protocol, as it is presumed safe by the discrete 
   logarithm problem. Although it would be preferred to not require users to keep cached 
   tables and perform physical verification, it is justified within this context due to 
   our system's infrastucture. As group servers cannot be expected to have any information 
@@ -471,7 +472,8 @@ server, a "u" the user, and an "f" a file server.</p>
   server itself is required. When the user receives a mismatched public RSA key when they 
   already have a previous record of that file server's correct key, they are immediately 
   alerted to their attempt to connect to an <b>s'</b> file server. After the server has 
-  been authenticated by the user, their further communication is secure under their 
+  been authenticated by the user, their further communication is secure by 
+  encryption with their 
   previously generated session key.
   </p>
 
@@ -486,7 +488,8 @@ server, a "u" the user, and an "f" a file server.</p>
 <p>
   Information leakage via passive monitoring is a threat whose counter-measures
   have already been partially addressed through the satisfaction of the other threats
-  by way of the Diffie-Hellman protocol. 
+  by way of symmetric key cryptography using keys generated via the 
+  Diffie-Hellman protocol. 
   This threat can be thought of as two people talking in a room
   and there being a third person in the room unseen who is listening to their 
   conversation. In the context of our program this means that people could listen 
@@ -510,15 +513,15 @@ server, a "u" the user, and an "f" a file server.</p>
   eavesdropper doesn't know. In a similar way the client and the servers will speak 
   their own language using encryption. At the beginning of all communication 
   between the client and one of the servers they will use the Diffie-Hellman 
-  protocol to create a shared symmetric key K. They will then use this key K in a symmetric 
+  protocol to create a shared symmetric key <b>K</b>. They will then use this 
+  key <b>K</b> in a symmetric 
   key cryptography system using AES with 128-bit keys, which is found to be secure at the present time. 
   It would be set to any mode besides ECB (which is vulnerable to replay attacks), and we will use CBC.
-  These keys are generated for each interaction between a server and a client,
-  meaing this protocol is carried out 1 time between a user u and the group server
-  g, and n times, a separate instance of the protocol for each of the n file servers
-  the user may wish to connect to. This means that the client, the group server, and the
+  These keys are generated for each interaction between a server and a client.
+  This means that the client, the group server, and the
   file servers must all keep track of their symmetric keys and their respective
-  correspondents, and these keys are discarded and never used again after disconnection.
+  correspondents, and these keys are discarded and never used again after 
+  disconnection.
   We must then establish the values g, the shared root to be raised to a randomly generated value
   and, and p, the value by which this exponentiation is moduloed by.
   The value g is chosen to be a prime number that is a primitive root of p, in other words,
@@ -527,26 +530,28 @@ server, a "u" the user, and an "f" a file server.</p>
   the likelihood of guessing the power g was raised to modulo p. The value p is chosen to be
   a large prime number that is slightly less than a power of 2. This is mainly used
   for encrypted key exchange protocols, where the number g<sup>randomly chosen number</sup> mod p is
-  enrypted using a weak secret, making an attacker unable to throw out most of the guessed
+  encrypted using a weak secret, making an attacker unable to throw out most of the guessed
   weak secrets to decrypt the value g<sup>randomly chosen number</sup> mod p. Our chosen
   value p here will be chosen to satisfy this property in order to allow for the system
   to remain extensible in the event that such changes are chosen to implemented.
 </p>
 <p>
   This protocol will stop eavesdroppers. At each exchange the user and the server 
-  generate a "b" and an "s" respectively. These numbers however are only transmitted 
+  generate a <b>b</b> and an <b>s</b> respectively. These numbers however are
+  only transmitted 
   in the form of g<sup>[b|s]</sup>mod p so an attacker who steals either or both 
   of these then cannot recover g<sup>bs</sup> mod p (K), but the user and the server
-  can generate g<sup>bs</sup> mod p by multiplying the received value by their own randomly
+  can generate g<sup>bs</sup> mod p by exponentiation of the received value 
+  with their own randomly
   chosen exponent, thus guaranteeing correctness. This protocol relies on the assumption
   that both the server and the user will be able to keep their respective values of
   b and s secret in order for it to be secure, as having one exposed could compromise the key for that session,
   so long as the prior transmissions of g<sup>[b|s]</sup>mod p were saved.
-  This means that K is a secret between the two parties and therefore if used for encryption then the 
+  This means that <b>K</b> is a secret between the two parties and therefore if used for encryption then the 
   third party will not be able to decrypt it when operating under these assumptions. 
-  Creating a new key K for each session means that the encryption will be different 
-  everytime, so patterns cannot be used to guess at the content of the messages and
-  if a session key K is compromised, it can only be used to decrypt the messages
+  Creating a new key <b>K</b> for each session means that the encryption will be different 
+  every time, so patterns cannot be used to guess at the content of the messages and
+  if a session key <b>K</b> is compromised, it can only be used to decrypt the messages
   exchanged during that session, providing forward secrecy.
 </p>
 
@@ -556,10 +561,10 @@ server, a "u" the user, and an "f" a file server.</p>
       <h2>Discussion</h2>
 <!-- BEGIN CHANGES HERE -->
 
-<p>Below is a diagram of the full sweet in action. In order to make use that 
+<p>Below is a diagram of the full suite in action. In order to make use that 
   servers continue to talk to the same user that they authenticated they encrypt 
   communication with symmetric session keys. This authentication protocol ends 
-  up covering threat 4 passive monitering because all communication is encrypted 
+  up covering threat 4 passive monitoring because all communication is encrypted 
   with a key that is not known by a third party.
 <br><br>
 <img src="images/full.png" class="image">
@@ -575,11 +580,15 @@ server, a "u" the user, and an "f" a file server.</p>
   In this solution the user's public key is submitted
   to the GroupServer upon the creation of the user account or at the request of 
   an authenticated client. The user and server 
-  create a shared secret K using a signed Diffie-Hellman protocol. This method 
-  creates a shared K and authenticates the user and server with each other. <br>
+  create a shared secret <b>K</b> using a signed Diffie-Hellman protocol. This method 
+  creates a shared <b>K</b> and authenticates the user and server with each other. <br>
   The protocol would look like so: <br>
   <img src="images/publicauth.png" class="image">
   <br> 
+  <!--
+	Once we pick g and q we need to test if g^b mod q will be to big for RSA and 
+	if it is rewrite this section to use only the hash versions
+  -->
   This protocol uses Diffie-Hellman to create a shared secret key, <b>K</b>, that 
   will be used for symmetric key cryptography. This Diffie-Hellman protocol will 
   use these values <b>g</b> = NUMBER and <b>q</b> = NUMBER. The numbers <b>b</b> 
@@ -592,22 +601,26 @@ server, a "u" the user, and an "f" a file server.</p>
   In order to defend from replay attacks a new shared key <b>K</b> is created every 
   time a user connects to the Group Server. While this symmetric key is being 
   generated both the user and the server are also authenticating with each other 
-  because signed Diffie-Hellman is being used. The user will send 
-  g<sup>b</sup> mod q in the message and then send it again but it (or a hash of it)
-  will be signed with the users private key K<sub>b</sub><sup>-1</sup>. The server 
+  because signed Diffie-Hellman is being used. The user will send g<sup>b</sup> mod q 
+  twice in the message, once in plaintext and once once signed with the users private
+  key K<sub>b</sub><sup>-1</sup>. If g<sup>b</sup> mod q is too big for RSA then we
+  will hash it with SHA-2 and sign the result. The server 
   will decrypt it with the users public key which would be saved in the User object 
-  in the UserList and compare the two. If they match this means that the user is 
-  who they say they are. The server will respond to the user with g<sup>s</sup> mod q
-  and again but g<sup>s</sup> mod q or a hash of it will be signed with the servers
-  private key K<sub>s</sub><sup>-1</sup>. The user will decrypt g<sup>s</sup> mod q
-  with the servers public key. If the recievied g<sup>s</sup> mod q matches the 
+  in the UserList and compare the plaintext version with the decrypted version (or 
+  it will hash the plaintext with SHA-2 and compare it to the decrypted result if 
+  it proves too large for RSA). If they match this means that the user is who they 
+  say they are. The server will response by sending g<sup>s</sup> mod q twice. Once 
+  in plaintext and once signed with the servers private key K<sub>s</sub><sup>-1</sup>.
+  It will compute the hash with SHA-2 and sign that is stead if g<sup>s</sup> mod q 
+  proves to big for RSA. The user will decrypt g<sup>s</sup> mod q
+  with the servers public key. If the plaintext g<sup>s</sup> mod q matches the 
   decrypted one then the server is who they say they are and each party has 
   authenticated themselves to the other. Finally a fixed String like "Success" will 
   be sent from the user to the server encrypted with the shared secret key <b>K</b>
   so that the server knows that the user authenticated it and successfully computed 
   the symmetric key. The digital signatures 
   will be done with 2048 bit key RSA because the NSA recently published about a 
-  break in 1024 as discussed in class.
+  break in 1024 as discussed in class. 
 </p>
 <p>
   This protocol sufficiently stops attacks of unauthorized Token issuance. The 
@@ -628,10 +641,11 @@ server, a "u" the user, and an "f" a file server.</p>
   keys then the ability to encrypt a message that can be decrypted with the senders 
   public keys means that the sender is the real person. The rest of the communication 
   that will occur between the user and the server will be encrypted by the shared 
-  key K. Knowing K if proof that the user is the same user that authenticated 
-  previously. The user and server are the only ones that know this key K and 
-  therefore being able to encrypt and decrypt things with K means that the person 
-  knows K. 
+  key <b>K</b>. Knowing <b>K</b> if proof that the user is the same user that authenticated 
+  previously. The user and server are the only ones that know this key <b>K</b>
+  and 
+  therefore being able to encrypt and decrypt things with <b>K</b> means that the 
+  person knows <b>K</b>. 
 </p>
 <!-- END CHANGES HERE -->
     </section>
