@@ -97,16 +97,20 @@ server, a "u" the user, and an "f" a file server.</p>
   <br>
   Before the user actually authenticates with the server the two must set up secure
   communication over an insecure channel. They do this using Diffie-Hellman to 
-  create a shared secret key, K that will be used for symmetric key cryptography.
-  This Diffie-Hellman protocol will use these values p = NUMBER and q = NUMBER.
-  The numbers b and s will be selected at random by Bob and the Server respectively 
-  using the java.security.SecureRandom library. The secret key K is computer with
-  K = g<sup>bs</sup> mod q. This symmetric key cryptography system would 
+  create a shared secret key, <b>K</b> that will be used for symmetric key 
+  cryptography.
+  This Diffie-Hellman protocol will use these values <b>g</b> = NUMBER and <b>q</b>
+   = NUMBER.
+  The numbers <b>b</b> and <b>s</b> will be selected at random by Bob and 
+  the Server respectively 
+  using the java.security.SecureRandom library. The secret key <b>K</b> is computed
+   with
+  <b>K</b> = g<sup>bs</sup> mod q. This symmetric key cryptography system would 
   use AES with 128-bit keys. AES would be used as a block cypher in CBC mode. CBC 
   is used because ECB is vulnerable to replay attacks.
   This encryption will protect the Tokens from being stolen later after the User 
   Bob authenticates with the system. In order to defend from replay attacks a new 
-  shared key K is created every time a user connects to the Group Server. 
+  shared key <b>K</b> is created every time a user connects to the Group Server. 
   <br>
   <!--
     Password Authentication
@@ -131,7 +135,7 @@ server, a "u" the user, and an "f" a file server.</p>
   his Token.
   <br>The protocol would look like so: <br>
   <img src="images/password.png" class="image">
-  <br>
+  
   When a user has a new user flag set then when the Server authenticates their 
   password the server will also include a "Change Password" message. When this 
   is received by the client the client will prompt the user to select a new 
@@ -155,12 +159,14 @@ server, a "u" the user, and an "f" a file server.</p>
 
   This protocol sufficiently stops attacks of unauthorized Token issuance. The 
   user and the server use Diffie-Hellman to exchange secret keys. The key exchange 
-  is secure because the user and the server generate a b and a s respectively. 
+  is secure because the user and the server generate a <b>b</b> and a <b>s</b>
+  respectively. 
   These numbers however are only transmitted in the form of g<sup>[b|s]</sup>mod q 
   so an attacker who steals either or both of these then cannot recover 
   g<sup>bs</sup> mod q (K). This means that K is a secret between the two parties.
   At this point the communication between the two cannot be observed by a third 
-  party. 
+  party. Diffie-Hellman is safe to use because figuring out g<sup>bs</sup> mod p 
+  from either message is the discrete log problem which is presumed to be hard. 
   <br>
   Once this secure communication channel has been set up the users password can be 
   sent to the server. This password system is sufficient to authenticate a user 
@@ -198,6 +204,14 @@ server, a "u" the user, and an "f" a file server.</p>
   cannot be used to trigger a forced password reset by an attacker. Even if the 
   newuser flag was somehow set it would not compromise the user account because 
   the user needs to authenticate with the server before changing the password.
+  <br>
+  It is assumed that if the ADMIN of the system chose our system it is because 
+  of the security that comes with it. Due to this assumption it is reasonable to 
+  assume that the ADMIN will have some method of getting the default password to 
+  the user, even email would work if it was encrypted. The main use of this 
+  system will be in a work setting so it is also 
+  reasonable to assume that the ADMIN could see the user face to face in order to
+  disclose the default password to them.
 </p>
 
 <!-- END CHANGES HERE -->

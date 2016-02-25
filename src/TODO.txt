@@ -15,3 +15,80 @@ to their group information
 =======
 
 [ ] Complete documentation and metadata
+
+<!--
+  First message in the protocol from Bob to Server.
+  <table border="1">
+    <tr>
+      <td>Message:</td>
+      <td>"Login"</td>
+    </tr>
+    <tr>
+      <td>Contents:</td>
+      <td>Username</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td>g<sup>b</sup> mod p</td>
+    </tr>
+  </table>
+  Second message in the protocol from Server to Bob
+  <table border="1">
+    <tr>
+      <td>Message:</td>
+      <td>"Login"</td>
+    </tr>
+    <tr>
+      <td>Contents:</td>
+      <td>g<sup>s</sup> mod p</td>
+    </tr>
+  </table>
+  Third message in the protocol from Bob to the Server
+  <table border="1">
+    <tr>
+      <td>Message:</td>
+      <td>"Password"</td>
+    </tr>
+    <tr>
+      <td>Contents:</td>
+      <td>Username</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td>password</td>
+    </tr>
+  </table>
+  Fourth message in the protocol from Server to Bob
+  <table border="1">
+    <tr>
+      <td>Message:</td>
+      <td>"OK"</td>
+    </tr>
+    <tr>
+      <td>Contents:</td>
+      <td></td>
+    </tr>
+  </table>
+  Later the authenticated user can request a token with a message like so.
+  <table border="1">
+    <tr>
+      <td>Message:</td>
+      <td>"GET"</td>
+    </tr>
+    <tr>
+      <td>Contents:</td>
+      <td></td>
+    </tr>
+  </table>
+  The server will respond to the request with the Token.
+  <table border="1">
+    <tr>
+      <td>Message:</td>
+      <td>"OK"</td>
+    </tr>
+    <tr>
+      <td>Contents:</td>
+      <td>Token</td>
+    </tr>
+  </table>
+  <br> -->
