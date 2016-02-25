@@ -329,20 +329,11 @@ server, a "u" the user, and an "f" a file server.</p>
   encryption will be RSA. 
 </p>
 <p>
-  This solution works because the users will physically verify the servers. The 
-  fact that this is the way servers authenticate SSH means that this method is 
-  tried and true. To ensure that we are talking to the same server we authenticated 
-  with, we will use RSA public key cryptography in tandem with symmetric key 
-  cryptography. Assuming that the server is the only one with the other key then our 
-  encrypted messages will only be decrypt-able by the server we authenticated with, 
-  this means we are always talking to <b>s</b> and not <b>s'</b>. 
-</p>
-<p>
   Before any sort of authentication with the file server takes place, Bob and 
   the file server must first set up a secure communication over an insecure channel.
   This is accomplished using the Diffie-Hellman protocol to create a shared session key,
   K, that will be used for the remainder of their session for symmetric key cryptography.
-  This Diffie-Hellman protocol will use the values <b>p</b> = NUMBER and <b>q</b> = 
+  This Diffie-Hellman protocol will use the values <b>g</b> = NUMBER and <b>q</b> = 
   NUMBER, with the values of <b>b</b> and <b>s</b> being generated at random with the
   java.security.SecureRandom library by Bob and the file server, respectively. 
   Just like in our password authentication solution above, the secret session key 
@@ -362,7 +353,7 @@ server, a "u" the user, and an "f" a file server.</p>
   by the NSA to be insecure. The file server first sends Bob its public RSA key, 
   <b>K<sub>s</sub></b>, encrypted with the session key, <b>K</b>. Upon receiving 
   this message, Bob decrypts <b>K<sub>s</sub></b> and then checks his cached table 
-  of &lt;file_server_ip, public_RSA_key&gt; pairs for a match. 
+  of &lt;hostname:port, public_key&gt; pairs for a match. 
 
   <br><br>
 
@@ -388,7 +379,7 @@ server, a "u" the user, and an "f" a file server.</p>
   file server he is attempting to authenticate, which would include the following: 
 
   <ul>
-    <li>File Server IP Address</li>
+    <li>File Server Hostname</li>
     <li>Recieved RSA Public Key</li>
     <li>Cached RSA Public Key (if available)</li>
     <li>Warnings and Directives</li>
@@ -419,7 +410,7 @@ server, a "u" the user, and an "f" a file server.</p>
   sends back to Bob the challenge <b>R1</b> encrypted with the session key. If the 
   challenge was successfully decrypted by the file server, the file server 
   is authenticated and Bob sends a message of success to the file server. Bob also 
-  adds a new pair to his cached table of &lt;file_server_ip, public_RSA_key&gt; 
+  adds a new pair to his cached table of &lt;hostname:port, public_key&gt; 
   to reflect the new verified server. Bob and the file server are then free to 
   communicate using their session key until the connection is terminated.
 
@@ -430,6 +421,28 @@ server, a "u" the user, and an "f" a file server.</p>
    <img src="images/physicalverify.png" class="image">
 
   <br><br>
+
+  <p>
+  This solution works because the users will physically verify the servers. The 
+  fact that this similar to the way servers authenticate SSH means that this method is 
+  "tried and true". To ensure that we are talking to the same server we authenticated 
+  with, we have used RSA public key cryptography in tandem with symmetric key 
+  cryptography. Assuming that the server is the only one with the other key, then our 
+  encrypted messages will only be decrypt-able by the server we authenticated with, 
+  this means we are always talking to <b>s</b> and not <b>s'</b>. Both during and after 
+  the authentication process, we can ensure safe communication between the user and the 
+  file server with the Diffie-Hellman protocol, as it is proven safe by the discrete 
+  logarithm problem. Although it would be preferred to not require users to keep cached 
+  tables and perform physical verification, it is justified within this context due to 
+  our system's infrastucture. As group servers cannot be expected to have any information 
+  about the (possible) multitude of file servers, and the fact that any user can run a 
+  file server, a solution that only involves communication between the user and the file 
+  server itself is required. When the user receives a mismatched public RSA key when they 
+  already have a previous record of that file server's correct key, they are immediately 
+  alerted to their attempt to connect to an <b>s'</b> file server. After the server has 
+  been authenticated by the user, their further communication is secure under their 
+  previously generated session key.
+  </p>
 
 </p>
 
