@@ -290,6 +290,8 @@ server, a "u" the user, and an "f" a file server.</p>
   and the user attempting the connection is refused. By including the timestamp in the signed hash,
   it guarantees the token cannot be tampered with without the file server being able
   to verify its modification.
+  <br>An example of how this verification works:
+  <img src="images/TokenVerification.png" class="image">
 </p>
 <p>
   Assuming that the group server is the only one with the private key then we know 
@@ -568,7 +570,7 @@ Two factor Authentication?
   The protocol would look like so: <br>
   <img src="images/publicauth.png" class="image">
   <br> 
-  This protocol uses Diffie-Hellman to create a shared secret key, K, that is 
+  This protocol uses Diffie-Hellman to create a shared secret key, <b>K</b>, that is 
   computed by both Bob and the Server with the formula g<sup>bs</sup> mod q. b is 
   chosen by Bob with a cryptographically secure random number generator and s is 
   chosen by the server with a cryptographically secure random number generator too.
