@@ -6,6 +6,10 @@ import java.net.Socket;
 import java.io.*;
 import java.util.*;
 
+import javax.crypto.Cipher;
+import javax.crypto.SealedObject;
+import javax.crypto.spec.SecretKeySpec;
+
 public class GroupThread extends Thread 
 {
 	private final Socket socket;
@@ -51,7 +55,12 @@ public class GroupThread extends Thread
 						//Respond to the client. On error, the client will receive a null token
 						response = new Envelope("OK");
 						response.addObject(yourToken);
-						System.out.println("SENT from GET: " + response);
+						/*System.out.println("SENT from GET: " + response);
+						Cipher cipher = Cipher.getInstance("AES");
+						SecretKeySpec secreteKeySpec = new SecretKeySpec(new byte[] {(byte)0x01, (byte)0x02, (byte)0x01, (byte)0x02,(byte)0x01, (byte)0x02, (byte)0x01, (byte)0x02,(byte)0x01, (byte)0x02, (byte)0x01, (byte)0x02,(byte)0x01, (byte)0x02, (byte)0x01, (byte)0x02}, "AES");
+						cipher.init(Cipher.ENCRYPT_MODE, secreteKeySpec);
+						SealedObject responseEncrypted = CipherBox.encrypt(response, cipher);
+						output.writeObject(responseEncrypted);*/
 						output.writeObject(response);
 						
 					}

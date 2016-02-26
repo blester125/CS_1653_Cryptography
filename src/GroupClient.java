@@ -4,6 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.io.ObjectInputStream;
 
+import javax.crypto.Cipher;
+import javax.crypto.SealedObject;
+import javax.crypto.spec.SecretKeySpec;
+
 public class GroupClient extends Client implements GroupClientInterface {
  
 	 public UserToken getToken(String username)
@@ -19,7 +23,15 @@ public class GroupClient extends Client implements GroupClientInterface {
 			output.writeObject(message);
 		
 			//Get the response from the server
+			/*SealedObject sa = (SealedObject)input.readObject();
+			System.out.println(sa.toString());
+			Cipher cipher = Cipher.getInstance("AES");
+			SecretKeySpec secreteKeySpec = new SecretKeySpec(new byte[] {(byte)0x01, (byte)0x02, (byte)0x01, (byte)0x02,(byte)0x01, (byte)0x02, (byte)0x01, (byte)0x02,(byte)0x01, (byte)0x02, (byte)0x01, (byte)0x02,(byte)0x01, (byte)0x02, (byte)0x01, (byte)0x02}, "AES");
+			cipher.init(Cipher.DECRYPT_MODE, secreteKeySpec);
+			response = (Envelope) CipherBox.decrypt(sa, cipher);
+			System.out.println(response.getMessage());*/
 			response = (Envelope)input.readObject();
+			
 			
 			//Successful response
 			if(response.getMessage().equals("OK"))
