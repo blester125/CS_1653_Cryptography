@@ -738,7 +738,7 @@ public class ClientApp {
 	//Attempts to log in to the group server with the given username.
 	//Eventually will need authentication via password as well, but 
 	//this is not required for phase 2.
-	public void attemptLogin(JTextField usernameField, JTextField ipField, JTextField portField, JButton btnLogin, JButton btnNewUser, JTabbedPane tabbedPane, JButton btnDeleteUser, JButton btnFileServer, JButton btnLogout){
+	public void attemptLogin(JTextField usernameField, JTextField ipField, JTextField portField, JButton btnLogin, JButton btnNewUser, JTabbedPane tabbedPane, JButton btnDeleteUser, JButton btnFileServer, JButton btnLogout) {
 
 		//Pull information from fields
 		String username = usernameField.getText();

@@ -4,7 +4,9 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.Component;
 import javax.swing.SwingUtilities;
+import java.security.*;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class RunClient {
 
@@ -12,7 +14,9 @@ public class RunClient {
 	protected static FileClient fileC;
 	protected static UserToken uToken;
 
-	public static void main (String[] args){
+	public static void main (String[] args) throws Exception {
+
+		Security.addProvider(new BouncyCastleProvider());
 
 		groupC = new GroupClient();
 		fileC = new FileClient();
