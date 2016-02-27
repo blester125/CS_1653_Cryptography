@@ -1,14 +1,19 @@
 /* Implements the GroupClient Interface */
 
+import java.security.KeyPair;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
 import java.io.ObjectInputStream;
 
 import javax.crypto.Cipher;
+import javax.crypto.KeyAgreement;
 import javax.crypto.SealedObject;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 public class GroupClient extends Client implements GroupClientInterface {
+	private SecretKey secretKey;
  
 	 public UserToken getToken(String username)
 	 {
@@ -271,4 +276,43 @@ public class GroupClient extends Client implements GroupClientInterface {
 			}
 	 }
 
+	 public boolean establishSessionKey() {
+		 KeyPair keyPair = null;
+		 KeyAgreement keyAgreement = null;
+		try {
+			keyPair = DiffieHellman.genKeyPair();
+			keyAgreement = DiffieHellman.genKeyAgreement(keyPair);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+		 try {
+			Envelope message = null, response = null;
+			//Tell the server to delete a group
+			message = new Envelope("SESSIONKEY");
+			message.addObject(keyPair.getPublic()); // add public value to envelope
+			output.writeObject(message); 
+		
+			response = (Envelope)input.readObject();
+			//If server indicates success, return true
+			if(response.getMessage().equals("OK"))
+			{
+				//retrieve the group server's public value
+				PublicKey groupServerPK = (PublicKey)response.getObjContents().get(0);
+				// generate the shared secret key
+				secretKey = DiffieHellman.generateSecretKey(groupServerPK, keyAgreement);
+				System.out.println(secretKey.getEncoded());
+	
+				return true;
+			}
+			
+			return false;
+		}
+		catch(Exception e)
+		{
+			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace(System.err);
+			return false;
+		}
+	 }
 }

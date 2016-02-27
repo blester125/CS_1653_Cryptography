@@ -1,30 +1,36 @@
 /* This thread does all the work. It communicates with the client through Envelopes.
  * 
  */
-import java.lang.Thread;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.io.*;
-import java.util.*;
+import java.security.KeyPair;
+import java.security.PublicKey;
+import java.security.Security;
+import java.util.ArrayList;
+import java.util.List;
 
-import javax.crypto.Cipher;
-import javax.crypto.SealedObject;
-import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.KeyAgreement;
+import javax.crypto.SecretKey;
 
 public class GroupThread extends Thread 
 {
 	private final Socket socket;
 	private GroupServer my_gs;
+	private SecretKey secretKey;
+	private boolean isSecureConnection;
 	
 	public GroupThread(Socket _socket, GroupServer _gs)
 	{
 		socket = _socket;
 		my_gs = _gs;
+		isSecureConnection = false;
 	}
 	
 	public void run()
 	{
 		boolean proceed = true;
-
+		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 		try
 		{
 			//Announces connection and opens object streams
@@ -37,8 +43,29 @@ public class GroupThread extends Thread
 				Envelope message = (Envelope)input.readObject();
 				System.out.println("Request received: " + message.getMessage());
 				Envelope response;
-				
-				if(message.getMessage().equals("GET"))//Client wants a token
+				// Client wishes to establish a shared symmetric secret key
+				if(message.getMessage().equals("SESSIONKEY")) {
+					// Retrieve Client's public key
+					PublicKey clientPK = (PublicKey)message.getObjContents().get(0);
+					KeyPair keypair = null;
+					KeyAgreement keyAgreement = null;
+					// generate secret key and send back public key
+					try {
+						keypair = DiffieHellman.genKeyPair();
+						keyAgreement = DiffieHellman.genKeyAgreement(keypair);
+						secretKey = DiffieHellman.generateSecretKey(clientPK, keyAgreement);
+						System.out.println(secretKey.getEncoded());
+						response = new Envelope("OK");
+						response.addObject(keypair.getPublic());
+						output.writeObject(response);
+					} catch(Exception e) {
+						e.printStackTrace();
+						response = new Envelope("FAIL");
+						response.addObject(response);
+						output.writeObject(response);
+					}
+				}
+				else if(message.getMessage().equals("GET"))//Client wants a token
 				{
 					String username = (String)message.getObjContents().get(0); //Get the username
 					if(username == null)
