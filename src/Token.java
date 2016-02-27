@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 
@@ -9,13 +10,26 @@ public class Token implements UserToken {
 	private String issuer;
 	private String subject;
 	private ArrayList<String> groups;
+	private Date timestamp;
+	
+	private String sentinal = "#";
 	
 	Token(String issuer, String subject, ArrayList<String> in_groups) {
 		this.issuer = issuer;
 		this.subject = subject;
 		this.groups = new ArrayList<String>(in_groups.size());
 		for(String group : in_groups)
-			groups.add(group);
+			this.groups.add(group);
+		this.timestamp = new Date();
+	}
+	
+	Token(String issuer, String subject, ArrayList<String> in_groups, Date timestamp) {
+		this.issuer = issuer;
+		this.subject = subject;
+		this.groups = new ArrayList<String>(in_groups.size());
+		for(String group : in_groups)
+			this.groups.add(group);
+		this.timestamp = timestamp;
 	}
 	
 	@Override
@@ -38,7 +52,11 @@ public class Token implements UserToken {
 
 	@Override
 	public String toString() {
-		return "Token [issuer=" + issuer + ", subject=" + subject + ", groups=" + groups + "]";
+		String token = this.timestamp + sentinal + this.issuer + sentinal + this.subject;
+		for(String group : this.groups) {
+			token += sentinal + group;
+		}
+		return token;
 	}
 	
 }
