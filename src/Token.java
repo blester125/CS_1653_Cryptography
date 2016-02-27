@@ -12,7 +12,7 @@ public class Token implements UserToken {
 	private ArrayList<String> groups;
 	private Date timestamp;
 	
-	private String sentinal = "#";
+	public static final String sentinal = "#";
 	
 	Token(String issuer, String subject, ArrayList<String> in_groups) {
 		this.issuer = issuer;

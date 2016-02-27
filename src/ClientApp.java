@@ -851,6 +851,11 @@ public class ClientApp {
 		int dialogue = JOptionPane.showOptionDialog(null, newUserDialogue, "New User Creation", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, null, null);
 		
 		String newUsername = newUsernameField.getText();
+		
+		if(newUsername.contains(Token.sentinal)) {
+			JOptionPane.showMessageDialog(null, "The user could not be created. Username cannot contain a '#'", "User Creation Failure", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
 
 		if(dialogue == 0 && newUsername.length() > 0){
 
