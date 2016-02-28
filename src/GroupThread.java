@@ -5,26 +5,45 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SealedObject;
 import javax.crypto.SecretKey;
 
 public class GroupThread extends Thread 
 {
 	private final Socket socket;
 	private GroupServer my_gs;
-	private SecretKey secretKey;
 	private boolean isSecureConnection;
+	private Cipher AESCipherEncrypt;
+	private Cipher AESCipherDecrypt;
 	
 	public GroupThread(Socket _socket, GroupServer _gs)
 	{
 		socket = _socket;
 		my_gs = _gs;
 		isSecureConnection = false;
+		try {
+			AESCipherEncrypt = Cipher.getInstance("AES/CBC/PKCS5Padding");
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		} catch (NoSuchPaddingException e) {
+			e.printStackTrace();
+		}
+		try {
+			AESCipherDecrypt = Cipher.getInstance("AES/CBC/PKCS5Padding");
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		} catch (NoSuchPaddingException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public void run()
@@ -40,7 +59,15 @@ public class GroupThread extends Thread
 			
 			do
 			{
-				Envelope message = (Envelope)input.readObject();
+				Envelope message;
+				if(!isSecureConnection) {
+					message = (Envelope)input.readObject();
+				}
+				// decrypt envelopes after establishing a secure connection with
+				// a shared symmetric secret key
+				else {
+					message = (Envelope)CipherBox.decrypt((SealedObject)input.readObject(), AESCipherDecrypt);
+				}
 				System.out.println("Request received: " + message.getMessage());
 				Envelope response;
 				// Client wishes to establish a shared symmetric secret key
@@ -53,11 +80,14 @@ public class GroupThread extends Thread
 					try {
 						keypair = DiffieHellman.genKeyPair();
 						keyAgreement = DiffieHellman.genKeyAgreement(keypair);
-						secretKey = DiffieHellman.generateSecretKey(clientPK, keyAgreement);
-						System.out.println(secretKey.getEncoded());
+						SecretKey secretKey = DiffieHellman.generateSecretKey(clientPK, keyAgreement);
+						System.out.println(secretKey.getEncoded().length);
+						AESCipherDecrypt.init(Cipher.DECRYPT_MODE, secretKey);
+						AESCipherEncrypt.init(Cipher.ENCRYPT_MODE, secretKey);
 						response = new Envelope("OK");
 						response.addObject(keypair.getPublic());
 						output.writeObject(response);
+						isSecureConnection = true;
 					} catch(Exception e) {
 						e.printStackTrace();
 						response = new Envelope("FAIL");
@@ -65,7 +95,7 @@ public class GroupThread extends Thread
 						output.writeObject(response);
 					}
 				}
-				else if(message.getMessage().equals("GET"))//Client wants a token
+				else if(message.getMessage().equals("GET") && isSecureConnection)//Client wants a token
 				{
 					String username = (String)message.getObjContents().get(0); //Get the username
 					if(username == null)
@@ -73,7 +103,7 @@ public class GroupThread extends Thread
 						response = new Envelope("FAIL");
 						response.addObject(null);
 						System.out.println("SENT from GET: " + response);
-						output.writeObject(response);
+						output.writeObject(CipherBox.encrypt(response, AESCipherEncrypt));
 					}
 					else
 					{
@@ -88,11 +118,11 @@ public class GroupThread extends Thread
 						cipher.init(Cipher.ENCRYPT_MODE, secreteKeySpec);
 						SealedObject responseEncrypted = CipherBox.encrypt(response, cipher);
 						output.writeObject(responseEncrypted);*/
-						output.writeObject(response);
+						output.writeObject(CipherBox.encrypt(response, AESCipherEncrypt));
 						
 					}
 				}
-				else if(message.getMessage().equals("CUSER")) //Client wants to create a user
+				else if(message.getMessage().equals("CUSER") && isSecureConnection) //Client wants to create a user
 				{
 					if(message.getObjContents().size() < 2)
 					{
@@ -119,7 +149,7 @@ public class GroupThread extends Thread
 					System.out.println("SENT from CUSER: " + response);
 					output.writeObject(response);
 				}
-				else if(message.getMessage().equals("DUSER")) //Client wants to delete a user
+				else if(message.getMessage().equals("DUSER") && isSecureConnection) //Client wants to delete a user
 				{
 					
 					if(message.getObjContents().size() < 2)
@@ -147,7 +177,7 @@ public class GroupThread extends Thread
 					System.out.println("SENT from DUSER: " + response);
 					output.writeObject(response);
 				}
-				else if(message.getMessage().equals("CGROUP")) //Client wants to create a group
+				else if(message.getMessage().equals("CGROUP") && isSecureConnection) //Client wants to create a group
 				{	
 					//System.out.println("rcvd: " + message + " " + message.getObjContents().size());
 					if(message.getObjContents().size() < 1) //size is always two+? not sure why this was set to < 2
@@ -177,7 +207,7 @@ public class GroupThread extends Thread
 					output.writeObject(response);
 
 				}
-				else if(message.getMessage().equals("DGROUP")) //Client wants to delete a group
+				else if(message.getMessage().equals("DGROUP") && isSecureConnection) //Client wants to delete a group
 				{
 					if(message.getObjContents().size() < 1)
 					{
@@ -204,7 +234,7 @@ public class GroupThread extends Thread
 					System.out.println("SENT from DGROUP: " + response);
 					output.writeObject(response);
 				}
-				else if(message.getMessage().equals("LMEMBERS")) //Client wants a list of members in a group
+				else if(message.getMessage().equals("LMEMBERS") && isSecureConnection) //Client wants a list of members in a group
 				{
 					// If there isn't enough information in the envelope
 					if (message.getObjContents().size() < 2) 
@@ -244,7 +274,7 @@ public class GroupThread extends Thread
 					output.reset();
 					output.writeObject(response);
 				}
-				else if(message.getMessage().equals("AUSERTOGROUP")) //Client wants to add user to a group
+				else if(message.getMessage().equals("AUSERTOGROUP") && isSecureConnection) //Client wants to add user to a group
 				{
 					// Is there a userName, groupName, and Token in the Envelope
 					if (message.getObjContents().size() < 3)
@@ -274,7 +304,7 @@ public class GroupThread extends Thread
 					System.out.println("SENT from AUSERTOGROUP: " + response);
 					output.writeObject(response);
 				}
-				else if(message.getMessage().equals("RUSERFROMGROUP")) //Client wants to remove user from a group
+				else if(message.getMessage().equals("RUSERFROMGROUP") && isSecureConnection) //Client wants to remove user from a group
 				{
 					// Is there a userName, groupName, and Token in the Envelope
 					if (message.getObjContents().size() < 3)
@@ -304,7 +334,7 @@ public class GroupThread extends Thread
 					System.out.println("SENT from RUSERFROMGROUP: " + response);
 					output.writeObject(response);
 				}
-				else if(message.getMessage().equals("DISCONNECT")) //Client wants to disconnect
+				else if(message.getMessage().equals("DISCONNECT") && isSecureConnection) //Client wants to disconnect
 				{
 					socket.close(); //Close the socket
 					proceed = false; //End this communication loop
@@ -312,7 +342,7 @@ public class GroupThread extends Thread
 				else
 				{
 					response = new Envelope("FAIL"); //Server does not understand client request
-					System.out.println("SENT from DISCONNECT: " + response);
+					System.out.println("SENT from INVALID MESSAGE: " + response);
 					output.writeObject(response);
 				}
 			}while(proceed);	

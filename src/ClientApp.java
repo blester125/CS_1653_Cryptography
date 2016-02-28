@@ -752,6 +752,12 @@ public class ClientApp {
 			return;
 		}
 		else{
+			// Establish secure connection with Diffie-Hellman Protocol
+			if(!RunClient.groupC.establishSessionKey()) {
+				JOptionPane.showMessageDialog(null, "Could not establish a secure connection.", "Incorrect Login", JOptionPane.OK_CANCEL_OPTION);
+				return;
+			}
+			
 			//Examine token, if fail, alert of failure.
 			RunClient.uToken = RunClient.groupC.getToken(username);
 
@@ -795,6 +801,11 @@ public class ClientApp {
 		//Attempt to connect to file server
 		if(!RunClient.fileC.connect(ipAddr, port)){
 			JOptionPane.showMessageDialog(null, "Connection failure. Could not connect to FILE server at " + ipAddr + ":" + port + ".", "Connection Failure", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+		// Establish secret key with Diffie-Hellman Protocol
+		if(!RunClient.fileC.establishSessionKey()) {
+			JOptionPane.showMessageDialog(null, "Connection failure. Could not establish a secure connection to FILE server at " + ipAddr + ":" + port + ".", "Connection Failure", JOptionPane.OK_CANCEL_OPTION);
 			return;
 		}
 		tabbedPane.setEnabledAt(2,true);

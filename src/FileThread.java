@@ -2,6 +2,10 @@
 
 import java.lang.Thread;
 import java.net.Socket;
+import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
 import java.io.File;
@@ -10,18 +14,36 @@ import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
+import javax.crypto.Cipher;
+import javax.crypto.KeyAgreement;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+
 public class FileThread extends Thread
 {
 	private final Socket socket;
+	private boolean isSecureConnection;
+	private SecretKey secretKey;
+	private Cipher AESCipher;
 
 	public FileThread(Socket _socket)
 	{
 		socket = _socket;
+		isSecureConnection = false;
+		try {
+			AESCipher = Cipher.getInstance("AES");
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		} catch (NoSuchPaddingException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public void run()
 	{
 		boolean proceed = true;
+		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+
 		try
 		{
 			System.out.println("*** New connection from " + socket.getInetAddress() + ":" + socket.getPort() + "***");
@@ -34,8 +56,30 @@ public class FileThread extends Thread
 				Envelope e = (Envelope)input.readObject();
 				System.out.println("Request received: " + e.getMessage());
 
+				// Client wishes to establish a shared symmetric secret key
+				if(e.getMessage().equals("SESSIONKEY")) {
+					// Retrieve Client's public key
+					PublicKey clientPK = (PublicKey)e.getObjContents().get(0);
+					KeyPair keypair = null;
+					KeyAgreement keyAgreement = null;
+					// generate secret key and send back public key
+					try {
+						keypair = DiffieHellman.genKeyPair();
+						keyAgreement = DiffieHellman.genKeyAgreement(keypair);
+						secretKey = DiffieHellman.generateSecretKey(clientPK, keyAgreement);
+						System.out.println(secretKey.getEncoded());
+						response = new Envelope("OK");
+						response.addObject(keypair.getPublic());
+						output.writeObject(response);
+					} catch(Exception exception) {
+						exception.printStackTrace();
+						response = new Envelope("FAIL");
+						response.addObject(response);
+						output.writeObject(response);
+					}
+				}
 				// Handler to list files that this user is allowed to see
-				if(e.getMessage().equals("LFILES"))
+				else if(e.getMessage().equals("LFILES"))
 				{
 				    //Do error handling
 				    if(e.getObjContents().size() < 1) {

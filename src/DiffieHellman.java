@@ -3,9 +3,13 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.spec.*;
 import java.security.interfaces.*;
+
 import javax.crypto.*;
 import javax.crypto.spec.*;
 import javax.crypto.interfaces.*;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
 import com.sun.crypto.provider.SunJCE;
 
 
@@ -25,6 +29,7 @@ public class DiffieHellman {
 	public static void main(String args[]) throws Exception {
 
 		//Test functionality (ensure secret keys match)
+		Security.addProvider(new BouncyCastleProvider());
 
 		KeyPair aliceKeyPair = genKeyPair();
 		KeyPair bobKeyPair = genKeyPair();
@@ -36,7 +41,7 @@ public class DiffieHellman {
 		SecretKey bobSecretKey = generateSecretKey(aliceKeyPair.getPublic(), bobKeyAgree);
 
 		System.out.println(new String(aliceSecretKey.getEncoded()));
-		System.out.println(new String(bobSecretKey.getEncoded()));
+		System.out.println(new String(bobSecretKey.getEncoded()).length());
 
 	}
 
@@ -63,7 +68,6 @@ public class DiffieHellman {
 
 		currAgreement.doPhase(currPubKey, true);
 		SecretKey newSecretKey = currAgreement.generateSecret("AES");
-
 		return newSecretKey;
 	}
 

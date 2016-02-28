@@ -8,7 +8,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.SealedObject;
 
 
-public class CipherBox{	
+public class CipherBox{
 	/**
 	 * encrypts the given plaintext with the key provided
 	 * @param plainText	object to be encrypted

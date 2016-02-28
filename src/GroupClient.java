@@ -1,6 +1,7 @@
 /* Implements the GroupClient Interface */
 
 import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
@@ -8,12 +9,31 @@ import java.io.ObjectInputStream;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SealedObject;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 public class GroupClient extends Client implements GroupClientInterface {
-	private SecretKey secretKey;
+	private Cipher AESCipherEncrypt;
+	private Cipher AESCipherDecrypt;
+	
+	public GroupClient() {
+		try {
+			AESCipherEncrypt = Cipher.getInstance("AES/CBC/PKCS5Padding");
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		} catch (NoSuchPaddingException e) {
+			e.printStackTrace();
+		}
+		try {
+			AESCipherDecrypt = Cipher.getInstance("AES/CBC/PKCS5Padding");
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		} catch (NoSuchPaddingException e) {
+			e.printStackTrace();
+		}
+	}
  
 	 public UserToken getToken(String username)
 	 {
@@ -25,7 +45,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			//Tell the server to return a token.
 			message = new Envelope("GET");
 			message.addObject(username); //Add user name string
-			output.writeObject(message);
+			output.writeObject(CipherBox.encrypt(message, AESCipherEncrypt));
 		
 			//Get the response from the server
 			/*SealedObject sa = (SealedObject)input.readObject();
@@ -35,7 +55,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			cipher.init(Cipher.DECRYPT_MODE, secreteKeySpec);
 			response = (Envelope) CipherBox.decrypt(sa, cipher);
 			System.out.println(response.getMessage());*/
-			response = (Envelope)input.readObject();
+			response = (Envelope)CipherBox.decrypt((SealedObject)input.readObject(), AESCipherDecrypt);
 			
 			
 			//Successful response
@@ -276,6 +296,11 @@ public class GroupClient extends Client implements GroupClientInterface {
 			}
 	 }
 
+	 /**
+	  * establishes a shared session key by generating a shared symmetric key between
+	  * the client and the server 
+	  * @return	true on success, false on failure
+	  */
 	 public boolean establishSessionKey() {
 		 KeyPair keyPair = null;
 		 KeyAgreement keyAgreement = null;
@@ -300,7 +325,9 @@ public class GroupClient extends Client implements GroupClientInterface {
 				//retrieve the group server's public value
 				PublicKey groupServerPK = (PublicKey)response.getObjContents().get(0);
 				// generate the shared secret key
-				secretKey = DiffieHellman.generateSecretKey(groupServerPK, keyAgreement);
+				SecretKey secretKey = DiffieHellman.generateSecretKey(groupServerPK, keyAgreement);
+				AESCipherDecrypt.init(Cipher.DECRYPT_MODE, secretKey);
+				AESCipherEncrypt.init(Cipher.ENCRYPT_MODE, secretKey);
 				System.out.println(secretKey.getEncoded());
 	
 				return true;

@@ -4,9 +4,30 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
 import java.util.List;
 
+import javax.crypto.Cipher;
+import javax.crypto.KeyAgreement;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+
 public class FileClient extends Client implements FileClientInterface {
+	private SecretKey secretKey;
+	private Cipher AESCipher;
+	
+	public FileClient() {
+		try {
+			AESCipher = Cipher.getInstance("AES");
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		} catch (NoSuchPaddingException e) {
+			e.printStackTrace();
+		}
+	}
+
 
 	public boolean delete(String filename, String group, UserToken token) {
 		String remotePath;
@@ -254,5 +275,49 @@ public class FileClient extends Client implements FileClientInterface {
 		 return true;
 	}
 
+	/**
+	  * establishes a shared session key by generating a shared symmetric key between
+	  * the client and the server 
+	  * @return	true on success, false on failure
+	  */
+	public boolean establishSessionKey() {
+		 KeyPair keyPair = null;
+		 KeyAgreement keyAgreement = null;
+		try {
+			keyPair = DiffieHellman.genKeyPair();
+			keyAgreement = DiffieHellman.genKeyAgreement(keyPair);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+		 try {
+			Envelope message = null, response = null;
+			//Tell the server to delete a group
+			message = new Envelope("SESSIONKEY");
+			message.addObject(keyPair.getPublic()); // add public value to envelope
+			output.writeObject(message); 
+		
+			response = (Envelope)input.readObject();
+			//If server indicates success, return true
+			if(response.getMessage().equals("OK"))
+			{
+				//retrieve the group server's public value
+				PublicKey fileServerPK = (PublicKey)response.getObjContents().get(0);
+				// generate the shared secret key
+				secretKey = DiffieHellman.generateSecretKey(fileServerPK, keyAgreement);
+				System.out.println(secretKey.getEncoded());
+	
+				return true;
+			}
+			
+			return false;
+		}
+		catch(Exception e)
+		{
+			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace(System.err);
+			return false;
+		}
+	 }
 }
 
