@@ -1,0 +1,16 @@
+#!/bin/sh
+
+if [ $1 -eq 1 ]
+	then
+		java -cp .:bcprov-jdk15on-154.jar RunClient
+fi
+
+if [ $1 -eq 2 ]
+	then
+		java -cp .:bcprov-jdk15on-154.jar RunFileServer
+fi
+
+if [ $1 -eq 3 ]
+	then
+		java -cp .:bcprov-jdk15on-154.jar RunGroupServer
+fi
