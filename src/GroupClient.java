@@ -17,6 +17,7 @@ import javax.crypto.spec.SecretKeySpec;
 public class GroupClient extends Client implements GroupClientInterface {
 	private Cipher AESCipherEncrypt;
 	private Cipher AESCipherDecrypt;
+	private SecretKey sessionKey;
 	
 	public GroupClient() {
 		try {
@@ -34,14 +35,35 @@ public class GroupClient extends Client implements GroupClientInterface {
 			e.printStackTrace();
 		}
 	}
+
+	public boolean login(String username, String password) throws Exception {
+		Envelope message, response = null;
+		KeyPair keyPair = DiffieHellman.genKeyPair();
+		KeyAgreement keyAgree = DiffieHellman.genKeyAgreement(keyPair);
+		message = new Envelope("LOGIN");
+		message.addObject(username);
+		message.addObject(keyPair.getPublic());
+		output.writeObject(message);
+		response = (Envelope)input.readObject();
+		if (response.getMessage().equals("LOGIN")) {
+			PublicKey serverPublicKey = (PublicKey)response.getObjContents().get(0);
+			if (serverPublicKey != null) 
+			{
+				sessionKey = DiffieHellman.generateSecretKey(serverPublicKey, keyAgree);
+				System.out.println(new String(sessionKey.getEncoded()));
+				return true;
+			}
+		}
+		return false;
+	}
  
-	 public UserToken getToken(String username)
-	 {
+	public UserToken getToken(String username)
+	{
 		try
 		{
 			UserToken token = null;
 			Envelope message = null, response = null;
-		 		 	
+				 	
 			//Tell the server to return a token.
 			message = new Envelope("GET");
 			message.addObject(username); //Add user name string

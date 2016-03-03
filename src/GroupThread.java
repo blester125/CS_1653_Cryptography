@@ -24,12 +24,14 @@ public class GroupThread extends Thread
 	private boolean isSecureConnection;
 	private Cipher AESCipherEncrypt;
 	private Cipher AESCipherDecrypt;
+	private SecretKey sessionKey;
 	
 	public GroupThread(Socket _socket, GroupServer _gs)
 	{
 		socket = _socket;
 		my_gs = _gs;
 		isSecureConnection = false;
+		sessionKey = null;
 		try {
 			AESCipherEncrypt = Cipher.getInstance("AES/CBC/PKCS5Padding");
 		} catch (NoSuchAlgorithmException e) {
@@ -59,8 +61,9 @@ public class GroupThread extends Thread
 			
 			do
 			{
-				Envelope message;
-				if(!isSecureConnection) {
+				Envelope message = (Envelope)input.readObject();
+				Envelope response;
+				/*if(!isSecureConnection) {
 					message = (Envelope)input.readObject();
 				}
 				// decrypt envelopes after establishing a secure connection with
@@ -69,7 +72,7 @@ public class GroupThread extends Thread
 					message = (Envelope)CipherBox.decrypt((SealedObject)input.readObject(), AESCipherDecrypt);
 				}
 				System.out.println("Request received: " + message.getMessage());
-				Envelope response;
+				
 				// Client wishes to establish a shared symmetric secret key
 				if(message.getMessage().equals("SESSIONKEY")) {
 					// Retrieve Client's public key
@@ -93,6 +96,32 @@ public class GroupThread extends Thread
 						response = new Envelope("FAIL");
 						response.addObject(response);
 						output.writeObject(response);
+					}
+				}*/
+				if(message.getMessage().equals("LOGIN")) 
+				{
+					if (message.getObjContents().size() < 2)
+					{
+						response = new Envelope("FAIL");
+					}
+					else
+					{
+						response = new Envelope("FAIL");
+						if (message.getObjContents().get(0) != null)
+						{
+							if (message.getObjContents().get(1) != null)
+							{
+								String username = (String)message.getObjContents().get(0);
+								PublicKey userPublicKey = (PublicKey)message.getObjContents().get(1);
+								KeyPair keyPair = DiffieHellman.genKeyPair();
+								KeyAgreement keyAgree = DiffieHellman.genKeyAgreement(keyPair);
+								sessionKey = DiffieHellman.generateSecretKey(userPublicKey, keyAgree);
+								System.out.println(new String(sessionKey.getEncoded()));
+								response = new Envelope("LOGIN");
+								response.addObject(keyPair.getPublic());
+								output.writeObject(response);
+							}
+						}
 					}
 				}
 				else if(message.getMessage().equals("GET") && isSecureConnection)//Client wants a token
@@ -336,6 +365,7 @@ public class GroupThread extends Thread
 				}
 				else if(message.getMessage().equals("DISCONNECT") && isSecureConnection) //Client wants to disconnect
 				{
+					isSecureConnection = false;
 					socket.close(); //Close the socket
 					proceed = false; //End this communication loop
 				}
