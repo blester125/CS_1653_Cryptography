@@ -5,10 +5,15 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import java.math.BigInteger;
 
 public class Hasher {
-	public static byte[] hash(Object obj) throws Exception {
-		MessageDigest md = MessageDigest.getInstance("SHA-256", "BC");
-		md.update(obj.toString().getBytes("UTF-8"));
-		return md.digest();
+	public static byte[] hash(Object obj) {
+		try {
+			MessageDigest md = MessageDigest.getInstance("SHA-256", "BC");
+			md.update(obj.toString().getBytes("UTF-8"));
+			return md.digest();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 
 	public static BigInteger genSalt() {

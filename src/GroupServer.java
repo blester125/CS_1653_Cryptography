@@ -13,6 +13,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.io.*;
 import java.util.*;
+import java.math.BigInteger;
+import java.security.*;
 
 
 public class GroupServer extends Server {
@@ -31,13 +33,14 @@ public class GroupServer extends Server {
 
 	public void start() {
 		// Overwrote server.start() because if no user file exists, initial admin account needs to be created
-
+		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 		String userFile = "UserList.bin";
 		String groupFile = "GroupList.bin";
 		Scanner console = new Scanner(System.in);
 		ObjectInputStream userStream;
 		ObjectInputStream groupStream;
 		String username = "";
+		String password = "";
 
 		//This runs a thread that saves the lists on program exit
 		Runtime runtime = Runtime.getRuntime();
@@ -56,12 +59,22 @@ public class GroupServer extends Server {
 			System.out.println("No users currently exist. Your account will be the administrator.");
 			System.out.println("Enter new username : ");
 			username = console.next();
-
+			System.out.println("Enter new password: ");
+			password = console.next();
 			//Create a new list, add current user to the ADMIN group. They now own the ADMIN group.
 			userList = new UserList();
 			userList.addUser(username);
 			userList.addGroup(username, "ADMIN");
 			userList.addOwnership(username, "ADMIN");
+			// Set password function?
+			BigInteger salt = Hasher.genSalt();
+			System.out.println(salt);
+			userList.setSalt(username, salt);
+			password = password + new String(salt.toByteArray());
+			System.out.println(password);
+			byte[] hashword = Hasher.hash(password);
+			System.out.println(new String(hashword));
+			userList.setPassword(username, password.getBytes());
 		}
 		catch(IOException e)
 		{
