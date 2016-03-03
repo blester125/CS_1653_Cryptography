@@ -4,6 +4,7 @@
 *.bin
 *.classpath
 *.metadata
+*.key
 *~
 shared_files
 *.pptx
