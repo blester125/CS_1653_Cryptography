@@ -70,8 +70,8 @@ public class DiffieHellman {
 
 		//128 bit workaround
 		byte[] secret = currAgreement.generateSecret();
-		SecretKey newSecretKey = new SecretKeySpec(secret, 0, 128, "AES");
-		
+		SecretKey newSecretKey = new SecretKeySpec(secret, 0, 16, "AES");
+
 		return newSecretKey;
 	}
 

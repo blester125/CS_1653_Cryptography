@@ -8,6 +8,7 @@ import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.Security;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,6 +17,7 @@ import javax.crypto.KeyAgreement;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SealedObject;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 
 public class GroupThread extends Thread 
 {
@@ -61,9 +63,9 @@ public class GroupThread extends Thread
 			
 			do
 			{
-				Envelope message = (Envelope)input.readObject();
+				Envelope message; // = (Envelope)input.readObject();
 				Envelope response;
-				/*if(!isSecureConnection) {
+				if(!isSecureConnection) {
 					message = (Envelope)input.readObject();
 				}
 				// decrypt envelopes after establishing a secure connection with
@@ -85,10 +87,17 @@ public class GroupThread extends Thread
 						keyAgreement = DiffieHellman.genKeyAgreement(keypair);
 						SecretKey secretKey = DiffieHellman.generateSecretKey(clientPK, keyAgreement);
 						System.out.println(secretKey.getEncoded().length);
-						AESCipherDecrypt.init(Cipher.DECRYPT_MODE, secretKey);
-						AESCipherEncrypt.init(Cipher.ENCRYPT_MODE, secretKey);
+						
+						SecureRandom rnd = new SecureRandom();
+						byte iv[] = new byte[16];
+						rnd.nextBytes(iv);
+						IvParameterSpec ivspec = new IvParameterSpec(iv);
+
+						AESCipherDecrypt.init(Cipher.DECRYPT_MODE, secretKey, ivspec);
+						AESCipherEncrypt.init(Cipher.ENCRYPT_MODE, secretKey, ivspec);
 						response = new Envelope("OK");
 						response.addObject(keypair.getPublic());
+						response.addObject(iv);
 						output.writeObject(response);
 						isSecureConnection = true;
 					} catch(Exception e) {
@@ -97,48 +106,48 @@ public class GroupThread extends Thread
 						response.addObject(response);
 						output.writeObject(response);
 					}
-				}*/
-				if(message.getMessage().equals("LOGIN")) 
-				{
-					if (message.getObjContents().size() < 2)
-					{
-						response = new Envelope("FAIL");
-					}
-					else
-					{
-						response = new Envelope("FAIL");
-						if (message.getObjContents().get(0) != null)
-						{
-							if (message.getObjContents().get(1) != null)
-							{
-								String username = (String)message.getObjContents().get(0);
-								PublicKey userPublicKey = (PublicKey)message.getObjContents().get(1);
-								KeyPair keyPair = DiffieHellman.genKeyPair();
-								KeyAgreement keyAgree = DiffieHellman.genKeyAgreement(keyPair);
-								sessionKey = DiffieHellman.generateSecretKey(userPublicKey, keyAgree);
-								System.out.println(new String(sessionKey.getEncoded()));
-								response = new Envelope("LOGIN");
-								response.addObject(keyPair.getPublic());
-								output.writeObject(response);
-								// Read encrypted username and password
-								// decrypt
-								// extract username and password
-								// check username vs first one
-								// look up salt
-								// compute H(password || salt)
-								// check H(password || salt)
-								// if failure
-									// disconnect
-								// else
-								// if user.newPassword
-									// Send "Change Password"
-									// Add an else if (message.get == "CHANGEPASSWORD")
-								// else
-									// Send Success
- 							}
-						}
-					}
 				}
+				// if(message.getMessage().equals("LOGIN")) 
+				// {
+				// 	if (message.getObjContents().size() < 2)
+				// 	{
+				// 		response = new Envelope("FAIL");
+				// 	}
+				// 	else
+				// 	{
+				// 		response = new Envelope("FAIL");
+				// 		if (message.getObjContents().get(0) != null)
+				// 		{
+				// 			if (message.getObjContents().get(1) != null)
+				// 			{
+				// 				String username = (String)message.getObjContents().get(0);
+				// 				PublicKey userPublicKey = (PublicKey)message.getObjContents().get(1);
+				// 				KeyPair keyPair = DiffieHellman.genKeyPair();
+				// 				KeyAgreement keyAgree = DiffieHellman.genKeyAgreement(keyPair);
+				// 				sessionKey = DiffieHellman.generateSecretKey(userPublicKey, keyAgree);
+				// 				System.out.println(new String(sessionKey.getEncoded()));
+				// 				response = new Envelope("LOGIN");
+				// 				response.addObject(keyPair.getPublic());
+				// 				output.writeObject(response);
+				// 				// Read encrypted username and password
+				// 				// decrypt
+				// 				// extract username and password
+				// 				// check username vs first one
+				// 				// look up salt
+				// 				// compute H(password || salt)
+				// 				// check H(password || salt)
+				// 				// if failure
+				// 					// disconnect
+				// 				// else
+				// 				// if user.newPassword
+				// 					// Send "Change Password"
+				// 					// Add an else if (message.get == "CHANGEPASSWORD")
+				// 				// else
+				// 					// Send Success
+ 			// 				}
+				// 		}
+				// 	}
+				// }
 				else if(message.getMessage().equals("GET") && isSecureConnection)//Client wants a token
 				{
 					String username = (String)message.getObjContents().get(0); //Get the username

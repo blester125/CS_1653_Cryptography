@@ -19,19 +19,23 @@ import javax.crypto.KeyAgreement;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 
+import java.security.KeyPair;
+
 public class FileThread extends Thread
 {
 	private final Socket socket;
 	private boolean isSecureConnection;
 	private SecretKey secretKey;
 	private Cipher AESCipher;
+	private KeyPair rsaPair;
 
-	public FileThread(Socket _socket)
+	public FileThread(Socket _socket, KeyPair _rsaPair)
 	{
 		socket = _socket;
+		rsaPair = _rsaPair;
 		isSecureConnection = false;
 		try {
-			AESCipher = Cipher.getInstance("AES");
+			AESCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 		} catch (NoSuchPaddingException e) {

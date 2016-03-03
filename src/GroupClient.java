@@ -14,6 +14,9 @@ import javax.crypto.SealedObject;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
+import java.security.SecureRandom;
+import javax.crypto.spec.IvParameterSpec;
+
 public class GroupClient extends Client implements GroupClientInterface {
 	private Cipher AESCipherEncrypt;
 	private Cipher AESCipherDecrypt;
@@ -354,8 +357,13 @@ public class GroupClient extends Client implements GroupClientInterface {
 				PublicKey groupServerPK = (PublicKey)response.getObjContents().get(0);
 				// generate the shared secret key
 				SecretKey secretKey = DiffieHellman.generateSecretKey(groupServerPK, keyAgreement);
-				AESCipherDecrypt.init(Cipher.DECRYPT_MODE, secretKey);
-				AESCipherEncrypt.init(Cipher.ENCRYPT_MODE, secretKey);
+
+				byte iv[] = (byte[])response.getObjContents().get(1);
+
+				IvParameterSpec ivspec = new IvParameterSpec(iv);
+
+				AESCipherDecrypt.init(Cipher.DECRYPT_MODE, secretKey, ivspec);
+				AESCipherEncrypt.init(Cipher.ENCRYPT_MODE, secretKey, ivspec);
 				System.out.println(secretKey.getEncoded());
 	
 				return true;
