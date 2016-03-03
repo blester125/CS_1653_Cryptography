@@ -33,7 +33,7 @@ public class GroupServer extends Server {
 
 	public void start() {
 		// Overwrote server.start() because if no user file exists, initial admin account needs to be created
-		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+		
 		String userFile = "UserList.bin";
 		String groupFile = "GroupList.bin";
 		Scanner console = new Scanner(System.in);
