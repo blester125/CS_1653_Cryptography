@@ -459,22 +459,49 @@ server, a "u" the user, and an "f" a file server.</p>
   is similar to the way servers authenticate SSH and that method is 
   "tried and true". To ensure that we are talking to the same server we authenticated 
   with, we have used RSA public key cryptography in tandem with symmetric key 
-  cryptography. Assuming that the server is the only other one with the session key, then our 
+  cryptography (created via a Diffie-Hellman exchange). Assuming that the server is 
+  the only other party with the DH-generated session key, then our 
   encrypted messages will only be decrypt-able by the server we authenticated with, 
-  this means we are always talking to <b>s</b> and not <b>s'</b>. Both during and after 
+  ensuring we are always talking to <b>s</b> and not <b>s'</b>. Both during and after 
   the authentication process, we can ensure safe communication between the user and the 
-  file server with the Diffie-Hellman protocol, as it is presumed safe by the discrete 
-  logarithm problem. Although it would be preferred to not require users to keep cached 
-  tables and perform physical verification, it is justified within this context due to 
-  our system's infrastucture. As group servers cannot be expected to have any information 
+  file server with the Diffie-Hellman protocol, as it is presumed safe by difficulty of the discrete 
+  logarithm problem. Since we later issue a challenge to the server involving decryption
+  with the server's private key, we need not sign our exchange process. Even if a man-in-the-middle 
+  attack were to occur in an attempt to hijack the session, the adversary would not be able to 
+  reproduce the server's actual private key, and the user would be alerted to the fact that 
+  they are attempting to connect to an untrusted file server.
+  </p>
+  <p>
+  Although it would be preferred to not require users to keep cached 
+  tables of &lt;hostname:port, public key&gt; and perform physical verification, 
+  it is justified within this context due to our system's infrastucture. 
+  As group servers cannot be expected to have any information 
   about the (possible) multitude of file servers, and the fact that any user can run a 
   file server, a solution that only involves communication between the user and the file 
   server itself is required. When the user receives a mismatched public RSA key when they 
   already have a previous record of that file server's correct key, they are immediately 
-  alerted to their attempt to connect to an <b>s'</b> file server. After the server has 
-  been authenticated by the user, their further communication is secure by 
-  encryption with their 
-  previously generated session key.
+  alerted to their attempt to connect to an <b>s'</b> file server. When this occurs, the server 
+  the user is attempting to connect to is one of the following:
+
+    <ul>
+      <li>A brand new file server being connected to 
+                                  for the first time (no match found in user cache)</li>
+      <li>An old server with modified information (mismatch in user cache)</li>
+      <li>An adversary attempting to pass off their own file server 
+                                  as a known one (mismatch in user cache)</li>
+    </ul>
+
+  In all these situations, the user is then required to make contact with the system administrator
+  out-of-band (physical discussion, email, etc...) to ensure that the information regarding the 
+  file server's information is correct, and that it is in fact a verified part of the system. 
+  This is only acceptable based on assumptions on how the entirety of our file-sharing system 
+  will be utilized by consumers. Those who elect to utilize our system are likely choosing so 
+  because they care immensely about the security of their sharing, therefore administrators will 
+  be more than willing to hold information about valid file servers and respond to user inquiry 
+  regarding file server validity. Furthermore, the scenarios in which our system will likely be 
+  employed will be small, local work- or classroom-sized groups, consisting of users and 
+  administrators that are all in close, physical proximity to one another, making this 
+  out-of-band verification with a system administrator trivial for a user.
   </p>
 
 </p>
