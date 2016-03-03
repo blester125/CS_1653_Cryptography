@@ -51,7 +51,13 @@ public class GroupClient extends Client implements GroupClientInterface {
 			{
 				sessionKey = DiffieHellman.generateSecretKey(serverPublicKey, keyAgree);
 				System.out.println(new String(sessionKey.getEncoded()));
-				return true;
+				// Send { username and password } sessionKey
+				// if "Success"
+					// return true
+				// else if "Change Password"
+					// if this.changePassword(String Password) return true
+						// return true
+
 			}
 		}
 		return false;

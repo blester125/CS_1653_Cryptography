@@ -120,7 +120,22 @@ public class GroupThread extends Thread
 								response = new Envelope("LOGIN");
 								response.addObject(keyPair.getPublic());
 								output.writeObject(response);
-							}
+								// Read encrypted username and password
+								// decrypt
+								// extract username and password
+								// check username vs first one
+								// look up salt
+								// compute H(password || salt)
+								// check H(password || salt)
+								// if failure
+									// disconnect
+								// else
+								// if user.newPassword
+									// Send "Change Password"
+									// Add an else if (message.get == "CHANGEPASSWORD")
+								// else
+									// Send Success
+ 							}
 						}
 					}
 				}

@@ -102,6 +102,14 @@ public class UserList implements java.io.Serializable {
 		return list.get(user).getPublicKey();		
 	}
 
+	public synchronized void setNewPassword(String user, boolean in) {
+		list.get(user).setNewPassword(in);
+	}
+
+	public synchronized boolean getNewPassword(String user) {
+		return list.get(user).getNewPassword();
+	}
+
 	class User implements java.io.Serializable {
 
 		/**
@@ -113,11 +121,13 @@ public class UserList implements java.io.Serializable {
 		private PublicKey publicKey;
 		private BigInteger salt;
 		private byte[] password;
+		private boolean newPassword;
 
 		public User()
 		{
 			groups = new ArrayList<String>();
 			ownership = new ArrayList<String>();
+			newPassword = true;
 		}
 		
 		public ArrayList<String> getGroups()
@@ -190,6 +200,14 @@ public class UserList implements java.io.Serializable {
 		public PublicKey getPublicKey() 
 		{
 			return publicKey;
+		}
+
+		public void setNewPassword(boolean in) {
+			newPassword = in;
+		}
+
+		public boolean getNewPassword() {
+			return newPassword;
 		}
 	}
 }	
