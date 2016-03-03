@@ -67,7 +67,11 @@ public class DiffieHellman {
 	public static SecretKey generateSecretKey(PublicKey currPubKey, KeyAgreement currAgreement) throws Exception {
 
 		currAgreement.doPhase(currPubKey, true);
-		SecretKey newSecretKey = currAgreement.generateSecret("AES");
+
+		//128 bit workaround
+		byte[] secret = currAgreement.generateSecret();
+		SecretKey newSecretKey = new SecretKeySpec(secret, 0, 128, "AES");
+		
 		return newSecretKey;
 	}
 
