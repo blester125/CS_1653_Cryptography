@@ -14,6 +14,7 @@ public class Token implements UserToken {
 	private ArrayList<String> groups;
 	private Date timestamp;
 	private SealedObject signedHash;
+	private final long networkTolerance = 10000L;
 	
 	public static final String sentinal = "#";
 	
@@ -69,6 +70,15 @@ public class Token implements UserToken {
 	public SealedObject getSignedHash() {
 		return this.signedHash;
 	}
+	
+	@Override
+	public boolean isFresh() {
+		Date currentTime = new Date();
+		if((currentTime.getTime() - this.timestamp.getTime()) < networkTolerance) {
+			return true;
+		}
+		return false;
+	};
 
 	@Override
 	public String toString() {

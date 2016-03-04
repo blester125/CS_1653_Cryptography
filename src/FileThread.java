@@ -470,6 +470,12 @@ public class FileThread extends Thread
 	}
 
 	private boolean verifiyToken(UserToken token) {
+		// check for token freshness
+		System.out.println("verify");
+		if(!token.isFresh()) {
+			System.out.println("old token");
+			return false;
+		}
 		serverPublicKey = loadServerKey();
 		SealedObject recvSignedHash = token.getSignedHash();
 		byte[] recvHash = (byte[])CipherBox.decrypt(recvSignedHash, serverPublicKey);

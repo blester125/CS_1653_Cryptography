@@ -54,5 +54,13 @@ public interface UserToken extends java.io.Serializable
     public SealedObject getSignedHash();
 
     public String toString();
+    
+    /**
+     * verifies that the token is fresh, as defined by being
+     * within the bounds allowed for network latency (10s)
+     * @return	true if within the allowed bounds given the current time,
+     * else false
+     */
+    public boolean isFresh();
 
 }   //-- end interface UserToken
