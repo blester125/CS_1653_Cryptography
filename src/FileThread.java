@@ -41,6 +41,25 @@ public class FileThread extends Thread
 		
 	}
 
+	public Envelope buildSuper(Envelope env){
+
+		IvParameterSpec ivspec = CipherBox.generateRandomIV();			
+		Envelope superEnv = new Envelope("SUPER");
+		superEnv.addObject(CipherBox.encrypt(env, secretKey, ivspec));
+		superEnv.addObject(ivspec);
+
+		return superEnv;
+	}
+
+	public Envelope extractInner(Envelope superInputEnv){
+
+		SealedObject innerEnv = (SealedObject)superInputEnv.getObjContents().get(0);
+		IvParameterSpec decIVSpec = new IvParameterSpec((byte[])superInputEnv.getObjContents().get(1));
+		Envelope env = (Envelope)CipherBox.decrypt(innerEnv, secretKey, decIVSpec);
+
+		return env;
+	}
+
 	public void run()
 	{
 		boolean proceed = true;
@@ -61,11 +80,7 @@ public class FileThread extends Thread
 					e = (Envelope)input.readObject();
 				}
 				else {
-					Envelope superE = (Envelope)input.readObject();
-					SealedObject sealedEnvelope = (SealedObject)superE.getObjContents().get(0);
-					IvParameterSpec ivspec = new IvParameterSpec((byte[])superE.getObjContents().get(1));
-
-					e = (Envelope)CipherBox.decrypt(sealedEnvelope, secretKey, ivspec);
+					e = extractInner((Envelope)input.readObject());
 				}
 
 				System.out.println("Request received: " + e.getMessage());
@@ -127,7 +142,7 @@ public class FileThread extends Thread
 						    //form response, write it
 						    response = new Envelope("OK");
 						    response.addObject(filteredFiles);
-						    output.writeObject(response);
+						    output.writeObject(buildSuper(response));
 						    System.out.println("SENT from LFILES: " + response);
 				    	}
 				    }   	
@@ -177,7 +192,7 @@ public class FileThread extends Thread
 					    	//form response, write it
 					    	response = new Envelope("OK");
 					    	response.addObject(finalFiles);
-					    	output.writeObject(response);
+					    	output.writeObject(buildSuper(response));
 					  	  System.out.println("SENT from LFILESG: " + response);
 					  	}
 					}
@@ -236,16 +251,16 @@ public class FileThread extends Thread
 								
 
 								response = new Envelope("READY"); //Success
-								output.writeObject(response);
+								output.writeObject(buildSuper(response));
 								System.out.println("SENT from UPLOADF - READY: " + response);
 
-								e = (Envelope)input.readObject();
+								e = extractInner((Envelope)input.readObject());
 								while (e.getMessage().compareTo("CHUNK")==0) {
 									fos.write((byte[])e.getObjContents().get(0), 0, (Integer)e.getObjContents().get(1));
 									response = new Envelope("READY"); //Success
-									output.writeObject(response);
+									output.writeObject(buildSuper(response));
 									System.out.println("SENT from UPLOADF - READYCHUNK: " + response);
-									e = (Envelope)input.readObject();
+									e = extractInner((Envelope)input.readObject());
 								}
 
 								if(e.getMessage().compareTo("EOF")==0) {
@@ -262,7 +277,7 @@ public class FileThread extends Thread
 						}
 					}
 
-					output.writeObject(response);
+					output.writeObject(buildSuper(response));
 					System.out.println("SENT from UPLOADF: " + response);
 				}
 				else if (e.getMessage().equals("DOWNLOADF") && isSecureConnection) 
@@ -276,7 +291,7 @@ public class FileThread extends Thread
 					{
 						System.out.printf("Error: File %s doesn't exist\n", remotePath);
 						e = new Envelope("ERROR_FILEMISSING");
-						output.writeObject(e);
+						output.writeObject(buildSuper(e));
 						System.out.println("SENT from DOWNLOADF - ERROR_FILEMISSING: " + e);
 
 					}
@@ -284,7 +299,7 @@ public class FileThread extends Thread
 					{
 						System.out.printf("Error user %s doesn't have permission\n", t.getSubject());
 						e = new Envelope("ERROR_PERMISSION");
-						output.writeObject(e);
+						output.writeObject(buildSuper(e));
 						System.out.println("SENT from DOWNLOADF - ERROR_PERMISSION: " + e);
 					}
 					else {
@@ -296,7 +311,7 @@ public class FileThread extends Thread
 							{
 								System.out.printf("Error file %s missing from disk\n", "_"+remotePath.replace('/', '_'));
 								e = new Envelope("ERROR_NOTONDISK");
-								output.writeObject(e);
+								output.writeObject(buildSuper(e));
 								System.out.println("SENT from DOWNLOADF - ERROR_NOTONDISK: " + e);
 
 							}
@@ -327,10 +342,10 @@ public class FileThread extends Thread
 									e.addObject(buf);
 									e.addObject(new Integer(n));
 
-									output.writeObject(e);
+									output.writeObject(buildSuper(e));
 									System.out.println("SENT from DOWNLOADF: " + e);
 
-									e = (Envelope)input.readObject();
+									e = extractInner((Envelope)input.readObject());
 
 
 								}
@@ -341,10 +356,10 @@ public class FileThread extends Thread
 								{
 
 									e = new Envelope("EOF");
-									output.writeObject(e);
+									output.writeObject(buildSuper(e));
 									System.out.println("SENT from DOWNLOADF - EOF: " + e);
 
-									e = (Envelope)input.readObject();
+									e = extractInner((Envelope)input.readObject());
 									if(e.getMessage().compareTo("OK")==0) {
 										System.out.printf("File data download successful\n");
 									}
@@ -414,7 +429,7 @@ public class FileThread extends Thread
 							e = new Envelope(e1.getMessage());
 						}
 					}
-					output.writeObject(e);
+					output.writeObject(buildSuper(e));
 					System.out.println("SENT from DELETEF: " + e);
 
 				}

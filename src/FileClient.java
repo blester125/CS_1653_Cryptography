@@ -165,9 +165,9 @@ public class FileClient extends Client implements FileClientInterface {
 			 //Tell the server to return the member list
 			 message = new Envelope("LFILES");
 			 message.addObject(token); //Add requester's token
-			 output.writeObject(message); 
+			 output.writeObject(buildSuper(message)); 
 			 
-			 e = (Envelope)input.readObject();
+			 e = extractInner((Envelope)input.readObject());
 			 
 			 //If server indicates success, return the member list
 			 if(e.getMessage().equals("OK"))
@@ -194,9 +194,9 @@ public class FileClient extends Client implements FileClientInterface {
 			 message = new Envelope("LFILESG");
 			 message.addObject(groupName); // add groupname
 			 message.addObject(token); //Add requester's token
-			 output.writeObject(message); 
+			 output.writeObject(buildSuper(message)); 
 			 
-			 e = (Envelope)input.readObject();
+			 e = extractInner((Envelope)input.readObject());
 			 
 			 //If server indicates success, return the member list
 			 if(e.getMessage().equals("OK"))
@@ -231,12 +231,12 @@ public class FileClient extends Client implements FileClientInterface {
 			 message.addObject(destFile);
 			 message.addObject(group);
 			 message.addObject(token); //Add requester's token
-			 output.writeObject(message);
+			 output.writeObject(buildSuper(message));
 			
 			 
 			 FileInputStream fis = new FileInputStream(sourceFile);
 			 
-			 env = (Envelope)input.readObject();
+			 env = extractInner((Envelope)input.readObject());
 			 
 			 //If server indicates success, return the member list
 			 if(env.getMessage().equals("READY"))
@@ -269,10 +269,10 @@ public class FileClient extends Client implements FileClientInterface {
 					message.addObject(buf);
 					message.addObject(new Integer(n));
 					
-					output.writeObject(message);
+					output.writeObject(buildSuper(message));
 					
 					
-					env = (Envelope)input.readObject();
+					env = extractInner((Envelope)input.readObject());
 					
 										
 			 }
@@ -283,9 +283,9 @@ public class FileClient extends Client implements FileClientInterface {
 			 { 
 				
 				message = new Envelope("EOF");
-				output.writeObject(message);
+				output.writeObject(buildSuper(message));
 				
-				env = (Envelope)input.readObject();
+				env = extractInner((Envelope)input.readObject());
 				if(env.getMessage().compareTo("OK")==0) {
 					System.out.printf("\nFile data upload successful\n");
 				}
