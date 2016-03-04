@@ -834,6 +834,15 @@ public class ClientApp {
 		// Authenticate file server
 		if(!RunClient.fileC.authenticateServer()) {
 			//TODO: Carmen generate the pop-up and call RunClient.fileC.addServerToRegistry if they trust the server
+			
+
+			//Construct a dialogue box to capture user input and do so.
+			JPanel alertServerDialog = new JPanel();
+			JLabel serverDialogLabel = new JLabel("Public Key Not Found!");
+
+			alertServerDialog.add(serverDialogLabel);
+
+
 		}
 		
 		tabbedPane.setEnabledAt(2,true);
