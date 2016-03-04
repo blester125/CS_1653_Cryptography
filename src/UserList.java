@@ -1,15 +1,9 @@
 /* This list represents the users on the server */
-import java.util.*;
 import java.math.BigInteger;
-import java.security.*;
-import java.security.spec.*;
-import java.security.interfaces.*;
-
-import javax.crypto.*;
-import javax.crypto.spec.*;
-import javax.crypto.interfaces.*;
-
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import java.security.MessageDigest;
+import java.security.PublicKey;
+import java.util.ArrayList;
+import java.util.Hashtable;
 
 public class UserList implements java.io.Serializable {
 

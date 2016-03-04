@@ -3,45 +3,18 @@
  */
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.math.BigInteger;
 import java.net.Socket;
 import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
+import java.security.MessageDigest;
 import java.security.PublicKey;
-import java.security.Security;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
-import java.math.BigInteger;
 
-import java.security.Security;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.KeyPairGenerator;
-import java.security.KeyPair;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.Signature;
-import java.security.SignatureException;
-import java.security.KeyFactory;
-import java.security.MessageDigest;
-
-import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SealedObject;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
-
-import java.security.spec.X509EncodedKeySpec;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.InvalidKeySpecException;
 
 public class GroupThread extends Thread 
 {

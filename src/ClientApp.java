@@ -1,45 +1,26 @@
+import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-
-import javax.swing.JFrame;
-import javax.swing.JTabbedPane;
-
-import java.awt.BorderLayout;
-
-import javax.swing.JPanel;
-
-import java.awt.GridBagLayout;
-
-import javax.swing.JLabel;
-
-import java.awt.GridBagConstraints;
-import java.awt.Insets;
-
-import javax.swing.JTextField;
-import javax.swing.JScrollBar;
-import javax.swing.JComponent;
-import java.awt.GridLayout;
-import java.awt.Dimension;
+import java.io.File;
+import java.util.ArrayList;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
-import javax.swing.JSplitPane;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JList;
-import javax.swing.ListSelectionModel;
-import javax.swing.AbstractListModel;
-
-import java.awt.Component;
-
-import javax.swing.Box;
-import javax.swing.JPasswordField;
-import javax.swing.SwingUtilities;
-import javax.swing.JComponent;
 import javax.swing.JOptionPane;
-import javax.swing.DefaultListModel;
-
-import java.util.ArrayList;
-import java.io.File;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JSplitPane;
+import javax.swing.JTabbedPane;
+import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
 
 @SuppressWarnings("unchecked")
 public class ClientApp {

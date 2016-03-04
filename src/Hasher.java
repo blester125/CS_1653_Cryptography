@@ -1,8 +1,7 @@
 import java.security.MessageDigest;
-import java.security.*;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import java.security.Security;
 
-import java.math.BigInteger;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class Hasher {
 	public static byte[] hash(Object obj) {

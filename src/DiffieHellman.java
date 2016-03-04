@@ -1,16 +1,15 @@
-import java.io.*;
 import java.math.BigInteger;
-import java.security.*;
-import java.security.spec.*;
-import java.security.interfaces.*;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PublicKey;
+import java.security.Security;
 
-import javax.crypto.*;
-import javax.crypto.spec.*;
-import javax.crypto.interfaces.*;
+import javax.crypto.KeyAgreement;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.DHParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
-import com.sun.crypto.provider.SunJCE;
 
 
 public class DiffieHellman {

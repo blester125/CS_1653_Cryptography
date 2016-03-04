@@ -2,9 +2,7 @@
 import java.awt.EventQueue;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.Component;
-import javax.swing.SwingUtilities;
-import java.security.*;
+import java.security.Security;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
