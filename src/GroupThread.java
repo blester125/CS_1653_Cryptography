@@ -132,35 +132,42 @@ public class GroupThread extends Thread
 					String user = (String)message.getObjContents().get(0);
 					SealedObject sealedHash = (SealedObject)message.getObjContents().get(1);
 					PublicKey userPublicKey = getUserPublicKey(user);
-					byte[] recvHash = (byte[])CipherBox.decrypt(sealedHash, userPublicKey);
-					PublicKey DHuserKey = (PublicKey)message.getObjContents().get(2);
-					if (!MessageDigest.isEqual(recvHash, Hasher.hash(DHuserKey))) {
-						return;
-					}
-					KeyPair keyPair = null;
-					KeyAgreement keyAgreement = null;
-					// generate secret key and send back public key
-					try {
-						keyPair = DiffieHellman.genKeyPair();
-						keyAgreement = DiffieHellman.genKeyAgreement(keyPair);
-						sessionKey = DiffieHellman.generateSecretKey(DHuserKey, keyAgreement);
-						response = new Envelope("RSALOGINOK");
-						byte[] hashedPublicKey = Hasher.hash(keyPair.getPublic());
-						SealedObject sealedKey;
-						sealedKey = CipherBox.encrypt(hashedPublicKey, my_gs.keyPair.getPrivate());
-						response.addObject(sealedKey);
-						response.addObject(keyPair.getPublic());
-						output.writeObject(response);
-						Envelope check = (Envelope)input.readObject();
-						Envelope innerCheck = extractInner(check);
-						if (innerCheck.getMessage().equals("SUCCESS")) {
-							isSecureConnection = true;
-							username = user;
+					if (userPublicKey != null) {
+						byte[] recvHash = (byte[])CipherBox.decrypt(sealedHash, userPublicKey);
+						PublicKey DHuserKey = (PublicKey)message.getObjContents().get(2);
+						if (MessageDigest.isEqual(recvHash, Hasher.hash(DHuserKey))) {
+							
+							KeyPair keyPair = null;
+							KeyAgreement keyAgreement = null;
+							// generate secret key and send back public key
+							try {
+								keyPair = DiffieHellman.genKeyPair();
+								keyAgreement = DiffieHellman.genKeyAgreement(keyPair);
+								sessionKey = DiffieHellman.generateSecretKey(DHuserKey, keyAgreement);
+								response = new Envelope("RSALOGINOK");
+								byte[] hashedPublicKey = Hasher.hash(keyPair.getPublic());
+								SealedObject sealedKey;
+								sealedKey = CipherBox.encrypt(hashedPublicKey, my_gs.keyPair.getPrivate());
+								response.addObject(sealedKey);
+								response.addObject(keyPair.getPublic());
+								output.writeObject(response);
+								Envelope check = (Envelope)input.readObject();
+								Envelope innerCheck = extractInner(check);
+								if (innerCheck.getMessage().equals("SUCCESS")) {
+									isSecureConnection = true;
+									username = user;
+								}
+							} catch(Exception e) {
+								e.printStackTrace();
+							}
 						}
-					} catch(Exception e) {
-						e.printStackTrace();
+						else {
+							response = new Envelope("FAIL");
+							output.writeObject(response);
+						}
+					}
+					else {
 						response = new Envelope("FAIL");
-						response.addObject(response);
 						output.writeObject(response);
 					}
 				}
