@@ -438,14 +438,9 @@ public class FileClient extends Client implements FileClientInterface {
 			return false;
 		}
 
-		System.out.println(this.sock.getInetAddress().getHostName());
-		System.out.println(Integer.toString(this.sock.getPort()));
-		System.out.println(this.serverPublicKey);
 
 		//Add server to registry
 		fsReg.insertServerInfo(new ServerInfo(this.sock.getInetAddress().getHostName(), Integer.toString(this.sock.getPort())), this.serverPublicKey);
-
-		System.out.println(fsReg.getServerPublicKey(new ServerInfo(this.sock.getInetAddress().getHostName(), Integer.toString(this.sock.getPort()))));
 
 		//Write out to file
 		try {
@@ -501,11 +496,9 @@ public class FileClient extends Client implements FileClientInterface {
 
 				// generate the shared secret key
 				secretKey = DiffieHellman.generateSecretKey(fileServerPK, keyAgreement);
-				System.out.println(secretKey.getEncoded());
 
 				// get the server public key
 				serverPublicKey = (PublicKey)response.getObjContents().get(1);
-				System.out.println(serverPublicKey.getEncoded());
 	
 				return secretKey;
 			}

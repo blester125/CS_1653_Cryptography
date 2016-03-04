@@ -122,7 +122,6 @@ public class FileThread extends Thread
 						keypair = DiffieHellman.genKeyPair();
 						keyAgreement = DiffieHellman.genKeyAgreement(keypair);
 						secretKey = DiffieHellman.generateSecretKey(clientPK, keyAgreement);
-						System.out.println(secretKey.getEncoded());
 
 						response = new Envelope("OK");
 						response.addObject(keypair.getPublic());

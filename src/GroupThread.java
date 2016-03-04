@@ -117,7 +117,6 @@ public class GroupThread extends Thread
 						keypair = DiffieHellman.genKeyPair();
 						keyAgreement = DiffieHellman.genKeyAgreement(keypair);
 						sessionKey = DiffieHellman.generateSecretKey(clientPK, keyAgreement);
-						System.out.println(new String(sessionKey.getEncoded()));
 						response = new Envelope("OK");
 						response.addObject(keypair.getPublic());
 						output.writeObject(response);
@@ -182,7 +181,6 @@ public class GroupThread extends Thread
 								innerResponse = new Envelope("FAIL");
 								String user = (String)message.getObjContents().get(0);
 								String password = (String)message.getObjContents().get(1);
-								System.out.println(user + " " + password);
 								if (checkUser(user, password)) {
 									username = user;
 									if (checkFlag(username)) {
