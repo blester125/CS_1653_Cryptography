@@ -61,6 +61,9 @@ public class GroupClient extends Client implements GroupClientInterface {
 	public int authenticateGroupServer(String username, String password) throws Exception {
 		Envelope message, response = null;
 		sessionKey = establishSessionKey();
+		if (sessionKey == null) {
+			return -1;
+		}
 		return login(username, password);
 	}
 
@@ -70,17 +73,9 @@ public class GroupClient extends Client implements GroupClientInterface {
 		contents.addObject(username);
 		contents.addObject(password);
 		Envelope message = buildSuper(contents);
-		//IvParameterSpec iv = CipherBox.generateRandomIV();
-		//System.out.println(iv);
-		//SealedObject sealedEnvelope = CipherBox.encrypt(contents, sessionKey, iv);
-		//Envelope message = new Envelope("");
-		//message.addObject(sealedEnvelope);
-		//message.addObject(iv.getIV());
 		output.writeObject(message);
-		Envelope response = (Envelope)input.readObject();
-		//sealedEnvelope = (SealedObject)response.getObjContents().get(0);
-		//iv = (IvParameterSpec)response.getObjContents().get(1);
-		//contents = (Envelope)CipherBox.decrypt(sealedEnvelope, sessionKey, iv);
+		Envelope superResponse = (Envelope)input.readObject();
+		Envelope response = extractInner(superResponse);
 		if (response.getMessage().equals("OK")) {
 			return 0;
 		}
@@ -94,7 +89,21 @@ public class GroupClient extends Client implements GroupClientInterface {
  	}
 
  	public boolean newPassword(String password) {
- 		return true;
+ 		try {
+	 		Envelope contents = new Envelope("CHANGEPASSWORD");
+ 			contents.addObject(password);
+ 			Envelope message = buildSuper(contents);
+	 		output.writeObject(message);
+ 			Envelope superResponse = (Envelope)input.readObject();
+ 			Envelope response = extractInner(superResponse);
+ 			if (response.getMessage().equals("OK")) {
+	 			return true;
+ 			}
+ 			return false;
+ 		} catch (Exception e) {
+ 			e.printStackTrace();
+ 			return false;
+ 		}
  	}
  
 	public UserToken getToken(String username)

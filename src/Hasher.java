@@ -16,10 +16,6 @@ public class Hasher {
 		}
 	}
 
-	public static BigInteger genSalt() {
-		return new BigInteger(256, new SecureRandom());
-	}
-
 	public static void main(String args[]) throws Exception {
 		Security.addProvider(new BouncyCastleProvider());
 		Envelope test = new Envelope("Test");
@@ -32,7 +28,5 @@ public class Hasher {
 		String hash2 = new String(hash(test2));
 		System.out.println(hash1 + "\n\n");
 		System.out.println(hash2);
-
-		System.out.println(genSalt());
 	}
 }

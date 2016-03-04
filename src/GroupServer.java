@@ -66,15 +66,11 @@ public class GroupServer extends Server {
 			userList.addUser(username);
 			userList.addGroup(username, "ADMIN");
 			userList.addOwnership(username, "ADMIN");
-			// Set password function?
-			BigInteger salt = Hasher.genSalt();
-			System.out.println(salt);
+			BigInteger salt = Passwords.generateSalt();
 			userList.setSalt(username, salt);
-			password = password + new String(salt.toByteArray());
-			System.out.println(password);
-			byte[] hashword = Hasher.hash(password);
-			System.out.println(new String(hashword));
-			userList.setPassword(username, password.getBytes());
+			byte[] hashword = Passwords.generatePasswordHash(password, salt);
+			userList.setPassword(username, hashword);
+			//userList.setNewPassword(username, false);
 		}
 		catch(IOException e)
 		{

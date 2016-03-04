@@ -11,6 +11,7 @@ import java.security.Security;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
+import java.math.BigInteger;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
@@ -27,7 +28,8 @@ public class GroupThread extends Thread
 	private Cipher AESCipherEncrypt;
 	private Cipher AESCipherDecrypt;
 	private SecretKey sessionKey;
-	
+	private String username = null;
+
 	public GroupThread(Socket _socket, GroupServer _gs)
 	{
 		socket = _socket;
@@ -92,10 +94,6 @@ public class GroupThread extends Thread
 				else {
 					Envelope superE = (Envelope)input.readObject();
 					message = extractInner(superE);
-					//SealedObject sealedEnvelope = (SealedObject)superE.getObjContents().get(0);
-					//IvParameterSpec ivspec = new IvParameterSpec((byte[])superE.getObjContents().get(1));
-					//System.out.println(sealedEnvelope + " " + ivspec);
-					//message = (Envelope)CipherBox.decrypt(sealedEnvelope, sessionKey, ivspec);
 				}
 				System.out.println("Request received: " + message.getMessage());
 				
@@ -124,38 +122,59 @@ public class GroupThread extends Thread
 				}
 				else if(message.getMessage().equals("LOGIN")) 
 				{
+					Envelope innerResponse;
 					if (message.getObjContents().size() < 2)
 					{
-				 		response = new Envelope("FAIL");
+				 		innerResponse = new Envelope("FAIL");
 				 	}
 				 	else
 				 	{
-				 		response = new Envelope("FAIL");
+				 		innerResponse = new Envelope("FAIL");
 				 		if (message.getObjContents().get(0) != null)
 				 		{
 				 			if (message.getObjContents().get(1) != null)
 							{
-								String username = (String)message.getObjContents().get(0);
+								innerResponse = new Envelope("FAIL");
+								String user = (String)message.getObjContents().get(0);
 								String password = (String)message.getObjContents().get(1);
-								System.out.println(username + " " + password);
-				// 				// check username vs first one
-				// 				// look up salt
-				// 				// compute H(password || salt)
-				// 				// check H(password || salt)
-				// 				// if failure
-				// 					// disconnect
-				// 				// else
-				// 				// if user.newPassword
-				// 					// Send "Change Password"
-				// 					// Add an else if (message.get == "CHANGEPASSWORD")
-				// 				// else
-				// 					// Send Success
-								response = new Envelope("OK");
-								//response.addObject(keyPair.getPublic());
-								output.writeObject(response);
+								if (checkUser(user, password)) {
+									username = user;
+									if (checkFlag(username)) {
+										innerResponse = new Envelope("CHANGEPASSWORD");
+									}
+									else {
+										System.out.println("Logged In");
+										innerResponse = new Envelope("OK");
+									}
+								}
+								else {
+									System.out.println("FAIL");
+									innerResponse = new Envelope("FAIL");
+								}
  							}
 				 		}
 					}
+					response = buildSuper(innerResponse);
+					output.writeObject(response);
+				}
+				else if (message.getMessage().equals("CHANGEPASSWORD") && isSecureConnection) {
+					Envelope innerResponse;
+					if (message.getObjContents().size() < 1) {
+						innerResponse = new Envelope("FAIL");
+					}
+					else {
+						innerResponse = new Envelope("FAIL");
+						if (message.getObjContents().get(0) != null) {
+							if (username != null) {
+								String password = (String)message.getObjContents().get(0);
+								if (setPassword(username, password)) {
+									innerResponse = new Envelope("OK");
+								}
+							}
+						}
+					}
+					response = buildSuper(innerResponse);
+					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("GET") && isSecureConnection)//Client wants a token
 				{
@@ -399,6 +418,8 @@ public class GroupThread extends Thread
 				else if(message.getMessage().equals("DISCONNECT") && isSecureConnection) //Client wants to disconnect
 				{
 					isSecureConnection = false;
+					username = null;
+					sessionKey = null;
 					socket.close(); //Close the socket
 					proceed = false; //End this communication loop
 				}
@@ -412,6 +433,9 @@ public class GroupThread extends Thread
 		}
 		catch(Exception e)
 		{
+			isSecureConnection = false;
+			username = null;
+			sessionKey = null;
 			System.err.println("Error: " + e.getMessage());
 			e.printStackTrace(System.err);
 		}
@@ -735,5 +759,24 @@ public class GroupThread extends Thread
 		{ // requester doesn't exist
 			return false;
 		}
+	}
+
+	private boolean checkUser(String user, String pwd) {
+		BigInteger salt = my_gs.userList.getSalt(user);
+		byte[] password = Passwords.generatePasswordHash(pwd, salt);
+		return my_gs.userList.checkPassword(user, password);
+	}
+
+	private boolean checkFlag(String user) {
+		return my_gs.userList.getNewPassword(user);
+	}
+
+	private boolean setPassword(String user, String password) {
+		BigInteger salt = Passwords.generateSalt();
+		my_gs.userList.setSalt(user, salt);
+		byte[] hashword = Passwords.generatePasswordHash(password, salt);
+		my_gs.userList.setPassword(user, hashword);
+		my_gs.userList.setNewPassword(user, false);
+		return true;
 	}
 }

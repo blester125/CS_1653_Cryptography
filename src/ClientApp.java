@@ -892,7 +892,7 @@ public class ClientApp {
 
 	public void newPassword() {
 		JPanel newPasswordDialogue = new JPanel();
-		JTextField newPasswordField = new JTextField(20);
+		JPasswordField newPasswordField = new JPasswordField(20);
 		JLabel passwordDialogueLabel = new JLabel("Please enter a new password: ");
 		newPasswordDialogue.add(passwordDialogueLabel);
 		newPasswordDialogue.add(newPasswordField);
