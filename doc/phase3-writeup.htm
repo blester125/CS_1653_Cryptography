@@ -232,13 +232,13 @@ server, a "u" the user, and an "f" a file server.</p>
   then adding groups to their token that they are not members of, which is possible in the current
   implementation due to the tokens being stored in memory as plaintext, without any signature. This could allow 
   non-admin users to add themselves to the admin group and abuse those powers by accessing
-  files they are not allowed to, creating users, and deleting users. The attacker/malicious user could also
+  files they are not allowed to: creating users and deleting users. The attacker/malicious user could also
   add themselves to any other group in the group server, gaining access to files they should
-  not have access to and being able to upload files to the group. 
-  <br>Token modification/forgery:</br>
+  not have access to, and being able to upload files to the group. 
+  <br><br>Token modification/forgery:</br>
   <img src="images/insecure_token_modifcation_forgery.png" class="image" title="new user">  
   An abuse of this
-  ability being flooding the group's files to make it difficult to locate the group's valid
+  ability is flooding the group's files to make it difficult to locate the group's valid
   files, consuming the group's disk quota, impersonating other valid documents with false copies, or even stealing sensitive files.
   Another scenario would be that users or attackers create their own 
   tokens from scratch that grants them the same kind of 
@@ -246,7 +246,7 @@ server, a "u" the user, and an "f" a file server.</p>
   category would be saving a token that had access to a group g, then once the user
   was removed from group g for whatever reason, this saved token could be used to access group 
   g again taking advantage of the exploits outlined above. These threats can manifest themselves
-  in the current implementation by having the user edit their token before sending it 
+  in the prior phase's implementation by having the user edit their token before sending it 
   to the file server. They can also save their tokens and reuse them at anytime, or simply fabricate new ones
   after obersving their structure. A token can be 
   forged by knowing the issuer (which is trivial to discover) the username of the user you wish
@@ -271,18 +271,25 @@ server, a "u" the user, and an "f" a file server.</p>
   the near future (more than a couple of years). The serialization of the
   token will occur by concatenating the 
   issuer, followed by the user, followed by all of the groups the user belongs to.
-  It will appear as follows: issuer || user || groups with each section separated with the "#" sign.
+  It will appear as follows: issuer || user || groups with each section separated with the "#" sign. 
+  The reason for this delimeter is so information cannot be injected into the token, such as a 
+  malicious user adding group names into their username.
   The authentication message the user sends to the file server along with its group token will
   be the token itself accompanied with the signed hash of the token, and this message encrypted
   with the symmetric key generated from the user-file server Diffie-Hellmann exchange.
   Once the client passes this token along with the signed token to the 
-  file server the file server can verify it with the server's public key. 
+  file server, the file server can verify it with the server's public key. 
   A file server will have knowledge of the group server's
   public RSA key upon the file server's creation, to be entered by the user who creates the file server.
   This is reasonable as by the nature of the key being public, there does not need to exist
   any security in the distribution of this public key. This is reasonable in our
   scenario to expect users who wish to create a new file server to have knowledge of the Group server's
-  public key because there is only one Group server. The third issue mentioned of reusing an old token can 
+  public key because there is only one Group server and the user who is the 
+  creator of the file server should be able to provide the public key
+  by way of a trusted admin who has this knowledge of the system. The public
+  key can then be transmitted to the user either in person, operating then in 
+  the same channel by which a user may authenticate a file server's public key.
+  The third issue mentioned of reusing an old token can 
   be solved with timestamps. This achieves freshness for a token and mitigates the threat of
   a replay attack of the token by only allowing a certain token to be used within a small
   and reasonable frame of time for it to be transmitted securely over the network,
@@ -303,7 +310,7 @@ server, a "u" the user, and an "f" a file server.</p>
   and the user attempting the connection is refused. By including the timestamp in the signed hash,
   it guarantees the token cannot be tampered with without the file server being able
   to verify its modification.
-  <br>An example of how this verification works:
+  <br><br>An example of how this verification works:
   <img src="images/TokenVerification.png" class="image" title="token verification">
 </p>
 <p>
@@ -625,12 +632,12 @@ Arrays.equals to protect against timing attacks.
   Token Issuance and allows user to login with a RSA Public Key/Private Key pair.
   This system allows for a user to use public key cryptography to log into the 
   system rather than a username and password pair.
-  <br>
+  <br><br>
   In this solution the user's public key is submitted
   to the GroupServer upon the creation of the user account or at the request of 
   an authenticated client. The user and server 
   create a shared secret <b>K</b> using a signed Diffie-Hellman protocol. This method 
-  creates a shared <b>K</b> and authenticates the user and server with each other. <br>
+  creates a shared <b>K</b> and authenticates the user and server with each other. <br><br>
   The protocol would look like so: <br>
   <img src="images/publicauth.png" class="image">
   <br> 
