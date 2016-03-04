@@ -19,6 +19,8 @@ import java.security.SecureRandom;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.SealedObject;
 
+import java.math.BigInteger;
+
 public class FileClient extends Client implements FileClientInterface {
 	private SecretKey secretKey;
 	private PublicKey serverPublicKey;
@@ -375,6 +377,43 @@ public class FileClient extends Client implements FileClientInterface {
 			e.printStackTrace(System.err);
 			return null;
 		}
+	 }
+
+
+	 public boolean issueChallenge(){
+
+	 	//Generate random long to use as r1
+	 	SecureRandom srand = new SecureRandom();
+	 	BigInteger r1 = new BigInteger(256, srand);
+
+	 	//Encrypt with server's public RSA key
+	 	SealedObject encRSA_R1 = CipherBox.encrypt(r1, serverPublicKey);
+
+	 	//Build an envelope with the challenge
+	 	Envelope env = new Envelope("CHALLENGE");
+	 	env.addObject(encRSA_R1);
+
+	 	//Send the challenge (encrypted with the session key) to server
+	 	output.writeObject(buildSuper(env));
+
+	 	response = extractInner((Envelope)input.readObject());
+
+	 	if(response.getMessage().equals("CH_RESPONSE")){
+
+	 		BigInteger challengeAnswer = (BigInteger)response.getObjContents().get(0);
+
+	 		if(challengeAnswer.equals(r1)){
+
+	 			Envelope success = new Envelope("AUTH_SUCCESS");
+	 			output.writeObject(buildSuper(success));
+
+	 			return true;
+	 		}
+
+	 		return false;
+	 	}
+	 	return false;
+
 	 }
 }
 

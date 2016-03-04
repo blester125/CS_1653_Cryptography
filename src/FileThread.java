@@ -25,11 +25,13 @@ import java.security.SecureRandom;
 import javax.crypto.spec.IvParameterSpec;
 
 import javax.crypto.SealedObject;
+import java.math.BigInteger;
 
 public class FileThread extends Thread
 {
 	private final Socket socket;
 	private boolean isSecureConnection;
+	private boolean isAuthenticated;
 	private SecretKey secretKey;
 	private KeyPair rsaPair;
 
@@ -38,6 +40,7 @@ public class FileThread extends Thread
 		socket = _socket;
 		rsaPair = _rsaPair;
 		isSecureConnection = false;
+		isAuthenticated = false;
 		
 	}
 
@@ -113,8 +116,38 @@ public class FileThread extends Thread
 						output.writeObject(response);
 					}
 				}
+				// Client sends server the challenge, server will decrypt and respond
+				else if(e.getMessage().equals("CHALLENGE") && isSecureConnection){
+
+					try {
+						//Recover sealedobject of challenge from envelope, then decrypt
+						SealedObject encRSA_R1 = (SealedObject)e.getObjContents().get(0);
+						BigInteger r1 = CipherBox.decrypt(encRSA_R1, rsaPair.getPrivateKey());
+
+						//build envelope
+						response = new Envelope("CH_RESPONSE");
+						response.addObject(r1);
+
+						//send it back
+						output.writeObject(buildSuper(response));
+						System.out.println("SENT from CHALLENGE: " + response);
+					} catch (Exception exception) {
+
+						exception.printStackTrace();
+						response = new Envelope("FAIL");
+						response.addObject(response);
+						output.writeObject(buildSuper(response));
+					}
+
+				}
+				// If successful, set your flag and carry on
+				else if(e.getMessage().equals("AUTH_SUCCESS") && isSecureConnection){
+
+					isAuthenticated = true;
+
+				}
 				// Handler to list files that this user is allowed to see
-				else if(e.getMessage().equals("LFILES") && isSecureConnection)
+				else if(e.getMessage().equals("LFILES") && isSecureConnection && isAuthenticated)
 				{
 				    //Do error handling
 				    if(e.getObjContents().size() < 1) {
@@ -152,7 +185,7 @@ public class FileThread extends Thread
 				    	}
 				    }   	
 				}
-				if(e.getMessage().equals("LFILESG") && isSecureConnection) //List only files in specified group
+				if(e.getMessage().equals("LFILESG") && isSecureConnection && isAuthenticated) //List only files in specified group
 				{
 				    //Do error handling
 				    if(e.getObjContents().size() < 1) 
@@ -202,7 +235,7 @@ public class FileThread extends Thread
 					  	}
 					}
 				}   	
-				if(e.getMessage().equals("UPLOADF") && isSecureConnection)
+				if(e.getMessage().equals("UPLOADF") && isSecureConnection && isAuthenticated)
 				{
 
 					if(e.getObjContents().size() < 3)
@@ -285,7 +318,7 @@ public class FileThread extends Thread
 					output.writeObject(buildSuper(response));
 					System.out.println("SENT from UPLOADF: " + response);
 				}
-				else if (e.getMessage().equals("DOWNLOADF") && isSecureConnection) 
+				else if (e.getMessage().equals("DOWNLOADF") && isSecureConnection && isAuthenticated) 
 				{
 
 					String remotePath = (String)e.getObjContents().get(0);
@@ -357,7 +390,7 @@ public class FileThread extends Thread
 								while (fis.available()>0);
 
 								//If server indicates success, return the member list
-								if(e.getMessage().compareTo("DOWNLOADF")==0 && isSecureConnection)
+								if(e.getMessage().compareTo("DOWNLOADF")==0 && isSecureConnection  && isAuthenticated)
 								{
 
 									e = new Envelope("EOF");
@@ -390,7 +423,7 @@ public class FileThread extends Thread
 						}
 					}
 				}
-				else if (e.getMessage().compareTo("DELETEF")==0 && isSecureConnection) {
+				else if (e.getMessage().compareTo("DELETEF")==0 && isSecureConnection && isAuthenticated) {
 
 					String remotePath = (String)e.getObjContents().get(0);
 					Token t = (Token)e.getObjContents().get(1);
