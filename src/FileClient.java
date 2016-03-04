@@ -35,6 +35,15 @@ public class FileClient extends Client implements FileClientInterface {
 		return superEnv;
 	}
 
+	public Envelope extractInner(Envelope superInputEnv){
+
+		SealedObject innerEnv = (SealedObject)superInputEnv.getObjContents().get(0);
+		IvParameterSpec decIVSpec = new IvParameterSpec((byte[])superInputEnv.getObjContents().get(1));
+		Envelope env = (Envelope)CipherBox.decrypt(innerEnv, secretKey, decIVSpec);
+
+		return env;
+	}
+
 
 	public boolean delete(String filename, String group, UserToken token) {
 
@@ -55,13 +64,12 @@ public class FileClient extends Client implements FileClientInterface {
 
 		try {
 
+			//build nested envelope, encrypt, and send
 			Envelope superEnv = buildSuper(env);
 			output.writeObject(superEnv);
 
-			Envelope superInputEnv = (Envelope)input.readObject();
-			SealedObject innerEnv = (SealedObject)superInputEnv.getObjContents().get(0);
-			IvParameterSpec decIVSpec = new IvParameterSpec((byte[])superInputEnv.getObjContents().get(1));
-			env = (Envelope)CipherBox.decrypt(innerEnv, secretKey, decIVSpec);
+			//receive, extract, and decrypt inner envelope
+			env = extractInner((Envelope)input.readObject());
 		   
 			if (env.getMessage().compareTo("OK")==0) {
 
@@ -99,25 +107,21 @@ public class FileClient extends Client implements FileClientInterface {
 					    env.addObject(sourceFile);
 					    env.addObject(token);
 
-					    IvParameterSpec ivspec = CipherBox.generateRandomIV();			
-						Envelope superEnv = new Envelope("SUPER");
-						superEnv.addObject(CipherBox.encrypt(env, secretKey, ivspec));
-						superEnv.addObject(ivspec);
+						//build nested envelope, encrypt, and send
+						Envelope superEnv = buildSuper(env);
 					    output.writeObject(superEnv); 
 					
-					    Envelope superInputEnv = (Envelope)input.readObject();
-					    SealedObject innerEnv = (SealedObject)superInputEnv.getObjContents().get(0);
-						IvParameterSpec decIVSpec = new IvParameterSpec((byte[])superInputEnv.getObjContents().get(1));
-					    env = (Envelope)CipherBox.decrypt(innerEnv, secretKey, decIVSpec);
+					   //receive, extract, and decrypt inner envelope
+						env = extractInner((Envelope)input.readObject());
 					    
 						while (env.getMessage().compareTo("CHUNK")==0) { 
 								fos.write((byte[])env.getObjContents().get(0), 0, (Integer)env.getObjContents().get(1));
 								System.out.printf(".");
 
 								env = new Envelope("DOWNLOADF"); //Success
-								output.writeObject(env);
+								output.writeObject(buildSuper(env));
 
-								env = (Envelope)input.readObject();									
+								env = extractInner((Envelope)input.readObject());									
 						}										
 						fos.close();
 						
@@ -125,7 +129,7 @@ public class FileClient extends Client implements FileClientInterface {
 					    	 fos.close();
 								System.out.printf("\nTransfer successful file %s\n", sourceFile);
 								env = new Envelope("OK"); //Success
-								output.writeObject(env);
+								output.writeObject(buildSuper(env));
 						}
 						else {
 								System.out.printf("Error reading file %s (%s)\n", sourceFile, env.getMessage());
