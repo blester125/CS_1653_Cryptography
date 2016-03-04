@@ -122,7 +122,7 @@ public class FileThread extends Thread
 					try {
 						//Recover sealedobject of challenge from envelope, then decrypt
 						SealedObject encRSA_R1 = (SealedObject)e.getObjContents().get(0);
-						BigInteger r1 = CipherBox.decrypt(encRSA_R1, rsaPair.getPrivateKey());
+						BigInteger r1 = (BigInteger)CipherBox.decrypt(encRSA_R1, rsaPair.getPrivate());
 
 						//build envelope
 						response = new Envelope("CH_RESPONSE");

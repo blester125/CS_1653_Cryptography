@@ -382,37 +382,45 @@ public class FileClient extends Client implements FileClientInterface {
 
 	 public boolean issueChallenge(){
 
-	 	//Generate random long to use as r1
-	 	SecureRandom srand = new SecureRandom();
-	 	BigInteger r1 = new BigInteger(256, srand);
+	 	try{
 
-	 	//Encrypt with server's public RSA key
-	 	SealedObject encRSA_R1 = CipherBox.encrypt(r1, serverPublicKey);
+		 	Envelope response = null;
 
-	 	//Build an envelope with the challenge
-	 	Envelope env = new Envelope("CHALLENGE");
-	 	env.addObject(encRSA_R1);
+		 	//Generate random long to use as r1
+		 	SecureRandom srand = new SecureRandom();
+		 	BigInteger r1 = new BigInteger(256, srand);
 
-	 	//Send the challenge (encrypted with the session key) to server
-	 	output.writeObject(buildSuper(env));
+		 	//Encrypt with server's public RSA key
+		 	SealedObject encRSA_R1 = CipherBox.encrypt(r1, serverPublicKey);
 
-	 	response = extractInner((Envelope)input.readObject());
+		 	//Build an envelope with the challenge
+		 	Envelope env = new Envelope("CHALLENGE");
+		 	env.addObject(encRSA_R1);
 
-	 	if(response.getMessage().equals("CH_RESPONSE")){
+		 	//Send the challenge (encrypted with the session key) to server
+		 	output.writeObject(buildSuper(env));
 
-	 		BigInteger challengeAnswer = (BigInteger)response.getObjContents().get(0);
+		 	response = extractInner((Envelope)input.readObject());
 
-	 		if(challengeAnswer.equals(r1)){
+		 	if(response.getMessage().equals("CH_RESPONSE")){
 
-	 			Envelope success = new Envelope("AUTH_SUCCESS");
-	 			output.writeObject(buildSuper(success));
+		 		BigInteger challengeAnswer = (BigInteger)response.getObjContents().get(0);
 
-	 			return true;
-	 		}
+		 		if(challengeAnswer.equals(r1)){
+
+		 			Envelope success = new Envelope("AUTH_SUCCESS");
+		 			output.writeObject(buildSuper(success));
+
+		 			return true;
+		 		}
+
+		 		return false;
+		 	}
+		 	return false;
+	 	} catch (Exception exception){
 
 	 		return false;
 	 	}
-	 	return false;
 
 	 }
 }
