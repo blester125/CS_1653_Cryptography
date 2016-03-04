@@ -16,6 +16,7 @@ import javax.crypto.SecretKey;
 
 import java.security.SecureRandom;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.SealedObject;
 
 public class FileClient extends Client implements FileClientInterface {
 	private SecretKey secretKey;
@@ -49,7 +50,10 @@ public class FileClient extends Client implements FileClientInterface {
 			superEnv.addObject(CipherBox.encrypt(env, secretKey, ivspec));
 
 			output.writeObject(superEnv);
-			env = (Envelope)input.readObject();
+			Envelope superInputEnv = (Envelope)input.readObject();
+			SealedObject innerEnv = (SealedObject)superInputEnv.getObjContents().get(0);
+			IvParameterSpec decIVSpec = new IvParameterSpec((byte[])superInputEnv.getObjContents().get(1));
+			env = (Envelope)CipherBox.decrypt(innerEnv, secretKey, decIVSpec);
 		   
 			if (env.getMessage().compareTo("OK")==0) {
 
@@ -86,15 +90,24 @@ public class FileClient extends Client implements FileClientInterface {
 					    Envelope env = new Envelope("DOWNLOADF"); //Success
 					    env.addObject(sourceFile);
 					    env.addObject(token);
-					    output.writeObject(env); 
+
+					    IvParameterSpec ivspec = CipherBox.generateRandomIV();			
+						Envelope superEnv = new Envelope("SUPER");
+						superEnv.addObject(CipherBox.encrypt(env, secretKey, ivspec));
+					    output.writeObject(superEnv); 
 					
-					    env = (Envelope)input.readObject();
+					    Envelope superInputEnv = (Envelope)input.readObject();
+					    SealedObject innerEnv = (SealedObject)superInputEnv.getObjContents().get(0);
+						IvParameterSpec decIVSpec = new IvParameterSpec((byte[])superInputEnv.getObjContents().get(1));
+					    env = (Envelope)CipherBox.decrypt(innerEnv, secretKey, decIVSpec);
 					    
 						while (env.getMessage().compareTo("CHUNK")==0) { 
 								fos.write((byte[])env.getObjContents().get(0), 0, (Integer)env.getObjContents().get(1));
 								System.out.printf(".");
+
 								env = new Envelope("DOWNLOADF"); //Success
 								output.writeObject(env);
+								
 								env = (Envelope)input.readObject();									
 						}										
 						fos.close();
@@ -292,6 +305,7 @@ public class FileClient extends Client implements FileClientInterface {
 	  */
 	public boolean authenticateServer(){
 
+		return false;
 	}
 
 	/**

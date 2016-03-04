@@ -22,6 +22,11 @@ import javax.crypto.SecretKey;
 import java.security.KeyPair;
 import java.security.SealedObject;
 
+import java.security.SecureRandom;
+import javax.crypto.spec.IvParameterSpec;
+
+import javax.crypto.SealedObject;
+
 public class FileThread extends Thread
 {
 	private final Socket socket;
@@ -58,8 +63,8 @@ public class FileThread extends Thread
 				}
 				else {
 					Envelope superE = (Envelope)input.readObject();
-					SealedObject sealedEnvelope = superE.getObjContents().get(0);
-					IvParameterSpec ivspec = new IvParameterSpec(superE.getObjContents().get(1));
+					SealedObject sealedEnvelope = (SealedObject)superE.getObjContents().get(0);
+					IvParameterSpec ivspec = new IvParameterSpec((byte[])superE.getObjContents().get(1));
 
 					e = (Envelope)CipherBox.decrypt(sealedEnvelope, secretKey, ivspec);
 				}
