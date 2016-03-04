@@ -994,6 +994,13 @@ public class ClientApp {
 	public void attemptRSASetup(JTextField usernameField) {
 		try {
 			int result = RunClient.groupC.setUpRSA();
+			if (result == 0) {
+				JOptionPane.showMessageDialog(
+						null, 
+						"RSA Key susscfully shared.", 
+						"Success", 
+						JOptionPane.OK_CANCEL_OPTION);
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			return;
