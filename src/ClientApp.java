@@ -1204,6 +1204,13 @@ public class ClientApp {
 								"Password Change Failure", 
 								JOptionPane.OK_CANCEL_OPTION);
 				return;
+			} else {
+				JOptionPane.showMessageDialog(
+								null, 
+								"Password Change Success.", 
+								"Password Change Success", 
+								JOptionPane.OK_CANCEL_OPTION);
+				return;
 			}
 		}
 	}
