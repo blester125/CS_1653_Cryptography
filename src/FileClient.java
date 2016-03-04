@@ -25,6 +25,16 @@ public class FileClient extends Client implements FileClientInterface {
 
 	}
 
+	public Envelope buildSuper(Envelope env){
+
+		IvParameterSpec ivspec = CipherBox.generateRandomIV();			
+		Envelope superEnv = new Envelope("SUPER");
+		superEnv.addObject(CipherBox.encrypt(env, secretKey, ivspec));
+		superEnv.addObject(ivspec);
+
+		return superEnv;
+	}
+
 
 	public boolean delete(String filename, String group, UserToken token) {
 
@@ -45,11 +55,9 @@ public class FileClient extends Client implements FileClientInterface {
 
 		try {
 
-			IvParameterSpec ivspec = CipherBox.generateRandomIV();			
-			Envelope superEnv = new Envelope("SUPER");
-			superEnv.addObject(CipherBox.encrypt(env, secretKey, ivspec));
-
+			Envelope superEnv = buildSuper(env);
 			output.writeObject(superEnv);
+
 			Envelope superInputEnv = (Envelope)input.readObject();
 			SealedObject innerEnv = (SealedObject)superInputEnv.getObjContents().get(0);
 			IvParameterSpec decIVSpec = new IvParameterSpec((byte[])superInputEnv.getObjContents().get(1));
@@ -94,6 +102,7 @@ public class FileClient extends Client implements FileClientInterface {
 					    IvParameterSpec ivspec = CipherBox.generateRandomIV();			
 						Envelope superEnv = new Envelope("SUPER");
 						superEnv.addObject(CipherBox.encrypt(env, secretKey, ivspec));
+						superEnv.addObject(ivspec);
 					    output.writeObject(superEnv); 
 					
 					    Envelope superInputEnv = (Envelope)input.readObject();
@@ -107,7 +116,7 @@ public class FileClient extends Client implements FileClientInterface {
 
 								env = new Envelope("DOWNLOADF"); //Success
 								output.writeObject(env);
-								
+
 								env = (Envelope)input.readObject();									
 						}										
 						fos.close();
