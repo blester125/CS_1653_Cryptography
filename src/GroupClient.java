@@ -69,21 +69,21 @@ public class GroupClient extends Client implements GroupClientInterface {
 		// return false;
 	}
 
-	public boolean login(String username, String password) throws Exception 
+	public int login(String username, String password) throws Exception 
 	{
 		Envelope contents = new Envelope("LOGIN");
 		contents.addObject(username);
 		contents.addObject(password);
-		IvParameterSpec iv = ChiperBox.generateRandomIV();
-		SealedObject sealedEnvelope = ChiperBox.encrypt(contents, sessionKey, iv);
+		IvParameterSpec iv = CipherBox.generateRandomIV();
+		SealedObject sealedEnvelope = CipherBox.encrypt(contents, sessionKey, iv);
 		Envelope message = new Envelope("");
 		message.addObject(sealedEnvelope);
-		message.addObject(iv.toByteArray());
+		message.addObject(iv.getIV());
 		output.writeObject(message);
 		Envelope response = (Envelope)input.readObject();
-		sealedEnvelope = response.getObjContents().get(0);
-		iv = response.getObjContents.get(1);
-		contents = (Envelope)ChipherBox.decrypt(sealedEnvelope, sessionKey, iv);
+		sealedEnvelope = (SealedObject)response.getObjContents().get(0);
+		iv = (IvParameterSpec)response.getObjContents().get(1);
+		contents = (Envelope)CipherBox.decrypt(sealedEnvelope, sessionKey, iv);
 		if (contents.getMessage().equals("OK")) {
 			return 0;
 		}
@@ -110,7 +110,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			//Tell the server to return a token.
 			message = new Envelope("GET");
 			message.addObject(username); //Add user name string
-			output.writeObject(CipherBox.encrypt(message, AESCipherEncrypt));
+			//output.writeObject(CipherBox.encrypt(message, AESCipherEncrypt));
 		
 			//Get the response from the server
 			/*SealedObject sa = (SealedObject)input.readObject();
@@ -120,7 +120,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			cipher.init(Cipher.DECRYPT_MODE, secreteKeySpec);
 			response = (Envelope) CipherBox.decrypt(sa, cipher);
 			System.out.println(response.getMessage());*/
-			response = (Envelope)CipherBox.decrypt((SealedObject)input.readObject(), AESCipherDecrypt);
+			//response = (Envelope)CipherBox.decrypt((SealedObject)input.readObject(), AESCipherDecrypt);
 			
 			
 			//Successful response
@@ -374,7 +374,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			keyAgreement = DiffieHellman.genKeyAgreement(keyPair);
 		} catch (Exception e) {
 			e.printStackTrace();
-			return false;
+			return null;
 		}
 		 try {
 			Envelope message = null, response = null;
@@ -401,7 +401,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 		{
 			System.err.println("Error: " + e.getMessage());
 			e.printStackTrace(System.err);
-			return false;
+			return null;
 		}
 	 }
 }

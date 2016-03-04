@@ -71,7 +71,10 @@ public class GroupThread extends Thread
 				// decrypt envelopes after establishing a secure connection with
 				// a shared symmetric secret key
 				else {
-					message = (Envelope)CipherBox.decrypt((SealedObject)input.readObject(), AESCipherDecrypt);
+					Envelope superE = (Envelope)input.readObject();
+					SealedObject sealedEnvelope = (SealedObject)superE.getObjContents().get(0);
+					IvParameterSpec ivspec = new IvParameterSpec((byte[])superE.getObjContents().get(1));
+					message = (Envelope)CipherBox.decrypt(sealedEnvelope, sessionKey, ivspec);
 				}
 				System.out.println("Request received: " + message.getMessage());
 				
@@ -86,18 +89,9 @@ public class GroupThread extends Thread
 						keypair = DiffieHellman.genKeyPair();
 						keyAgreement = DiffieHellman.genKeyAgreement(keypair);
 						SecretKey secretKey = DiffieHellman.generateSecretKey(clientPK, keyAgreement);
-						System.out.println(secretKey.getEncoded().length);
-						
-						SecureRandom rnd = new SecureRandom();
-						byte iv[] = new byte[16];
-						rnd.nextBytes(iv);
-						IvParameterSpec ivspec = new IvParameterSpec(iv);
-
-						AESCipherDecrypt.init(Cipher.DECRYPT_MODE, secretKey, ivspec);
-						AESCipherEncrypt.init(Cipher.ENCRYPT_MODE, secretKey, ivspec);
+						System.out.println(secretKey.getEncoded());
 						response = new Envelope("OK");
 						response.addObject(keypair.getPublic());
-						response.addObject(iv);
 						output.writeObject(response);
 						isSecureConnection = true;
 					} catch(Exception e) {
@@ -107,7 +101,7 @@ public class GroupThread extends Thread
 						output.writeObject(response);
 					}
 				}
-				if(message.getMessage().equals("LOGIN")) 
+				else if(message.getMessage().equals("LOGIN")) 
 				{
 					if (message.getObjContents().size() < 2)
 					{
@@ -121,17 +115,8 @@ public class GroupThread extends Thread
 				 			if (message.getObjContents().get(1) != null)
 							{
 								String username = (String)message.getObjContents().get(0);
-								PublicKey userPublicKey = (PublicKey)message.getObjContents().get(1);
-								KeyPair keyPair = DiffieHellman.genKeyPair();
-								KeyAgreement keyAgree = DiffieHellman.genKeyAgreement(keyPair);
-								sessionKey = DiffieHellman.generateSecretKey(userPublicKey, keyAgree);
-								System.out.println(new String(sessionKey.getEncoded()));
-								response = new Envelope("LOGIN");
-								response.addObject(keyPair.getPublic());
-								output.writeObject(response);
-				// 				// Read encrypted username and password
-				// 				// decrypt
-				// 				// extract username and password
+								String password = (String)message.getObjContents().get(1);
+								System.out.println(username + " " + password);
 				// 				// check username vs first one
 				// 				// look up salt
 				// 				// compute H(password || salt)
@@ -144,10 +129,13 @@ public class GroupThread extends Thread
 				// 					// Add an else if (message.get == "CHANGEPASSWORD")
 				// 				// else
 				// 					// Send Success
- 			// 				}
-				// 		}
-				// 	}
-				// }
+								response = new Envelope("OK");
+								//response.addObject(keyPair.getPublic());
+								output.writeObject(response);
+ 							}
+				 		}
+					}
+				}
 				else if(message.getMessage().equals("GET") && isSecureConnection)//Client wants a token
 				{
 					String username = (String)message.getObjContents().get(0); //Get the username
@@ -156,7 +144,7 @@ public class GroupThread extends Thread
 						response = new Envelope("FAIL");
 						response.addObject(null);
 						System.out.println("SENT from GET: " + response);
-						output.writeObject(CipherBox.encrypt(response, AESCipherEncrypt));
+						//output.writeObject(CipherBox.encrypt(response, AESCipherEncrypt));
 					}
 					else
 					{
@@ -171,7 +159,7 @@ public class GroupThread extends Thread
 						cipher.init(Cipher.ENCRYPT_MODE, secreteKeySpec);
 						SealedObject responseEncrypted = CipherBox.encrypt(response, cipher);
 						output.writeObject(responseEncrypted);*/
-						output.writeObject(CipherBox.encrypt(response, AESCipherEncrypt));
+						//output.writeObject(CipherBox.encrypt(response, AESCipherEncrypt));
 						
 					}
 				}

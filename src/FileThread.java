@@ -20,6 +20,7 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 
 import java.security.KeyPair;
+import java.security.SealedObject;
 
 public class FileThread extends Thread
 {
