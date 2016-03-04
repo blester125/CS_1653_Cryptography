@@ -1,9 +1,12 @@
 import java.security.PublicKey;
 import java.util.Hashtable;
+import java.io.Serializable;
 
 
-public class ServerRegistry {
+public class ServerRegistry implements Serializable {
+	private static final long serialVersionUID = 5463198767498412185L;	
 	private Hashtable<ServerInfo, PublicKey> serverReg;
+										  
 	
 	public ServerRegistry() {
 		this.serverReg = new Hashtable<ServerInfo, PublicKey>();

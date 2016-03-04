@@ -23,10 +23,9 @@ import java.math.BigInteger;
 
 public class FileClient extends Client implements FileClientInterface {
 	private SecretKey secretKey;
-	private PublicKey fsPublicKey;
-	private PublicKey cachedPublicKey;
+	public PublicKey cachedPublicKey;
 	private String fileserverRegistry = "FileServerRegistry.bin";
-	private PublicKey serverPublicKey;
+	public PublicKey serverPublicKey;
 	
 	public FileClient() {
 
@@ -352,18 +351,12 @@ public class FileClient extends Client implements FileClientInterface {
 		try {
 			fis = new FileInputStream(fileserverRegistry);
 		} catch (FileNotFoundException e1) {
-			ObjectOutputStream outStream;
-			try
-			{
-				outStream = new ObjectOutputStream(new FileOutputStream(fileserverRegistry));
-				outStream.writeObject(new ServerRegistry());
-				outStream.close();
-			} catch(Exception e) {
-				e.printStackTrace();
+			File temp = new File(fileserverRegistry);
+			try{
+				fis = new FileInputStream(temp);
+			} catch (Exception e){
 				return false;
 			}
-			e1.printStackTrace();
-			return false;
 		}
 		ObjectInputStream fsStream = null;
 		// read the object
@@ -398,7 +391,7 @@ public class FileClient extends Client implements FileClientInterface {
 		ServerInfo connectedFS = new ServerInfo(this.sock.getInetAddress().getHostName(), 
 				Integer.toString(this.sock.getPort()));
 		if(fsReg.getServerPublicKey(connectedFS) != null && 
-				fsReg.getServerPublicKey(connectedFS).equals(fsPublicKey)) {
+				fsReg.getServerPublicKey(connectedFS).equals(serverPublicKey)) {
 			return true;
 		}
 		
@@ -416,18 +409,12 @@ public class FileClient extends Client implements FileClientInterface {
 		try {
 			fis = new FileInputStream(fileserverRegistry);
 		} catch (FileNotFoundException e1) {
-			ObjectOutputStream outStream;
-			try
-			{
-				outStream = new ObjectOutputStream(new FileOutputStream(fileserverRegistry));
-				outStream.writeObject(new ServerRegistry());
-				outStream.close();
-			} catch(Exception e) {
-				e.printStackTrace();
+			File temp = new File(fileserverRegistry);
+			try{
+				fis = new FileInputStream(temp);
+			} catch (Exception e){
 				return false;
 			}
-			e1.printStackTrace();
-			return false;
 		}
 		ObjectInputStream fsStream = null;
 		try {
@@ -459,7 +446,7 @@ public class FileClient extends Client implements FileClientInterface {
 		// save the updated registry
 		fsReg.insertServerInfo(
 				new ServerInfo(this.sock.getInetAddress().getHostName(), Integer.toString(this.sock.getPort())), 
-				this.fsPublicKey);
+				this.serverPublicKey);
 		ObjectOutputStream outStream = null;
 		try
 		{
@@ -550,6 +537,8 @@ public class FileClient extends Client implements FileClientInterface {
 		 	//Build an envelope with the challenge
 		 	Envelope env = new Envelope("CHALLENGE");
 		 	env.addObject(encRSA_R1);
+
+		 	System.out.println("challenge env:" + env);
 
 		 	//Send the challenge (encrypted with the session key) to server
 		 	output.writeObject(buildSuper(env));
