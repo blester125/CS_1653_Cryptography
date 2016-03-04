@@ -2,37 +2,47 @@
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.security.KeyPair;
+import java.security.PublicKey;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.util.List;
 
-import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
-
-import java.security.SecureRandom;
-import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.SealedObject;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+
+import java.math.BigInteger;
 
 public class FileClient extends Client implements FileClientInterface {
 	private SecretKey secretKey;
+	private PublicKey fsPublicKey;
+	private PublicKey cachedPublicKey;
+	private String fileserverRegistry = "FileServerRegistry.bin";
+	private PublicKey serverPublicKey;
 	
 	public FileClient() {
 
 	}
 
 	public Envelope buildSuper(Envelope env){
-
 		IvParameterSpec ivspec = CipherBox.generateRandomIV();			
 		Envelope superEnv = new Envelope("SUPER");
 		superEnv.addObject(CipherBox.encrypt(env, secretKey, ivspec));
 		superEnv.addObject(ivspec.getIV());
 
 		return superEnv;
+	}
+	
+	public PublicKey getCachedPublicKey() {
+		return this.cachedPublicKey;
 	}
 
 	public Envelope extractInner(Envelope superInputEnv){
@@ -310,21 +320,169 @@ public class FileClient extends Client implements FileClientInterface {
 				}
 		 return true;
 	}
+	
+	/**
+	 * attempts to securely establish a session with the file server
+	 * @return true on success, false on failure
+	 */
+	public boolean establishSession() {
+		// send the user's public symmetric key value to the file server
+		// and establish a shared secret symmetric key upon receiving the file server's
+		// public value
+		establishSessionKey();
+		// authenticates the server by checking the server's public key
+		// against the cached registry of hostname:ip to public keys
+		authenticateServer();
+		
+		return false;
+	}
 
 	/**
-	  * Establish a shared session key and send + verify a challenge,
-	  * fully authenticating the server.
-	  * @return	true on success, false on failure
+	  * using the server's public key retrieved from establishSessionKey,
+	  * the client verifies that the file server's hostname:port match
+	  * the given public key for the file server the client has cached
+	  * @return	true if the public key is cached and matches the host:port
+	  * for the file server, false otherwise 
 	  */
 	public boolean authenticateServer(){
-
+		// check the client's file server registry for the hostname:ip
+		// pairing with the corresponding public key
+		FileInputStream fis;
+		ServerRegistry fsReg;
+		try {
+			fis = new FileInputStream(fileserverRegistry);
+		} catch (FileNotFoundException e1) {
+			ObjectOutputStream outStream;
+			try
+			{
+				outStream = new ObjectOutputStream(new FileOutputStream(fileserverRegistry));
+				outStream.writeObject(new ServerRegistry());
+				outStream.close();
+			} catch(Exception e) {
+				e.printStackTrace();
+				return false;
+			}
+			e1.printStackTrace();
+			return false;
+		}
+		ObjectInputStream fsStream = null;
+		// read the object
+		try {
+			fsStream = new ObjectInputStream(fis);
+		} catch (IOException e1) {
+			e1.printStackTrace();
+			try {
+				fsStream.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			return false;
+		}
+		try {
+			fsReg = (ServerRegistry)fsStream.readObject();
+			this.cachedPublicKey = fsReg.getServerPublicKey(new ServerInfo(this.sock.getInetAddress().getHostName(), 
+					Integer.toString(this.sock.getPort())));
+			fsStream.close();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+			try {
+				fsStream.close();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+			return false;
+		} catch (IOException e) {
+			e.printStackTrace();
+			return false;
+		}
+		ServerInfo connectedFS = new ServerInfo(this.sock.getInetAddress().getHostName(), 
+				Integer.toString(this.sock.getPort()));
+		if(fsReg.getServerPublicKey(connectedFS) != null && 
+				fsReg.getServerPublicKey(connectedFS).equals(fsPublicKey)) {
+			return true;
+		}
+		
 		return false;
+	}
+	
+	/**
+	 * add the server to the user's registry cache
+	 * @return success/failure
+	 */
+	public boolean addServerToRegistry() {
+		// retrieve the registry
+		FileInputStream fis;
+		ServerRegistry fsReg;
+		try {
+			fis = new FileInputStream(fileserverRegistry);
+		} catch (FileNotFoundException e1) {
+			ObjectOutputStream outStream;
+			try
+			{
+				outStream = new ObjectOutputStream(new FileOutputStream(fileserverRegistry));
+				outStream.writeObject(new ServerRegistry());
+				outStream.close();
+			} catch(Exception e) {
+				e.printStackTrace();
+				return false;
+			}
+			e1.printStackTrace();
+			return false;
+		}
+		ObjectInputStream fsStream = null;
+		try {
+			fsStream = new ObjectInputStream(fis);
+		} catch (IOException e1) {
+			e1.printStackTrace();
+			try {
+				fsStream.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			return false;
+		}
+		try {
+			fsReg = (ServerRegistry)fsStream.readObject();
+			fsStream.close();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+			try {
+				fsStream.close();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+			return false;
+		} catch (IOException e) {
+			e.printStackTrace();
+			return false;
+		}
+		// save the updated registry
+		fsReg.insertServerInfo(
+				new ServerInfo(this.sock.getInetAddress().getHostName(), Integer.toString(this.sock.getPort())), 
+				this.fsPublicKey);
+		ObjectOutputStream outStream = null;
+		try
+		{
+			outStream = new ObjectOutputStream(new FileOutputStream(fileserverRegistry));
+			outStream.writeObject(fsReg);
+			outStream.close();
+		} catch(Exception e) {
+			e.printStackTrace();
+			try {
+				outStream.close();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+				return false;
+			}
+			return false;
+		}
+		return true;
 	}
 
 	/**
 	  * establishes a shared session key by generating a shared symmetric key between
 	  * the client and the server 
-	  * @return	SecretKey
+	  * @return	boolean
 	  */
 	public SecretKey establishSessionKey() {
 		KeyPair keyPair = null;
@@ -351,12 +509,16 @@ public class FileClient extends Client implements FileClientInterface {
 			//If server indicates success, return true
 			if(response.getMessage().equals("OK"))
 			{
-				//retrieve the group server's public value
+				//retrieve the file server's public value
 				PublicKey fileServerPK = (PublicKey)response.getObjContents().get(0);
 
 				// generate the shared secret key
 				secretKey = DiffieHellman.generateSecretKey(fileServerPK, keyAgreement);
 				System.out.println(secretKey.getEncoded());
+
+				// get the server public key
+				serverPublicKey = (PublicKey)response.getObjContents().get(1);
+				System.out.println(serverPublicKey.getEncoded());
 	
 				return secretKey;
 			}
@@ -369,6 +531,51 @@ public class FileClient extends Client implements FileClientInterface {
 			e.printStackTrace(System.err);
 			return null;
 		}
+	 }
+
+
+	 public boolean issueChallenge(){
+
+	 	try{
+
+		 	Envelope response = null;
+
+		 	//Generate random long to use as r1
+		 	SecureRandom srand = new SecureRandom();
+		 	BigInteger r1 = new BigInteger(256, srand);
+
+		 	//Encrypt with server's public RSA key
+		 	SealedObject encRSA_R1 = CipherBox.encrypt(r1, serverPublicKey);
+
+		 	//Build an envelope with the challenge
+		 	Envelope env = new Envelope("CHALLENGE");
+		 	env.addObject(encRSA_R1);
+
+		 	//Send the challenge (encrypted with the session key) to server
+		 	output.writeObject(buildSuper(env));
+
+		 	response = extractInner((Envelope)input.readObject());
+
+		 	if(response.getMessage().equals("CH_RESPONSE")){
+
+		 		BigInteger challengeAnswer = (BigInteger)response.getObjContents().get(0);
+
+		 		if(challengeAnswer.equals(r1)){
+
+		 			Envelope success = new Envelope("AUTH_SUCCESS");
+		 			output.writeObject(buildSuper(success));
+
+		 			return true;
+		 		}
+
+		 		return false;
+		 	}
+		 	return false;
+	 	} catch (Exception exception){
+
+	 		return false;
+	 	}
+
 	 }
 }
 

@@ -1,30 +1,42 @@
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+
 import javax.swing.JFrame;
 import javax.swing.JTabbedPane;
+
 import java.awt.BorderLayout;
+
 import javax.swing.JPanel;
+
 import java.awt.GridBagLayout;
+
 import javax.swing.JLabel;
+
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
+
 import javax.swing.JTextField;
 import javax.swing.JScrollBar;
+
 import java.awt.GridLayout;
+
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JSplitPane;
 import javax.swing.JList;
 import javax.swing.ListSelectionModel;
 import javax.swing.AbstractListModel;
+
 import java.awt.Component;
+
 import javax.swing.Box;
 import javax.swing.JPasswordField;
 import javax.swing.SwingUtilities;
 import javax.swing.JComponent;
 import javax.swing.JOptionPane;
 import javax.swing.DefaultListModel;
+
 import java.util.ArrayList;
 import java.io.File;
 
@@ -819,6 +831,11 @@ public class ClientApp {
 			JOptionPane.showMessageDialog(null, "Connection failure. Could not establish a secure connection to FILE server at " + ipAddr + ":" + port + ".", "Connection Failure", JOptionPane.OK_CANCEL_OPTION);
 			return;
 		}
+		// Authenticate file server
+		if(!RunClient.fileC.authenticateServer()) {
+			//TODO: Carmen generate the pop-up and call RunClient.fileC.addServerToRegistry if they trust the server
+		}
+		
 		tabbedPane.setEnabledAt(2,true);
 
 		//redraw files page
