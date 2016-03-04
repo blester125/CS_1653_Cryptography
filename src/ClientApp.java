@@ -1038,16 +1038,17 @@ public class ClientApp {
 			if(dialogue == 0){
 
 				RunClient.fileC.addServerToRegistry();
-
-				if(!RunClient.fileC.issueChallenge()){
-					JOptionPane.showMessageDialog(null, "Server failed to correctly answer the challenge.", "Challenge Failure", JOptionPane.OK_CANCEL_OPTION);
-					RunClient.fileC.disconnect();
-				}
-
 			}
 			else {
 				JOptionPane.showMessageDialog(null, "Connection aborted. Please alert your system administrator of suspicious file servers.", "Connection Aborted", JOptionPane.OK_CANCEL_OPTION);
 				RunClient.fileC.disconnect();
+				return;
+			}
+
+			if(!RunClient.fileC.issueChallenge()){
+				JOptionPane.showMessageDialog(null, "Server failed to correctly answer the challenge.", "Challenge Failure", JOptionPane.OK_CANCEL_OPTION);
+				RunClient.fileC.disconnect();
+				return;
 			}
 
 		}
