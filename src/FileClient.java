@@ -14,47 +14,58 @@ import javax.crypto.KeyAgreement;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 
+import java.security.SecureRandom;
+import javax.crypto.spec.IvParameterSpec;
+
 public class FileClient extends Client implements FileClientInterface {
 	private SecretKey secretKey;
-	private Cipher AESCipher;
 	
 	public FileClient() {
-		try {
-			AESCipher = Cipher.getInstance("AES");
-		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
-		} catch (NoSuchPaddingException e) {
-			e.printStackTrace();
-		}
+
 	}
 
 
 	public boolean delete(String filename, String group, UserToken token) {
+
 		String remotePath;
+
 		if (filename.charAt(0)=='/') {
 			remotePath = filename.substring(1);
 		}
 		else {
 			remotePath = filename;
 		}
+
 		remotePath = remotePath + group;
+
 		Envelope env = new Envelope("DELETEF"); //Success
 		env.addObject(remotePath);
 		env.addObject(token);
+
 		try {
-			output.writeObject(env);
-			env = (Envelope)input.readObject();
+
+			IvParameterSpec ivspec = CipherBox.generateRandomIV();			
+			Envelope superEnv = new Envelope("SUPER");
+			superEnv.addObject(CipherBox.encrypt(env, secretKey, ivspec));
+
+			output.writeObject(superEnv);
+			Envelope superInputEnv = (Envelope)input.readObject();
+			env = (Envelope)CipherBox.decrypt(superInputEnv.getObjContents.get(0), secretKey, superInputEnv.getObjContents().get(1));
 		   
 			if (env.getMessage().compareTo("OK")==0) {
+
 				System.out.printf("File %s deleted successfully\n", filename);				
 			}
 			else {
+
 				System.out.printf("Error deleting file %s (%s)\n", filename, env.getMessage());
 				return false;
 			}			
 		} catch (IOException e1) {
+
 			e1.printStackTrace();
 		} catch (ClassNotFoundException e1) {
+
 			e1.printStackTrace();
 		}  	
 		return true;
@@ -76,9 +87,15 @@ public class FileClient extends Client implements FileClientInterface {
 					    Envelope env = new Envelope("DOWNLOADF"); //Success
 					    env.addObject(sourceFile);
 					    env.addObject(token);
-					    output.writeObject(env); 
+
+					    IvParameterSpec ivspec = CipherBox.generateRandomIV();			
+						Envelope superEnv = new Envelope("SUPER");
+						superEnv.addObject(CipherBox.encrypt(env, secretKey, ivspec));
+					    output.writeObject(superEnv); 
 					
-					    env = (Envelope)input.readObject();
+					    Envelope superInputEnv = (Envelope)input.readObject();
+					    env = (Envelope)CipherBox.decrypt(superInputEnv.getObjContents.get(0), secretKey, superInputEnv.getObjContents().get(1));
+
 					    
 						while (env.getMessage().compareTo("CHUNK")==0) { 
 								fos.write((byte[])env.getObjContents().get(0), 0, (Integer)env.getObjContents().get(1));
@@ -276,47 +293,61 @@ public class FileClient extends Client implements FileClientInterface {
 	}
 
 	/**
-	  * establishes a shared session key by generating a shared symmetric key between
-	  * the client and the server 
+	  * Establish a shared session key and send + verify a challenge,
+	  * fully authenticating the server.
 	  * @return	true on success, false on failure
 	  */
-	public boolean establishSessionKey() {
-		 KeyPair keyPair = null;
-		 KeyAgreement keyAgreement = null;
+	public boolean authenticateServer(){
+
+	}
+
+	/**
+	  * establishes a shared session key by generating a shared symmetric key between
+	  * the client and the server 
+	  * @return	SecretKey
+	  */
+	public SecretKey establishSessionKey() {
+		KeyPair keyPair = null;
+		KeyAgreement keyAgreement = null;
+
 		try {
 			keyPair = DiffieHellman.genKeyPair();
 			keyAgreement = DiffieHellman.genKeyAgreement(keyPair);
 		} catch (Exception e) {
 			e.printStackTrace();
-			return false;
+			return null;
 		}
-		 try {
+
+		try {
 			Envelope message = null, response = null;
+
 			//Tell the server to delete a group
 			message = new Envelope("SESSIONKEY");
 			message.addObject(keyPair.getPublic()); // add public value to envelope
 			output.writeObject(message); 
 		
 			response = (Envelope)input.readObject();
+
 			//If server indicates success, return true
 			if(response.getMessage().equals("OK"))
 			{
 				//retrieve the group server's public value
 				PublicKey fileServerPK = (PublicKey)response.getObjContents().get(0);
+
 				// generate the shared secret key
 				secretKey = DiffieHellman.generateSecretKey(fileServerPK, keyAgreement);
 				System.out.println(secretKey.getEncoded());
 	
-				return true;
+				return secretKey;
 			}
 			
-			return false;
+			return null;
 		}
 		catch(Exception e)
 		{
 			System.err.println("Error: " + e.getMessage());
 			e.printStackTrace(System.err);
-			return false;
+			return null;
 		}
 	 }
 }

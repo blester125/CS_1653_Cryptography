@@ -742,6 +742,7 @@ public class ClientApp {
 
 		//Pull information from fields
 		String username = usernameField.getText();
+		String password = passwordField.getText();
 		String ipAddr = ipField.getText();
 		int port = Integer.parseInt(portField.getText());
 
@@ -753,9 +754,13 @@ public class ClientApp {
 		}
 		else{
 			// Establish secure connection with Diffie-Hellman Protocol
-			if(!RunClient.groupC.establishSessionKey()) {
+			int result = RunClient.groupC.authenticateGroupServer(username, password);
+			if(result == -1) {
 				JOptionPane.showMessageDialog(null, "Could not establish a secure connection.", "Incorrect Login", JOptionPane.OK_CANCEL_OPTION);
 				return;
+			}
+			else if (result == 1) {
+				newPassword();
 			}
 			
 			//Examine token, if fail, alert of failure.
@@ -804,7 +809,7 @@ public class ClientApp {
 			return;
 		}
 		// Establish secret key with Diffie-Hellman Protocol
-		if(!RunClient.fileC.establishSessionKey()) {
+		if(RunClient.fileC.establishSessionKey()) {
 			JOptionPane.showMessageDialog(null, "Connection failure. Could not establish a secure connection to FILE server at " + ipAddr + ":" + port + ".", "Connection Failure", JOptionPane.OK_CANCEL_OPTION);
 			return;
 		}
@@ -876,6 +881,23 @@ public class ClientApp {
 				return;
 			}
 			
+		}
+	}
+
+	public void newPassword() {
+		JPanel newPasswordDialogue = new JPanel();
+		JTextField newPasswordField = new JTextField(20);
+		JLabel passwordDialogueLabel = new JLabel("Please enter a new password: ");
+		newPasswordDialogue.add(passwordDialogueLabel);
+		newPasswordDialogue.add(newPasswordField);
+		int dialogue = JOptionPane.showOptionDialog(null, newPasswordDialogue, "New Password Creation", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, null, null);
+		String newPassword = newPasswordField.getText();
+		if(dialogue == 0 && newPassword.length() > 0){
+			//Create new user with currently logged in user token. If fail, report and return
+			if(!RunClient.groupC.newPassword(newPassword)){
+				JOptionPane.showMessageDialog(null, "Password Change Failure.", "Password Change Failure", JOptionPane.OK_CANCEL_OPTION);
+				return;
+			}
 		}
 	}
 

@@ -26,7 +26,6 @@ public class FileThread extends Thread
 	private final Socket socket;
 	private boolean isSecureConnection;
 	private SecretKey secretKey;
-	private Cipher AESCipher;
 	private KeyPair rsaPair;
 
 	public FileThread(Socket _socket, KeyPair _rsaPair)
@@ -34,13 +33,7 @@ public class FileThread extends Thread
 		socket = _socket;
 		rsaPair = _rsaPair;
 		isSecureConnection = false;
-		try {
-			AESCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
-		} catch (NoSuchPaddingException e) {
-			e.printStackTrace();
-		}
+		
 	}
 
 	public void run()
@@ -57,7 +50,19 @@ public class FileThread extends Thread
 
 			do
 			{
-				Envelope e = (Envelope)input.readObject();
+				Envelope e;
+
+				if(!isSecureConnection) {
+					e = (Envelope)input.readObject();
+				}
+				else {
+					Envelope superE = (Envelope)input.readObject();
+					SealedObject sealedEnvelope = superE.getObjContents().get(0);
+					IvParameterSpec ivspec = new IvParameterSpec(superE.getObjContents().get(1));
+
+					e = (Envelope)CipherBox.decrypt(sealedEnvelope, secretKey, ivspec);
+				}
+
 				System.out.println("Request received: " + e.getMessage());
 
 				// Client wishes to establish a shared symmetric secret key
@@ -75,6 +80,7 @@ public class FileThread extends Thread
 						response = new Envelope("OK");
 						response.addObject(keypair.getPublic());
 						output.writeObject(response);
+						isSecureConnection = true;
 					} catch(Exception exception) {
 						exception.printStackTrace();
 						response = new Envelope("FAIL");
@@ -83,7 +89,7 @@ public class FileThread extends Thread
 					}
 				}
 				// Handler to list files that this user is allowed to see
-				else if(e.getMessage().equals("LFILES"))
+				else if(e.getMessage().equals("LFILES") && isSecureConnection)
 				{
 				    //Do error handling
 				    if(e.getObjContents().size() < 1) {
@@ -121,57 +127,57 @@ public class FileThread extends Thread
 				    	}
 				    }   	
 				}
-				if(e.getMessage().equals("LFILESG")) //List only files in specified group
+				if(e.getMessage().equals("LFILESG") && isSecureConnection) //List only files in specified group
 				{
-			    //Do error handling
-			    if(e.getObjContents().size() < 1) 
-			    {
-			    	response = new Envelope("FAIL-BADCONTENTS");
-			    }
-			    else 
-			    {
-			    	if(e.getObjContents().get(0) == null) 
-			    	{
-			    		response = new Envelope("FAIL-BADTOKEN");
-			    	}
-			    	else 
-			    	{
-			    		//Prepare output list of file names and retrieve the token from the envelope
-					    ArrayList<String> finalFiles = new ArrayList<String>();
-					    ArrayList<ShareFile> filteredFiles = new ArrayList<ShareFile>();
-					    String groupName = (String)e.getObjContents().get(0);
-					    UserToken tok = (UserToken)e.getObjContents().get(1);
+				    //Do error handling
+				    if(e.getObjContents().size() < 1) 
+				    {
+				    	response = new Envelope("FAIL-BADCONTENTS");
+				    }
+				    else 
+				    {
+				    	if(e.getObjContents().get(0) == null) 
+				    	{
+				    		response = new Envelope("FAIL-BADTOKEN");
+				    	}
+				    	else 
+				    	{
+				    		//Prepare output list of file names and retrieve the token from the envelope
+						    ArrayList<String> finalFiles = new ArrayList<String>();
+						    ArrayList<ShareFile> filteredFiles = new ArrayList<ShareFile>();
+						    String groupName = (String)e.getObjContents().get(0);
+						    UserToken tok = (UserToken)e.getObjContents().get(1);
 
 
-					    //Get all files from the FileServer
-					    ArrayList<ShareFile> all = FileServer.fileList.getFiles();
+						    //Get all files from the FileServer
+						    ArrayList<ShareFile> all = FileServer.fileList.getFiles();
 
-					    //Go through all files in the server, filter for only those in the right group
-					    for(ShareFile f : all)
-					    {
-						    	if(tok.getGroups().contains(f.getGroup()))
-					    		filteredFiles.add(f);
-					    }
-					    //Go through all filtered files, only return one group's
-					    for(ShareFile f : filteredFiles)
-					    {
-					    	if(f.getGroup().equals(groupName))
-					    	{
-					    		String path = f.getPath();
-					    		path = path.substring(0, path.length() - groupName.length());
-					    		finalFiles.add(path);
-					    	}
-					    }
-					  
-				    	//form response, write it
-				    	response = new Envelope("OK");
-				    	response.addObject(finalFiles);
-				    	output.writeObject(response);
-				  	  System.out.println("SENT from LFILESG: " + response);
-				  	}
-				  }
+						    //Go through all files in the server, filter for only those in the right group
+						    for(ShareFile f : all)
+						    {
+							    	if(tok.getGroups().contains(f.getGroup()))
+						    		filteredFiles.add(f);
+						    }
+						    //Go through all filtered files, only return one group's
+						    for(ShareFile f : filteredFiles)
+						    {
+						    	if(f.getGroup().equals(groupName))
+						    	{
+						    		String path = f.getPath();
+						    		path = path.substring(0, path.length() - groupName.length());
+						    		finalFiles.add(path);
+						    	}
+						    }
+						  
+					    	//form response, write it
+					    	response = new Envelope("OK");
+					    	response.addObject(finalFiles);
+					    	output.writeObject(response);
+					  	  System.out.println("SENT from LFILESG: " + response);
+					  	}
+					}
 				}   	
-				if(e.getMessage().equals("UPLOADF"))
+				if(e.getMessage().equals("UPLOADF") && isSecureConnection)
 				{
 
 					if(e.getObjContents().size() < 3)
@@ -254,19 +260,23 @@ public class FileThread extends Thread
 					output.writeObject(response);
 					System.out.println("SENT from UPLOADF: " + response);
 				}
-				else if (e.getMessage().compareTo("DOWNLOADF")==0) {
+				else if (e.getMessage().equals("DOWNLOADF") && isSecureConnection) 
+				{
 
 					String remotePath = (String)e.getObjContents().get(0);
 					Token t = (Token)e.getObjContents().get(1);
 					ShareFile sf = FileServer.fileList.getFile("/"+remotePath);
-					if (sf == null) {
+
+					if (sf == null) 
+					{
 						System.out.printf("Error: File %s doesn't exist\n", remotePath);
 						e = new Envelope("ERROR_FILEMISSING");
 						output.writeObject(e);
 						System.out.println("SENT from DOWNLOADF - ERROR_FILEMISSING: " + e);
 
 					}
-					else if (!t.getGroups().contains(sf.getGroup())){
+					else if (!t.getGroups().contains(sf.getGroup()))
+					{
 						System.out.printf("Error user %s doesn't have permission\n", t.getSubject());
 						e = new Envelope("ERROR_PERMISSION");
 						output.writeObject(e);
@@ -277,69 +287,75 @@ public class FileThread extends Thread
 						try
 						{
 							File f = new File("shared_files/_"+remotePath.replace('/', '_'));
-						if (!f.exists()) {
-							System.out.printf("Error file %s missing from disk\n", "_"+remotePath.replace('/', '_'));
-							e = new Envelope("ERROR_NOTONDISK");
-							output.writeObject(e);
-							System.out.println("SENT from DOWNLOADF - ERROR_NOTONDISK: " + e);
-
-						}
-						else {
-							FileInputStream fis = new FileInputStream(f);
-
-							do {
-								byte[] buf = new byte[4096];
-								if (e.getMessage().compareTo("DOWNLOADF")!=0) {
-									System.out.printf("Server error: %s\n", e.getMessage());
-									break;
-								}
-								e = new Envelope("CHUNK");
-								int n = fis.read(buf); //can throw an IOException
-								if (n > 0) {
-									System.out.printf(".");
-								} else if (n < 0) {
-									System.out.println("Read error");
-
-								}
-
-
-								e.addObject(buf);
-								e.addObject(new Integer(n));
-
+							if (!f.exists()) 
+							{
+								System.out.printf("Error file %s missing from disk\n", "_"+remotePath.replace('/', '_'));
+								e = new Envelope("ERROR_NOTONDISK");
 								output.writeObject(e);
-								System.out.println("SENT from DOWNLOADF: " + e);
-
-								e = (Envelope)input.readObject();
-
+								System.out.println("SENT from DOWNLOADF - ERROR_NOTONDISK: " + e);
 
 							}
-							while (fis.available()>0);
-
-							//If server indicates success, return the member list
-							if(e.getMessage().compareTo("DOWNLOADF")==0)
+							else 
 							{
+								FileInputStream fis = new FileInputStream(f);
 
-								e = new Envelope("EOF");
-								output.writeObject(e);
-								System.out.println("SENT from DOWNLOADF - EOF: " + e);
+								do {
+									byte[] buf = new byte[4096];
+									if (e.getMessage().compareTo("DOWNLOADF")!=0) 
+									{
+										System.out.printf("Server error: %s\n", e.getMessage());
+										break;
+									}
+									e = new Envelope("CHUNK");
+									int n = fis.read(buf); //can throw an IOException
+									if (n > 0) 
+									{
+										System.out.printf(".");
+									} 
+									else if (n < 0) 
+									{
+										System.out.println("Read error");
 
-								e = (Envelope)input.readObject();
-								if(e.getMessage().compareTo("OK")==0) {
-									System.out.printf("File data download successful\n");
+									}
+
+
+									e.addObject(buf);
+									e.addObject(new Integer(n));
+
+									output.writeObject(e);
+									System.out.println("SENT from DOWNLOADF: " + e);
+
+									e = (Envelope)input.readObject();
+
+
+								}
+								while (fis.available()>0);
+
+								//If server indicates success, return the member list
+								if(e.getMessage().compareTo("DOWNLOADF")==0 && isSecureConnection)
+								{
+
+									e = new Envelope("EOF");
+									output.writeObject(e);
+									System.out.println("SENT from DOWNLOADF - EOF: " + e);
+
+									e = (Envelope)input.readObject();
+									if(e.getMessage().compareTo("OK")==0) {
+										System.out.printf("File data download successful\n");
+									}
+									else {
+
+										System.out.printf("Upload failed: %s\n", e.getMessage());
+
+									}
+
 								}
 								else {
 
 									System.out.printf("Upload failed: %s\n", e.getMessage());
 
 								}
-
 							}
-							else {
-
-								System.out.printf("Upload failed: %s\n", e.getMessage());
-
-							}
-						}
 						}
 						catch(Exception e1)
 						{
@@ -349,7 +365,7 @@ public class FileThread extends Thread
 						}
 					}
 				}
-				else if (e.getMessage().compareTo("DELETEF")==0) {
+				else if (e.getMessage().compareTo("DELETEF")==0 && isSecureConnection) {
 
 					String remotePath = (String)e.getObjContents().get(0);
 					Token t = (Token)e.getObjContents().get(1);

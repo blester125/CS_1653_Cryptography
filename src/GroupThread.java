@@ -107,28 +107,28 @@ public class GroupThread extends Thread
 						output.writeObject(response);
 					}
 				}
-				// if(message.getMessage().equals("LOGIN")) 
-				// {
-				// 	if (message.getObjContents().size() < 2)
-				// 	{
-				// 		response = new Envelope("FAIL");
-				// 	}
-				// 	else
-				// 	{
-				// 		response = new Envelope("FAIL");
-				// 		if (message.getObjContents().get(0) != null)
-				// 		{
-				// 			if (message.getObjContents().get(1) != null)
-				// 			{
-				// 				String username = (String)message.getObjContents().get(0);
-				// 				PublicKey userPublicKey = (PublicKey)message.getObjContents().get(1);
-				// 				KeyPair keyPair = DiffieHellman.genKeyPair();
-				// 				KeyAgreement keyAgree = DiffieHellman.genKeyAgreement(keyPair);
-				// 				sessionKey = DiffieHellman.generateSecretKey(userPublicKey, keyAgree);
-				// 				System.out.println(new String(sessionKey.getEncoded()));
-				// 				response = new Envelope("LOGIN");
-				// 				response.addObject(keyPair.getPublic());
-				// 				output.writeObject(response);
+				if(message.getMessage().equals("LOGIN")) 
+				{
+					if (message.getObjContents().size() < 2)
+					{
+				 		response = new Envelope("FAIL");
+				 	}
+				 	else
+				 	{
+				 		response = new Envelope("FAIL");
+				 		if (message.getObjContents().get(0) != null)
+				 		{
+				 			if (message.getObjContents().get(1) != null)
+							{
+								String username = (String)message.getObjContents().get(0);
+								PublicKey userPublicKey = (PublicKey)message.getObjContents().get(1);
+								KeyPair keyPair = DiffieHellman.genKeyPair();
+								KeyAgreement keyAgree = DiffieHellman.genKeyAgreement(keyPair);
+								sessionKey = DiffieHellman.generateSecretKey(userPublicKey, keyAgree);
+								System.out.println(new String(sessionKey.getEncoded()));
+								response = new Envelope("LOGIN");
+								response.addObject(keyPair.getPublic());
+								output.writeObject(response);
 				// 				// Read encrypted username and password
 				// 				// decrypt
 				// 				// extract username and password

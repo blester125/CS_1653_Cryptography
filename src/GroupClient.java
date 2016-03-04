@@ -39,21 +39,24 @@ public class GroupClient extends Client implements GroupClientInterface {
 		}
 	}
 
-	public boolean login(String username, String password) throws Exception {
+	public int authenticateGroupServer(String username, String password) throws Exception {
 		Envelope message, response = null;
-		KeyPair keyPair = DiffieHellman.genKeyPair();
-		KeyAgreement keyAgree = DiffieHellman.genKeyAgreement(keyPair);
-		message = new Envelope("LOGIN");
-		message.addObject(username);
-		message.addObject(keyPair.getPublic());
-		output.writeObject(message);
-		response = (Envelope)input.readObject();
-		if (response.getMessage().equals("LOGIN")) {
-			PublicKey serverPublicKey = (PublicKey)response.getObjContents().get(0);
-			if (serverPublicKey != null) 
-			{
-				sessionKey = DiffieHellman.generateSecretKey(serverPublicKey, keyAgree);
-				System.out.println(new String(sessionKey.getEncoded()));
+		sessionKey = establishSessionKey();
+		return login(username, password);
+
+		//KeyPair keyPair = DiffieHellman.genKeyPair();
+		//KeyAgreement keyAgree = DiffieHellman.genKeyAgreement(keyPair);
+		//message = new Envelope("LOGIN");
+		//message.addObject(username);
+		//message.addObject(keyPair.getPublic());
+		//output.writeObject(message);
+		//response = (Envelope)input.readObject();
+		//if (response.getMessage().equals("LOGIN")) {
+		//	PublicKey serverPublicKey = (PublicKey)response.getObjContents().get(0);
+		//	if (serverPublicKey != null) 
+		//	{
+		//		sessionKey = DiffieHellman.generateSecretKey(serverPublicKey, keyAgree);
+		//		System.out.println(new String(sessionKey.getEncoded()));
 				// Send { username and password } sessionKey
 				// if "Success"
 					// return true
@@ -61,10 +64,41 @@ public class GroupClient extends Client implements GroupClientInterface {
 					// if this.changePassword(String Password) return true
 						// return true
 
-			}
-		}
-		return false;
+		//	}
+		//}
+		// return false;
 	}
+
+	public boolean login(String username, String password) throws Exception 
+	{
+		Envelope contents = new Envelope("LOGIN");
+		contents.addObject(username);
+		contents.addObject(password);
+		IvParameterSpec iv = ChiperBox.generateRandomIV();
+		SealedObject sealedEnvelope = ChiperBox.encrypt(contents, sessionKey, iv);
+		Envelope message = new Envelope("");
+		message.addObject(sealedEnvelope);
+		message.addObject(iv.toByteArray());
+		output.writeObject(message);
+		Envelope response = (Envelope)input.readObject();
+		sealedEnvelope = response.getObjContents().get(0);
+		iv = response.getObjContents.get(1);
+		contents = (Envelope)ChipherBox.decrypt(sealedEnvelope, sessionKey, iv);
+		if (contents.getMessage().equals("OK")) {
+			return 0;
+		}
+		else if (contents.getMessage().equals("CHANGEPASSWORD")) {
+			return 1;
+		}
+		else 
+		{
+			return -1;
+		}
+ 	}
+
+ 	public boolean newPassword(String password) {
+ 		return true;
+ 	}
  
 	public UserToken getToken(String username)
 	{
@@ -330,9 +364,9 @@ public class GroupClient extends Client implements GroupClientInterface {
 	 /**
 	  * establishes a shared session key by generating a shared symmetric key between
 	  * the client and the server 
-	  * @return	true on success, false on failure
+	  * @return	SecretKey on success, null on failure
 	  */
-	 public boolean establishSessionKey() {
+	 public SecretKey establishSessionKey() {
 		 KeyPair keyPair = null;
 		 KeyAgreement keyAgreement = null;
 		try {
@@ -344,7 +378,6 @@ public class GroupClient extends Client implements GroupClientInterface {
 		}
 		 try {
 			Envelope message = null, response = null;
-			//Tell the server to delete a group
 			message = new Envelope("SESSIONKEY");
 			message.addObject(keyPair.getPublic()); // add public value to envelope
 			output.writeObject(message); 
@@ -357,19 +390,12 @@ public class GroupClient extends Client implements GroupClientInterface {
 				PublicKey groupServerPK = (PublicKey)response.getObjContents().get(0);
 				// generate the shared secret key
 				SecretKey secretKey = DiffieHellman.generateSecretKey(groupServerPK, keyAgreement);
-
-				byte iv[] = (byte[])response.getObjContents().get(1);
-
-				IvParameterSpec ivspec = new IvParameterSpec(iv);
-
-				AESCipherDecrypt.init(Cipher.DECRYPT_MODE, secretKey, ivspec);
-				AESCipherEncrypt.init(Cipher.ENCRYPT_MODE, secretKey, ivspec);
 				System.out.println(secretKey.getEncoded());
 	
-				return true;
+				return secretKey;
 			}
 			
-			return false;
+			return null;
 		}
 		catch(Exception e)
 		{
