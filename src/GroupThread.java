@@ -819,6 +819,9 @@ public class GroupThread extends Thread
 	}
 
 	private boolean checkUser(String user, String pwd) {
+		if (my_gs.userList.checkUser(user) == false) {
+			return false;
+		}
 		BigInteger salt = my_gs.userList.getSalt(user);
 		byte[] password = Passwords.generatePasswordHash(pwd, salt);
 		return my_gs.userList.checkPassword(user, password);
