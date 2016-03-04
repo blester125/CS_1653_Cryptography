@@ -49,7 +49,8 @@ public class FileClient extends Client implements FileClientInterface {
 			superEnv.addObject(CipherBox.encrypt(env, secretKey, ivspec));
 
 			output.writeObject(superEnv);
-			env = (Envelope)input.readObject();
+			Envelope superInputEnv = (Envelope)input.readObject();
+			env = (Envelope)CipherBox.decrypt(superInputEnv.getObjContents.get(0), secretKey, superInputEnv.getObjContents().get(1));
 		   
 			if (env.getMessage().compareTo("OK")==0) {
 
@@ -86,9 +87,15 @@ public class FileClient extends Client implements FileClientInterface {
 					    Envelope env = new Envelope("DOWNLOADF"); //Success
 					    env.addObject(sourceFile);
 					    env.addObject(token);
-					    output.writeObject(env); 
+
+					    IvParameterSpec ivspec = CipherBox.generateRandomIV();			
+						Envelope superEnv = new Envelope("SUPER");
+						superEnv.addObject(CipherBox.encrypt(env, secretKey, ivspec));
+					    output.writeObject(superEnv); 
 					
-					    env = (Envelope)input.readObject();
+					    Envelope superInputEnv = (Envelope)input.readObject();
+					    env = (Envelope)CipherBox.decrypt(superInputEnv.getObjContents.get(0), secretKey, superInputEnv.getObjContents().get(1));
+
 					    
 						while (env.getMessage().compareTo("CHUNK")==0) { 
 								fos.write((byte[])env.getObjContents().get(0), 0, (Integer)env.getObjContents().get(1));
