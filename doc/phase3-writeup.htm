@@ -36,8 +36,8 @@ Ryan Conley (rgc11) </br >
       <h2>Overview</h2>
 <!-- BEGIN CHANGES HERE -->
 
-<p>In order to address the threats posed in the Threats T1-T4 our group used a 
-wide variety of Cryptographic techniques. We use Symmetric key cryptography to 
+<p>In order to address the threats posed in the Threats T1-T4, our group used a 
+wide variety of cryptographic techniques. We use symmetric key cryptography to 
 stop passive eavesdroppers, public key cryptography for mutual authentication, 
 digital signing for token verification, and key exchange protocols such 
 Diffie-Hellman to swap session keys. All notation used in this write-up is derived from
@@ -51,40 +51,41 @@ server, a "u" the user, and an "f" a file server.</p>
 <!-- BEGIN CHANGES HERE -->
 <p>
   Threat 1 (T1) is the threat of an Unauthorized Token Issuance. This threat can 
-  be succinctly be described as user Alice requesting (and then 
+  succinctly be described as user Alice requesting (and then 
   obtaining) a token meant for user Bob. It is easy to imagine this scenario being 
   exploited. Attacker Alice tells the Group server that her username is Bob. The 
   Group server responds with the token of user Bob. Now when Alice makes a
-  request to the file server she can access all the files that only Bob is supposed to. 
-  In our current insecure implementation 
-  a user can set their username to whatever they want and that is sent to the 
-  Group server. Exploiting this is as simple as typing a name in a box. </br>
+  request to the file server, she can access all the files that only Bob is supposed to. 
+  In our current insecure implementation, 
+  a user can set their username to whatever they want and that is then sent to the 
+  Group server. Exploiting this is as simple as typing a name in a box. </br><br>
   <img src="images/FakeUser.png" title="I am really User Alice" class="image"> 
-  </br>In this case 
+  </br>In this case, 
   Attacker Alice has entered User Bob's name in the username field and will be 
-  requesting Bob's token instead of her own. In our implementation the request for 
-  a token simply takes a username and responds with that users token. This means 
+  requesting Bob's token instead of her own. In our implementation, the request for 
+  a token simply takes a username and responds with that user's token. This means 
   that Alice using Bob's name will give her Bob's token.
   <br>
   This threat is not a one time threat. The system must defend from attacker 
   Alice taking a token meant for Bob after Bob has authenticated with the server 
   the initial time. This is the simple scenario of Alice waiting for the actual 
-  user Bob to request a token and then Alice could copy the token. This copy could 
+  user Bob to request a token, and then Alice could copy that token. This copy could 
   then be used on file servers to access Bob's files.
 </p>
 
 <p>
   Our solution is use passwords to protect the system from Unauthorized 
   Token Issuance. 
-  <br>
+  <br><br>
   <!-- User Creation, Justify why ADMIN gives password to user, Describe the 
     implementation of the newuser flag-->
-  In this solution an ADMIN picks a password that must be 
+  In this solution, an ADMIN picks a password that must be 
   provided to the group server upon user creation. This initial password will be 
   given to the user by the ADMIN. 
   The Group server will set a flag in the UserList that this user needs a new 
   password (a newPassword flag). This 
-  will trigger a forced password change once the user logs on. 
+  will trigger a forced password change once the user logs on. Note: this does not 
+  apply to the initial server ADMIN.
   <!-- Authentication Protocol 
     Key Exchange
     to Argue:
@@ -92,10 +93,10 @@ server, a "u" the user, and an "f" a file server.</p>
       Random number selection
       Symmetric encryption to use AES
   -->
-  <br>
-  Before the user actually authenticates with the server the two must set up secure
-  communication over an insecure channel. They do this using Diffie-Hellman to 
-  create a shared secret key, <b>K</b> that will be used for symmetric key 
+  <br><br>
+  Before the user actually authenticates with the server, the two must set up secure
+  communication over an insecure channel. They do this using the Diffie-Hellman key exchange protocol to 
+  create a shared secret key, <b>K</b>, that will be used for symmetric key 
   cryptography.
   This Diffie-Hellman protocol will use these values <b>g</b> = 2 and 
   <b>q</b>
@@ -105,12 +106,13 @@ server, a "u" the user, and an "f" a file server.</p>
   using the java.security.SecureRandom library. The secret key <b>K</b> is computed
    with
   <b>K</b> = g<sup>bs</sup> mod q. This symmetric key cryptography system would 
-  use AES with 128-bit keys. AES would be used as a block cypher in CBC mode. CBC 
+  use AES with 128-bit keys. AES would be used as a block cypher in CBC mode, 
+  padded with the PKCS5 padding scheme. CBC 
   is used because ECB is vulnerable to replay attacks.
   This encryption will protect the tokens from being stolen later after the user 
-  Bob authenticates with the system. In order to defend from replay attacks a new 
+  Bob authenticates with the system. In order to defend from replay attacks, a new 
   shared key <b>K</b> is created every time a user connects to the group server. 
-  <br>
+  <br><br>
   <!--
     Password Authentication
     to Argue:
@@ -119,34 +121,34 @@ server, a "u" the user, and an "f" a file server.</p>
       Hashed password || Salt storage
   -->
   Once this shared key is established and therefore a secure communication channel 
-  is setup the server still needs to verify that the client is who they are claiming to be. 
+  is setup, the server still needs to verify that the client is who they are claiming to be. 
   This is done with a password. Using the 
-  shared key Bob sends his username and password to the server. Once 
-  the server receives the message and decrypts it with the key it will hash the
+  shared key, Bob sends his username and password to the server. Once 
+  the server receives the message and decrypts it with the shared key, it will hash the
   password concatenated with a salt that is associated with the username.
-  server then compares this &lt;username, hash&gt; pair with its database. Both 
+  The server then compares the &lt;username, hash&gt; pair with its database. Both 
   the salt and the hash of the password concatenated with the salt will be stored 
   in the User object associated with that user. The salt will be generated when 
   the password is changed. The salt will be generated randomly with the 
-  java.security.SecureRandom library. The salt is 256 bits long. The Hash will be computed using SHA-256 because
+  java.security.SecureRandom library. The salt is 256 bits long. The hash will be computed using SHA-256 because
   recently SHA-1 has been showing the same weakness that MD-5 did before it was 
   broken. If the hash matches the saved hash then the server responds to Bob with 
   a success message. Later Bob can request a Token with a request that is 
   encrypted with <b>K</b>. 
-  <br>The protocol would look like so: <br>
+  <br><br>The protocol would look like so: <br>
   <img src="images/password.png" class="image" title="password change">
   
   When a user has the newPassword flag set then when the server authenticates their 
-  password the server will also include a "Change Password" message. When this 
-  is received by the client the client will prompt the user to select a new 
+  password, the server will also include a "Change Password" message. When this 
+  is received by the client, the client will prompt the user to select a new 
   password. Once this new password is chosen then it is encrypted and sent back 
   to the server. The server decrypts this new password and will generate a new 
   salt with the same secure random number generator as before. The group server 
   concatenates the new password and the new salt and hashes it with SHA-256. Once 
-  this new hash is saved the newPassword flag is unset and the server tells the client 
+  this new hash is saved, the newPassword flag is unset and the server tells the client 
   that the change was a success. Clients can also initiate this change password 
   protocol provided they are already authenticated.
-  <br>The new password protocol would look like this</br>
+  <br><br>The new password protocol would look like this</br>
   <img src="images/newuser.png" class="image" title="new user">  
 </p>
 <p>
@@ -167,55 +169,55 @@ server, a "u" the user, and an "f" a file server.</p>
   g<sup>bs</sup> mod q (K). This means that <b>K</b> is a secret between the two parties.
   At this point the communication between the two cannot be observed by a third 
   party. Diffie-Hellman is safe to use because figuring out g<sup>bs</sup> mod p
-  from either message is the discrete log problem which is presumed to be hard. 
-  <br>
-  Once this secure communication channel has been set up the users password can be 
+  from either message is the discrete log problem, which is presumed to be "hard" by mathematicians. 
+  <br><br>
+  Once this secure communication channel has been set up, the user's password can be 
   sent to the server. This password system is sufficient to authenticate a user 
   assuming that the user is the only person who knows their password. 
   The server concatenates the password with the saved salt 
   associated with the user. This result is then hashed using SHA-256. This hash is 
   compared to the hash associated with the user. If the hash of the password plus 
-  salt matches the saved hash then the user is authenticated. Matching the hashes 
+  salt matches the saved hash, then the user is authenticated. Matching the hashes 
   is sufficient to authenticate the user because SHA-256 is a cryptographically secure 
-  hash. This means that SHA-256 has second image resistance. This means that it is 
+  hash. This means that SHA-256 has second preimage resistance. This means that it is 
   infeasible to find a second message y that hashes to the same value as the 
   original value x. This means that if the hashes match the user must know the 
   real password rather than generating a password that has a matching hash. Using 
   a cryptographically secure hash also means that it has preimage resistance. This
   means that if the group server is ever compromised then it would be infeasible 
   for attackers to recover the original passwords from the stolen hashes.  
-  <br>
-  Once established all communication that occurs between the user and the server 
+  <br><br>
+  Once established, all communication that occurs between the user and the server 
   will be encrypted by the shared key <b>K</b>. Knowing <b>K</b> is proof that the user is the 
   same user that authenticated previously. The user and server are the only ones 
   that know this key <b>K</b> and therefore being able to encrypt and decrypt things 
   with <b>K</b> proves that user knows <b>K</b> and is therefore the same user. 
-  <br>
-  This system is safe from replay attacks. For example if an attacker steals the 
-  two messages that are stared. 
+  <br><br>
+  This system is safe from replay attacks. For example: if an attacker steals the 
+  two messages that are starred... 
   <br><img src="images/passwordreplay.png" class="image" title="password replay"><br>
-  Later the attacker sends these two messages to 
+  Later, the attacker sends these two messages to 
   the server. This will not result in the attacker gaining access 
   to the system. The server will choose a different value of <b>s</b> than it chose when 
   the attacker recorded the messages. This means that the secret key <b>K</b> will be 
   different than the <b>K</b> that was chosen between Bob and the server. This means the server will not be able
   to decrypt the message from the attacker because the attacker is using the old 
-  <b>K</b> which is incorrect.
-  <br>
-  In this scenario group servers are trusted which means that the newPassword flag 
+  <b>K</b>, which is incorrect.
+  <br><br>
+  In this scenario, group servers are trusted which means that the newPassword flag 
   cannot be used to trigger a forced password reset by an attacker. Even if the 
   newPassword flag was somehow set it would not compromise the user account because 
   the user needs to authenticate with the server before changing the password.
-  <br>
-  It is assumed that if the ADMIN of the system chose our system it is because 
-  of the security that comes with it. Due to this assumption it is reasonable to 
+  <br><br>
+  It is assumed that if the ADMIN of the system chose our system, it is because 
+  of the security that comes with it. Due to this assumption, it is reasonable to 
   assume that the ADMIN will have some method of getting the default password to 
   the user out-of-band (physical discussion, email, etc...). The main use of this 
-  system will be in a work setting where the users and ADMIN are familiar such as small, 
-  local work- or classroom-sized groups, consisting of users and 
+  system will be in a work setting where the users and ADMIN are familiar with each other, such as 
+  local work- or classroom-sized groups. These groups consist of users and 
   administrators that are all in close, physical proximity to one another, making this 
   out-of-band verification with a system administrator trivial for an ADMIN. It is  
-  reasonable to assume that the ADMIN could see the user face to face in order to
+  reasonable to assume that the ADMIN could see the user face-to-face in order to
   disclose the default password to them.
 </p>
 
