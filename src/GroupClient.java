@@ -446,6 +446,13 @@ public class GroupClient extends Client implements GroupClientInterface {
 		if (sessionKey == null) {
 			return -1;
 		}
+		try {
+			Envelope innerResponse= new Envelope("SUCCESS");
+			Envelope response = buildSuper(innerResponse);
+			output.writeObject(response);
+		} catch (Exception e) {
+			return -2;
+		}
 		return 0;
 	}
 

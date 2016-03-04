@@ -151,8 +151,12 @@ public class GroupThread extends Thread
 						response.addObject(sk);
 						response.addObject(keypair.getPublic());
 						output.writeObject(response);
-						isSecureConnection = true;
-						username = user;
+						Envelope check = (Envelope)input.readObject();
+						Envelope innerCheck = extractInner(check);
+						if (innerCheck.getMessage().equals("SUCCESS")) {
+							isSecureConnection = true;
+							username = user;
+						}
 					} catch(Exception e) {
 						e.printStackTrace();
 						response = new Envelope("FAIL");
