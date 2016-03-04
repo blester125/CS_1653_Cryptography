@@ -16,6 +16,7 @@ import javax.crypto.SecretKey;
 
 import java.security.SecureRandom;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.SealedObject;
 
 public class FileClient extends Client implements FileClientInterface {
 	private SecretKey secretKey;
@@ -50,7 +51,9 @@ public class FileClient extends Client implements FileClientInterface {
 
 			output.writeObject(superEnv);
 			Envelope superInputEnv = (Envelope)input.readObject();
-			env = (Envelope)CipherBox.decrypt(superInputEnv.getObjContents.get(0), secretKey, superInputEnv.getObjContents().get(1));
+			SealedObject innerEnv = (SealedObject)superInputEnv.getObjContents().get(0);
+			IvParameterSpec decIVSpec = new IvParameterSpec((byte[])superInputEnv.getObjContents().get(1));
+			env = (Envelope)CipherBox.decrypt(innerEnv, secretKey, decIVSpec);
 		   
 			if (env.getMessage().compareTo("OK")==0) {
 
@@ -94,14 +97,17 @@ public class FileClient extends Client implements FileClientInterface {
 					    output.writeObject(superEnv); 
 					
 					    Envelope superInputEnv = (Envelope)input.readObject();
-					    env = (Envelope)CipherBox.decrypt(superInputEnv.getObjContents.get(0), secretKey, superInputEnv.getObjContents().get(1));
-
+					    SealedObject innerEnv = (SealedObject)superInputEnv.getObjContents().get(0);
+						IvParameterSpec decIVSpec = new IvParameterSpec((byte[])superInputEnv.getObjContents().get(1));
+					    env = (Envelope)CipherBox.decrypt(innerEnv, secretKey, decIVSpec);
 					    
 						while (env.getMessage().compareTo("CHUNK")==0) { 
 								fos.write((byte[])env.getObjContents().get(0), 0, (Integer)env.getObjContents().get(1));
 								System.out.printf(".");
+
 								env = new Envelope("DOWNLOADF"); //Success
 								output.writeObject(env);
+								
 								env = (Envelope)input.readObject();									
 						}										
 						fos.close();
@@ -299,6 +305,7 @@ public class FileClient extends Client implements FileClientInterface {
 	  */
 	public boolean authenticateServer(){
 
+		return false;
 	}
 
 	/**
