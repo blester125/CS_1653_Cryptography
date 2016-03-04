@@ -119,15 +119,16 @@ server, a "u" the user, and an "f" a file server.</p>
       Hashed password || Salt storage
   -->
   Once this shared key is established and therefore a secure communication channel 
-  is setup the server still needs to verify that the client is who they are claiming to be. This is done with a password. Using the 
+  is setup the server still needs to verify that the client is who they are claiming to be. 
+  This is done with a password. Using the 
   shared key Bob sends his username and password to the server. Once 
   the server receives the message and decrypts it with the key it will hash the
-  password concatenated with a salt that is associated with the username. The 
+  password concatenated with a salt that is associated with the username.
   server then compares this &lt;username, hash&gt; pair with its database. Both 
   the salt and the hash of the password concatenated with the salt will be stored 
   in the User object associated with that user. The salt will be generated when 
   the password is changed. The salt will be generated randomly with the 
-  java.security.SecureRandom library. The Hash will be computed using SHA-2 because
+  java.security.SecureRandom library. The salt is 256 bits long. The Hash will be computed using SHA-256 because
   recently SHA-1 has been showing the same weakness that MD-5 did before it was 
   broken. If the hash matches the saved hash then the server responds to Bob with 
   a success message. Later Bob can request a Token with a request that is 
@@ -141,7 +142,7 @@ server, a "u" the user, and an "f" a file server.</p>
   password. Once this new password is chosen then it is encrypted and sent back 
   to the server. The server decrypts this new password and will generate a new 
   salt with the same secure random number generator as before. The group server 
-  concatenates the new password and the new salt and hashes it with SHA-2. Once 
+  concatenates the new password and the new salt and hashes it with SHA-256. Once 
   this new hash is saved the newPassword flag is unset and the server tells the client 
   that the change was a success. Clients can also initiate this change password 
   protocol provided they are already authenticated.
@@ -172,11 +173,11 @@ server, a "u" the user, and an "f" a file server.</p>
   sent to the server. This password system is sufficient to authenticate a user 
   assuming that the user is the only person who knows their password. 
   The server concatenates the password with the saved salt 
-  associated with the user. This result is then hashed using SHA-2. This hash is 
+  associated with the user. This result is then hashed using SHA-256. This hash is 
   compared to the hash associated with the user. If the hash of the password plus 
   salt matches the saved hash then the user is authenticated. Matching the hashes 
-  is sufficient to authenticate the user because SHA-2 is a cryptographically secure 
-  hash. This means that SHA-2 has collision resistance. This means that it is 
+  is sufficient to authenticate the user because SHA-256 is a cryptographically secure 
+  hash. This means that SHA-256 has second image resistance. This means that it is 
   infeasible to find a second message y that hashes to the same value as the 
   original value x. This means that if the hashes match the user must know the 
   real password rather than generating a password that has a matching hash. Using 
@@ -209,8 +210,11 @@ server, a "u" the user, and an "f" a file server.</p>
   It is assumed that if the ADMIN of the system chose our system it is because 
   of the security that comes with it. Due to this assumption it is reasonable to 
   assume that the ADMIN will have some method of getting the default password to 
-  the user, even email would work if it was encrypted. The main use of this 
-  system will be in a work setting where the users and ADMIN are familiar so it is also 
+  the user out-of-band (physical discussion, email, etc...). The main use of this 
+  system will be in a work setting where the users and ADMIN are familiar such as small, 
+  local work- or classroom-sized groups, consisting of users and 
+  administrators that are all in close, physical proximity to one another, making this 
+  out-of-band verification with a system administrator trivial for an ADMIN. It is  
   reasonable to assume that the ADMIN could see the user face to face in order to
   disclose the default password to them.
 </p>
@@ -265,7 +269,7 @@ server, a "u" the user, and an "f" a file server.</p>
   the near future (more than a couple of years). The serialization of the
   token will occur by concatenating the 
   issuer, followed by the user, followed by all of the groups the user belongs to.
-  It will appear as follows: issuer || user || groups
+  It will appear as follows: issuer || user || groups with each section separated with the "#" sign.
   The authentication message the user sends to the file server along with its group token will
   be the token itself accompanied with the signed hash of the token, and this message encrypted
   with the symmetric key generated from the user-file server Diffie-Hellmann exchange.
@@ -288,7 +292,8 @@ server, a "u" the user, and an "f" a file server.</p>
   the previous token scheme to the timestamp. So the serialization and subsequent transmission
   to the user to be used with the file server within the time frame will appear as follows:
    { token || [token]K<sub>g</sub><sup>-1</sup> }K<sub>uf</sub>
-   Where the token = timestamp || issuer || user || groups
+   Where the token = timestamp || issuer || user || groups with each section separated with the "#" sign
+   The signed Hash is saved as a field in the token. The "#" is prohibited from being used in any of these sections.
   If the file server receives a token where 
   the timestamp is outside of the time frame given the current time, then the file server will know 
   the token has been tampered with or that the received token is an expired token
@@ -561,6 +566,11 @@ server, a "u" the user, and an "f" a file server.</p>
   weak secrets to decrypt the value g<sup>randomly chosen number</sup> mod p. Our chosen
   value p here will be chosen to satisfy this property in order to allow for the system
   to remain extensible in the event that such changes are chosen to implemented.
+  The encryption scheme we are using is AES CBC, because it is in CBC mode we need to 
+  send an initialization vector or IV with it. We used Envelopes in Envelopes to 
+  solve this problem. Our encryption functions create javax.crypto.SealedObjects
+  so we would encrypt an Envelope using one IV and then place that SealedObject 
+  and the IV into another Envelope that is then sent.  
 </p>
 <p>
   This protocol will stop eavesdroppers. At each exchange the user and the server 
@@ -580,6 +590,11 @@ server, a "u" the user, and an "f" a file server.</p>
   every time, so patterns cannot be used to guess at the content of the messages and
   if a session key <b>K</b> is compromised, it can only be used to decrypt the messages
   exchanged during that session, providing forward secrecy.
+  Sending the IV and SealedObject (encrypted Envelope) in a unencrypted Envelope is
+  safe because the IV need only be random not secret. In fact it could not be secret 
+  because the receiving party needs it to decrypt the SealedObject. This is safe 
+  from eavesdroppers however because the secretKey <b>K</b> is also needed to 
+  decrypt the SealedObject and read it's contents. 
 </p>
 
 <!-- END CHANGES HERE -->
@@ -595,6 +610,11 @@ server, a "u" the user, and an "f" a file server.</p>
   with a key that is not known by a third party.
 <br><br>
 <img src="images/full.png" class="image">
+<br><br>
+General cryptographic best practices we used were generating random numbers with
+java.security.SecureRandom instead of java.util.Random. In this same vein all 
+times that byte arrays are compared MessageDigest.isEqual is used rather than 
+Arrays.equals to protect against timing attacks.
 </p>
 
 <h3>Extra Credit: A public key cryptography authentication protocol.</h3>
@@ -631,14 +651,14 @@ server, a "u" the user, and an "f" a file server.</p>
   because signed Diffie-Hellman is being used. The user will send g<sup>b</sup> mod q 
   twice in the message, once in plaintext and once once signed with the users private
   key K<sub>b</sub><sup>-1</sup>. If g<sup>b</sup> mod q is too big for RSA then we
-  will hash it with SHA-2 and sign the result. The server 
+  will hash it with SHA-256 and sign the result. The server 
   will decrypt it with the users public key which would be saved in the User object 
   in the UserList and compare the plaintext version with the decrypted version (or 
-  it will hash the plaintext with SHA-2 and compare it to the decrypted result if 
+  it will hash the plaintext with SHA-256 and compare it to the decrypted result if 
   it proves too large for RSA). If they match this means that the user is who they 
   say they are. The server will response by sending g<sup>s</sup> mod q twice. Once 
   in plaintext and once signed with the servers private key K<sub>s</sub><sup>-1</sup>.
-  It will compute the hash with SHA-2 and sign that is stead if g<sup>s</sup> mod q 
+  It will compute the hash with SHA-256 and sign that is stead if g<sup>s</sup> mod q 
   proves to big for RSA. The user will decrypt g<sup>s</sup> mod q
   with the servers public key. If the plaintext g<sup>s</sup> mod q matches the 
   decrypted one then the server is who they say they are and each party has 
