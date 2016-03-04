@@ -87,18 +87,23 @@ public class FileThread extends Thread
 
 				// Client wishes to establish a shared symmetric secret key
 				if(e.getMessage().equals("SESSIONKEY")) {
+
 					// Retrieve Client's public key
 					PublicKey clientPK = (PublicKey)e.getObjContents().get(0);
 					KeyPair keypair = null;
 					KeyAgreement keyAgreement = null;
+
 					// generate secret key and send back public key
 					try {
+
 						keypair = DiffieHellman.genKeyPair();
 						keyAgreement = DiffieHellman.genKeyAgreement(keypair);
 						secretKey = DiffieHellman.generateSecretKey(clientPK, keyAgreement);
 						System.out.println(secretKey.getEncoded());
+
 						response = new Envelope("OK");
 						response.addObject(keypair.getPublic());
+						response.addObject(rsaPair.getPublic());
 						output.writeObject(response);
 						isSecureConnection = true;
 					} catch(Exception exception) {

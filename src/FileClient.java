@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.KeyPair;
+import java.security.PublicKey;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.util.List;
@@ -20,6 +21,7 @@ import javax.crypto.SealedObject;
 
 public class FileClient extends Client implements FileClientInterface {
 	private SecretKey secretKey;
+	private PublicKey serverPublicKey;
 	
 	public FileClient() {
 
@@ -357,6 +359,10 @@ public class FileClient extends Client implements FileClientInterface {
 				// generate the shared secret key
 				secretKey = DiffieHellman.generateSecretKey(fileServerPK, keyAgreement);
 				System.out.println(secretKey.getEncoded());
+
+				// get the server public key
+				serverPublicKey = (PublicKey)response.getObjContents().get(1);
+				System.out.println(serverPublicKey.getEncoded());
 	
 				return secretKey;
 			}
