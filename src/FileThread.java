@@ -109,6 +109,7 @@ public class FileThread extends Thread
 						response.addObject(rsaPair.getPublic());
 						output.writeObject(response);
 						isSecureConnection = true;
+						System.out.println("Client and server set up secure communication via DH.");
 					} catch(Exception exception) {
 						exception.printStackTrace();
 						response = new Envelope("FAIL");
@@ -144,7 +145,7 @@ public class FileThread extends Thread
 				else if(e.getMessage().equals("AUTH_SUCCESS") && isSecureConnection){
 
 					isAuthenticated = true;
-
+					System.out.println("Client authenticated the file server!");
 				}
 				// Handler to list files that this user is allowed to see
 				else if(e.getMessage().equals("LFILES") && isSecureConnection && isAuthenticated)
