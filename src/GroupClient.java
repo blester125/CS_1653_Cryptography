@@ -39,34 +39,29 @@ public class GroupClient extends Client implements GroupClientInterface {
 		}
 	}
 
+	public Envelope buildSuper(Envelope env){
+
+		IvParameterSpec ivspec = CipherBox.generateRandomIV();			
+		Envelope superEnv = new Envelope("SUPER");
+		superEnv.addObject(CipherBox.encrypt(env, sessionKey, ivspec));
+		superEnv.addObject(ivspec.getIV());
+
+		return superEnv;
+	}
+
+	public Envelope extractInner(Envelope superInputEnv){
+
+		SealedObject innerEnv = (SealedObject)superInputEnv.getObjContents().get(0);
+		IvParameterSpec decIVSpec = new IvParameterSpec((byte[])superInputEnv.getObjContents().get(1));
+		Envelope env = (Envelope)CipherBox.decrypt(innerEnv, sessionKey, decIVSpec);
+
+		return env;
+	}
+
 	public int authenticateGroupServer(String username, String password) throws Exception {
 		Envelope message, response = null;
 		sessionKey = establishSessionKey();
 		return login(username, password);
-
-		//KeyPair keyPair = DiffieHellman.genKeyPair();
-		//KeyAgreement keyAgree = DiffieHellman.genKeyAgreement(keyPair);
-		//message = new Envelope("LOGIN");
-		//message.addObject(username);
-		//message.addObject(keyPair.getPublic());
-		//output.writeObject(message);
-		//response = (Envelope)input.readObject();
-		//if (response.getMessage().equals("LOGIN")) {
-		//	PublicKey serverPublicKey = (PublicKey)response.getObjContents().get(0);
-		//	if (serverPublicKey != null) 
-		//	{
-		//		sessionKey = DiffieHellman.generateSecretKey(serverPublicKey, keyAgree);
-		//		System.out.println(new String(sessionKey.getEncoded()));
-				// Send { username and password } sessionKey
-				// if "Success"
-					// return true
-				// else if "Change Password"
-					// if this.changePassword(String Password) return true
-						// return true
-
-		//	}
-		//}
-		// return false;
 	}
 
 	public int login(String username, String password) throws Exception 
@@ -74,21 +69,22 @@ public class GroupClient extends Client implements GroupClientInterface {
 		Envelope contents = new Envelope("LOGIN");
 		contents.addObject(username);
 		contents.addObject(password);
-		IvParameterSpec iv = CipherBox.generateRandomIV();
-		System.out.println(iv);
-		SealedObject sealedEnvelope = CipherBox.encrypt(contents, sessionKey, iv);
-		Envelope message = new Envelope("");
-		message.addObject(sealedEnvelope);
-		message.addObject(iv.getIV());
+		Envelope message = buildSuper(contents);
+		//IvParameterSpec iv = CipherBox.generateRandomIV();
+		//System.out.println(iv);
+		//SealedObject sealedEnvelope = CipherBox.encrypt(contents, sessionKey, iv);
+		//Envelope message = new Envelope("");
+		//message.addObject(sealedEnvelope);
+		//message.addObject(iv.getIV());
 		output.writeObject(message);
 		Envelope response = (Envelope)input.readObject();
-		sealedEnvelope = (SealedObject)response.getObjContents().get(0);
-		iv = (IvParameterSpec)response.getObjContents().get(1);
-		contents = (Envelope)CipherBox.decrypt(sealedEnvelope, sessionKey, iv);
-		if (contents.getMessage().equals("OK")) {
+		//sealedEnvelope = (SealedObject)response.getObjContents().get(0);
+		//iv = (IvParameterSpec)response.getObjContents().get(1);
+		//contents = (Envelope)CipherBox.decrypt(sealedEnvelope, sessionKey, iv);
+		if (response.getMessage().equals("OK")) {
 			return 0;
 		}
-		else if (contents.getMessage().equals("CHANGEPASSWORD")) {
+		else if (response.getMessage().equals("CHANGEPASSWORD")) {
 			return 1;
 		}
 		else 

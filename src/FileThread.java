@@ -46,7 +46,7 @@ public class FileThread extends Thread
 		IvParameterSpec ivspec = CipherBox.generateRandomIV();			
 		Envelope superEnv = new Envelope("SUPER");
 		superEnv.addObject(CipherBox.encrypt(env, secretKey, ivspec));
-		superEnv.addObject(ivspec);
+		superEnv.addObject(ivspec.getIV());
 
 		return superEnv;
 	}

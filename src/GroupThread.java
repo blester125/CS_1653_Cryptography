@@ -49,6 +49,25 @@ public class GroupThread extends Thread
 			e.printStackTrace();
 		}
 	}
+
+	public Envelope buildSuper(Envelope env){
+
+		IvParameterSpec ivspec = CipherBox.generateRandomIV();			
+		Envelope superEnv = new Envelope("SUPER");
+		superEnv.addObject(CipherBox.encrypt(env, sessionKey, ivspec));
+		superEnv.addObject(ivspec.getIV());
+
+		return superEnv;
+	}
+
+	public Envelope extractInner(Envelope superInputEnv){
+
+		SealedObject innerEnv = (SealedObject)superInputEnv.getObjContents().get(0);
+		IvParameterSpec decIVSpec = new IvParameterSpec((byte[])superInputEnv.getObjContents().get(1));
+		Envelope env = (Envelope)CipherBox.decrypt(innerEnv, sessionKey, decIVSpec);
+
+		return env;
+	}
 	
 	public void run()
 	{
@@ -72,10 +91,11 @@ public class GroupThread extends Thread
 				// a shared symmetric secret key
 				else {
 					Envelope superE = (Envelope)input.readObject();
-					SealedObject sealedEnvelope = (SealedObject)superE.getObjContents().get(0);
-					IvParameterSpec ivspec = new IvParameterSpec((byte[])superE.getObjContents().get(1));
-					System.out.println(sealedEnvelope + " " + ivspec);
-					message = (Envelope)CipherBox.decrypt(sealedEnvelope, sessionKey, ivspec);
+					message = extractInner(superE);
+					//SealedObject sealedEnvelope = (SealedObject)superE.getObjContents().get(0);
+					//IvParameterSpec ivspec = new IvParameterSpec((byte[])superE.getObjContents().get(1));
+					//System.out.println(sealedEnvelope + " " + ivspec);
+					//message = (Envelope)CipherBox.decrypt(sealedEnvelope, sessionKey, ivspec);
 				}
 				System.out.println("Request received: " + message.getMessage());
 				
