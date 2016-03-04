@@ -124,7 +124,7 @@ public class ClientApp {
 		homePage.add(lblUsername, gbc_lblUsername);
 		
 		//Password label
-		JLabel lblPassword = new JLabel("Password (unused)");
+		JLabel lblPassword = new JLabel("Password");
 		GridBagConstraints gbc_lblPassword = new GridBagConstraints();
 		gbc_lblPassword.anchor = GridBagConstraints.WEST;
 		gbc_lblPassword.insets = new Insets(0, 0, 5, 5);
@@ -175,6 +175,21 @@ public class ClientApp {
 
 		homePage.add(btnNewUser, gbc_btnNewUser);
 
+		// Change Password button 
+		final JButton btnChangePwd = new JButton("Change Pwd");
+		GridBagConstraints gbc_btnChangePwd = new GridBagConstraints();
+		gbc_btnChangePwd.anchor = GridBagConstraints.NORTH;
+		gbc_btnChangePwd.fill = GridBagConstraints.HORIZONTAL;
+		gbc_btnChangePwd.insets = new Insets(0, 0, 5, 0);
+		gbc_btnChangePwd.gridx = 4;
+		gbc_btnChangePwd.gridy = 2;
+		btnChangePwd.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent ard0) {
+				attemptNewPassword();
+			}
+		});
+		homePage.add(btnChangePwd, gbc_btnChangePwd);
 
 		final JButton btnDeleteUser = new JButton("Delete User");
 		GridBagConstraints gbc_btnDeleteUser = new GridBagConstraints();
@@ -304,6 +319,8 @@ public class ClientApp {
 		homePage.add(btnFileServer, gbc_btnFileServer);
 
 		//Login button
+		final JButton btnRSASetup = new JButton("RSA Setup");
+		final JButton btnRSA = new JButton("RSA Login");
 		final JButton btnLogout = new JButton("Logout");
 		final JButton btnLogin = new JButton("Login");
 		GridBagConstraints gbc_btnLogin = new GridBagConstraints();
@@ -319,12 +336,21 @@ public class ClientApp {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
 
-					attemptLogin(usernameField, ipField, portField, btnLogin, btnNewUser, tabbedPane, btnDeleteUser, btnFileServer, btnLogout);
-
+					attemptLogin(
+						usernameField, 
+						ipField, 
+						portField, 
+						btnLogin, 
+						btnNewUser, 
+						tabbedPane, 
+						btnDeleteUser, 
+						btnFileServer, 
+						btnLogout,
+						btnChangePwd,
+						btnRSA, 
+						btnRSASetup);
 				}
 			}
-
-
 		);
 
 		homePage.add(btnLogin, gbc_btnLogin);
@@ -342,16 +368,64 @@ public class ClientApp {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
 
-					attemptLogout(btnLogin, btnNewUser, tabbedPane, btnDeleteUser, btnFileServer);
-
+					attemptLogout(
+						btnLogin, 
+						btnNewUser, 
+						tabbedPane, 
+						btnDeleteUser, 
+						btnFileServer,
+						btnChangePwd,
+						btnRSA,
+						btnRSASetup,
+						btnLogout);
 				}
 			}
-
-
 		);
 
 		homePage.add(btnLogout, gbc_btnLogout);
 		
+		GridBagConstraints gbc_btnRSA = new GridBagConstraints();
+		gbc_btnRSA.anchor = GridBagConstraints.NORTH;
+		gbc_btnRSA.fill = GridBagConstraints.HORIZONTAL;
+		gbc_btnRSA.insets = new Insets(0, 0, 5, 0);
+		gbc_btnRSA.gridx = 4;
+		gbc_btnRSA.gridy = 5;
+
+		btnRSA.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				attemptRSALogin(
+					usernameField, 
+					ipField, 
+					portField, 
+					btnLogin, 
+					btnNewUser, 
+					tabbedPane, 
+					btnDeleteUser, 
+					btnFileServer, 
+					btnLogout,
+					btnChangePwd,
+					btnRSA,
+					btnRSASetup);
+			}
+		});
+		homePage.add(btnRSA, gbc_btnRSA);
+
+		//RSA SETUP 
+		GridBagConstraints gbc_btnRSASetup = new GridBagConstraints();
+		gbc_btnRSASetup.anchor = GridBagConstraints.NORTH;
+		gbc_btnRSASetup.fill = GridBagConstraints.HORIZONTAL;
+		gbc_btnRSASetup.insets = new Insets(0, 0, 5, 0);
+		gbc_btnRSASetup.gridx = 4;
+		gbc_btnRSASetup.gridy = 6;
+
+		btnRSASetup.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				attemptRSASetup(usernameField);
+			}
+		});
+		homePage.add(btnRSASetup, gbc_btnRSASetup);
 		/*//explanation label
 		JLabel lblthisPageDoes = new JLabel("(This page does not have full functionality yet)");
 		GridBagConstraints gbc_lblthisPageDoes = new GridBagConstraints();
@@ -444,8 +518,6 @@ public class ClientApp {
 					attemptCreateGroup(groupsListPanel);
 				}
 			}
-
-
 		);
 		groupFunctionsPanel.add(btnCreateGroup, gbc_btnCreateGroup);
 		
@@ -740,12 +812,14 @@ public class ClientApp {
 		//-------------------------------------------------------------------------
 
 		//Set Enabled/Disabled functionality on startup
-		tabbedPane.setEnabledAt(1, true);
-		tabbedPane.setEnabledAt(2, true);
-		btnNewUser.setEnabled(true);
-		btnDeleteUser.setEnabled(true);
-		btnFileServer.setEnabled(true);
-		btnLogout.setEnabled(true);
+		tabbedPane.setEnabledAt(1, false);
+		tabbedPane.setEnabledAt(2, false);
+		btnNewUser.setEnabled(false);
+		btnDeleteUser.setEnabled(false);
+		btnFileServer.setEnabled(false);
+		btnLogout.setEnabled(false);
+		btnChangePwd.setEnabled(false);
+		btnRSASetup.setEnabled(false);
 	}
 
 	//Attempts to log in to the group server with the given username.
@@ -760,7 +834,10 @@ public class ClientApp {
 					JTabbedPane tabbedPane, 
 					JButton btnDeleteUser, 
 					JButton btnFileServer, 
-					JButton btnLogout) {
+					JButton btnLogout,
+					JButton btnChangePwd,
+					JButton btnRSA,
+					JButton btnRSASetup) {
 
 		//Pull information from fields
 		String username = usernameField.getText();
@@ -826,6 +903,9 @@ public class ClientApp {
 			tabbedPane.setEnabledAt(1,true);
 			btnFileServer.setEnabled(true);
 			btnLogout.setEnabled(true);
+			btnChangePwd.setEnabled(true);
+			btnRSA.setEnabled(false);
+			btnRSASetup.setEnabled(true);
 			currentUsername = username;
 
 			//redraw groups page
@@ -837,6 +917,68 @@ public class ClientApp {
 			templeft.updateUI();
 			tempright.removeAll();
 			tempright.updateUI();
+		}
+	}
+
+	public void attemptRSALogin(
+					JTextField usernameField, 
+					JTextField ipField, 
+					JTextField portField, 
+					JButton btnLogin, 
+					JButton btnNewUser, 
+					JTabbedPane tabbedPane, 
+					JButton btnDeleteUser, 
+					JButton btnFileServer, 
+					JButton btnLogout,
+					JButton btnChangePwd,
+					JButton btnRSA,
+					JButton btnRSASetup) {
+
+		String username = usernameField.getText();
+		String ipAddr = ipField.getText();
+		int port = Integer.parseInt(portField.getText());
+
+		//Attempt to connect to group server
+		//If fail, alert of failure
+		if (!RunClient.groupC.connect(ipAddr, port)) {
+			JOptionPane.showMessageDialog(null, "Connection failure. Could not connect to GROUP server at " + ipAddr + ":" + port + ".", "Connection Failure", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+		else {
+			// Establish secure connection with Diffie-Hellman Protocol
+			try {
+				int result = RunClient.groupC.authenticateGroupServerRSA(username);
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+				return;
+			}
+		}
+
+		//Enable navigation to application resources.
+		usernameField.setEnabled(false);
+		ipField.setEnabled(false);
+		portField.setEnabled(false);
+		passwordField.setEnabled(false);
+
+		btnLogin.setEnabled(false);
+		btnNewUser.setEnabled(true);
+		btnDeleteUser.setEnabled(true);
+		tabbedPane.setEnabledAt(1,true);
+		btnFileServer.setEnabled(true);
+		btnLogout.setEnabled(true);
+		btnChangePwd.setEnabled(true);
+		btnRSA.setEnabled(false);
+		btnRSASetup.setEnabled(true);
+		//currentUsername = username;
+	}
+
+	public void attemptRSASetup(JTextField usernameField) {
+		try {
+			int result = RunClient.groupC.setUpRSA();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return;
 		}
 	}
 
@@ -926,7 +1068,11 @@ public class ClientApp {
 					JButton btnNewUser, 
 					JTabbedPane tabbedPane, 
 					JButton btnDeleteUser, 
-					JButton btnFileServer) {
+					JButton btnFileServer,
+					JButton btnChangePwd,
+					JButton btnRSA,
+					JButton btnRSASetup,
+					JButton btnLogout) {
 		if (RunClient.fileC.isConnected()) {
 			RunClient.fileC.disconnect();
 		}
@@ -944,6 +1090,10 @@ public class ClientApp {
 		btnDeleteUser.setEnabled(false);
 		btnFileServer.setEnabled(false);
 		btnLogin.setEnabled(true);
+		btnChangePwd.setEnabled(false);
+		btnRSA.setEnabled(true);
+		btnRSASetup.setEnabled(false);
+		btnLogout.setEnabled(false);
 	}
 
 	//Attempts to create a new user on the group server.

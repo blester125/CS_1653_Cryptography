@@ -41,7 +41,7 @@ public class CipherBox {
 	 */
 	public static SealedObject encrypt(Serializable plainText, Key key, IvParameterSpec iv) {
 		try {
-			AESCipherEncrypt = Cipher.getInstance("AES/CBC/PKCS5Padding");
+			AESCipherEncrypt = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");
 			AESCipherEncrypt.init(Cipher.ENCRYPT_MODE, key, iv);
 		} catch (InvalidKeyException e) {
 			e.printStackTrace();
@@ -69,7 +69,7 @@ public class CipherBox {
 	 */
 	public static Object decrypt(SealedObject encrypted, Key key, IvParameterSpec iv) {
 		try {
-			AESCipherDecrypt = Cipher.getInstance("AES/CBC/PKCS5Padding");
+			AESCipherDecrypt = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");
 			AESCipherDecrypt.init(Cipher.DECRYPT_MODE, key, iv);
 		} catch (InvalidKeyException e1) {
 			e1.printStackTrace();
@@ -100,15 +100,16 @@ public class CipherBox {
 	 */
 	public static SealedObject encrypt(Serializable plainText, Key key) {
 		try {
+			RSACipherEncrypt = Cipher.getInstance("RSA", "BC");
 			RSACipherEncrypt.init(Cipher.ENCRYPT_MODE, key);
-		} catch (InvalidKeyException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		try {
 			return new SealedObject(plainText, RSACipherEncrypt);
 		} catch (IllegalBlockSizeException e) {
 			e.printStackTrace();
-		} catch (IOException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return null;
@@ -122,8 +123,9 @@ public class CipherBox {
 	 */
 	public static Object decrypt(SealedObject encrypted, Key key) {
 		try {
+			RSACipherDecrypt = Cipher.getInstance("RSA", "BC");
 			RSACipherDecrypt.init(Cipher.DECRYPT_MODE, key);
-		} catch (InvalidKeyException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		try {
@@ -134,7 +136,7 @@ public class CipherBox {
 			e.printStackTrace();
 		} catch (BadPaddingException e) {
 			e.printStackTrace();
-		} catch (IOException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return null;

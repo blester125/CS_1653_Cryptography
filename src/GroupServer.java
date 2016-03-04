@@ -9,6 +9,45 @@
  *
  */
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.Socket;
+import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.Security;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.List;
+import java.math.BigInteger;
+
+import java.security.Security;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.KeyPairGenerator;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.security.KeyFactory;
+
+import javax.crypto.Cipher;
+import javax.crypto.KeyAgreement;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SealedObject;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+
+import java.security.spec.X509EncodedKeySpec;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.InvalidKeySpecException;
+
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.io.*;
@@ -21,6 +60,9 @@ public class GroupServer extends Server {
 	public static final int SERVER_PORT = 8765;
 	public UserList userList;
 	public GroupList groupList;
+	static final int RSA_BIT_KEYSIZE = 2048;
+	// Seems dangerous
+	public KeyPair keyPair;
 
 	public GroupServer() {
 		super(SERVER_PORT, "ALPHA");
@@ -32,7 +74,7 @@ public class GroupServer extends Server {
 
 	public void start() {
 		// Overwrote server.start() because if no user file exists, initial admin account needs to be created
-		
+		keyPair = loadRSA();
 		String userFile = "UserList.bin";
 		String groupFile = "GroupList.bin";
 		Scanner console = new Scanner(System.in);
@@ -142,6 +184,83 @@ public class GroupServer extends Server {
 			e.printStackTrace(System.err);
 		}
 
+	}
+
+	public KeyPair loadRSA() {
+		//Attempt to load RSA key pair from file
+		try{
+			KeyPair rsaPair;
+			File fsPublicKey = new File("groupserverpublic.key");
+			FileInputStream keyIn = new FileInputStream("groupserverpublic.key");
+			byte[] encPublicKey = new byte[(int) fsPublicKey.length()];
+			keyIn.read(encPublicKey);
+			keyIn.close();
+
+			File fsPrivateKey = new File("groupserverprivate.key");
+			keyIn = new FileInputStream("groupserverprivate.key");
+			byte[] encPrivateKey = new byte[(int) fsPrivateKey.length()];
+			keyIn.read(encPrivateKey);
+			keyIn.close();
+
+			KeyFactory kf = KeyFactory.getInstance("RSA", "BC");
+			X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(encPublicKey);
+			PublicKey publicKey = kf.generatePublic(publicKeySpec);
+
+			PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(encPrivateKey);
+			PrivateKey privateKey = kf.generatePrivate(privateKeySpec);
+
+			rsaPair = new KeyPair(publicKey, privateKey);
+
+			System.out.println("Found RSA key pair. Loaded successfully!");
+			return rsaPair;
+		}
+		catch (FileNotFoundException e) {
+			try {
+				System.out.println("Did not find public and/or private RSA keys. Generating new key pair....");
+			
+				//Generate RSA key pair with KeyPairGenerator, 1024 bits
+				KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA", "BC");
+				keyGen.initialize(RSA_BIT_KEYSIZE);
+				KeyPair rsaPair = keyGen.generateKeyPair();
+				PrivateKey privateKey = rsaPair.getPrivate();
+				PublicKey publicKey = rsaPair.getPublic();
+
+				//Store both keys to file
+				X509EncodedKeySpec x590keyspec = new X509EncodedKeySpec(publicKey.getEncoded());
+				FileOutputStream keyOut = new FileOutputStream("groupserverpublic.key");
+				keyOut.write(x590keyspec.getEncoded());
+				keyOut.close();
+
+				PKCS8EncodedKeySpec pkcs8keyspec = new PKCS8EncodedKeySpec(privateKey.getEncoded());
+				keyOut = new FileOutputStream("groupserverprivate.key");
+				keyOut.write(pkcs8keyspec.getEncoded());
+				keyOut.close();
+
+				System.out.println("New RSA key pair generated and stored!");
+				return rsaPair;
+			}
+			catch (Exception f){
+				System.out.println("Exception thrown in create new RSA pair.");
+				return null;
+			}
+
+		}
+		catch (IOException e) {
+			System.out.println("Could not read or write from/to key files!");
+			return null;
+		}
+		catch (NoSuchAlgorithmException e){
+			System.out.println("Algorithm does not exist!");
+			return null;
+		}
+		catch (InvalidKeySpecException e){
+			System.out.println("Invalid key specification!");
+			return null;
+		}
+		catch (Exception e){
+			System.out.println("unspecified exception thrown");
+			return null;
+		}
 	}
 
 }

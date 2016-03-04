@@ -36,6 +36,7 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.KeyFactory;
+import java.security.MessageDigest;
 
 import java.security.spec.X509EncodedKeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -417,9 +418,89 @@ public class GroupClient extends Client implements GroupClientInterface {
 		}
 	}
 
-	public String setUpRSA() {
+	public int setUpRSA() throws Exception {
 		KeyPair keyPair = loadRSA();
 		return shareRSA(keyPair);
+	}
+
+	public int shareRSA(KeyPair keyPair) throws Exception {
+		Envelope message = new Envelope("RSAKEY");
+		message.addObject(keyPair.getPublic());
+		Envelope superE = buildSuper(message);
+		System.out.println(keyPair.getPublic());
+		output.writeObject(superE);
+		Envelope superResponse = (Envelope)input.readObject();
+		Envelope response = extractInner(superResponse);
+		if (response.getMessage().equals("OK")) {
+			return 0;
+		}
+		else {
+			return -1;
+		}
+	}
+
+	public int authenticateGroupServerRSA(String username) {
+		KeyPair keyPair = loadRSA();
+		PublicKey serverKey = loadServerKey();
+		sessionKey = establishSessionKeyRSA(username, keyPair, serverKey);
+		if (sessionKey == null) {
+			return -1;
+		}
+		return 0;
+	}
+
+	public SecretKey establishSessionKeyRSA(String username, KeyPair keyPair, PublicKey serverKey) {
+		KeyPair DHKeyPair = null;
+		KeyAgreement keyAgreement = null;
+		try {
+			DHKeyPair = DiffieHellman.genKeyPair();
+			keyAgreement = DiffieHellman.genKeyAgreement(DHKeyPair);
+			SealedObject key = CipherBox.encrypt(Hasher.hash(DHKeyPair.getPublic()), keyPair.getPrivate());
+			Envelope message = new Envelope("RSALOGIN");
+			message.addObject(username);
+			message.addObject(key);
+			message.addObject(DHKeyPair.getPublic());
+			output.writeObject(message);
+			System.out.println("Waiting");
+
+			//WHHHHAHAAATTTTT
+			// This object is not getting read from the socket :(
+			Envelope response = (Envelope)input.readObject();
+			if (response.getMessage().equals("RSALOGIN")) {
+				SealedObject so = (SealedObject)response.getObjContents().get(0);
+				byte[] recvHash = (byte[])CipherBox.decrypt(so, serverKey);
+				PublicKey DHServerKey = (PublicKey)message.getObjContents().get(1);
+				if (!MessageDigest.isEqual(recvHash, Hasher.hash(DHServerKey))) {
+					System.out.println("Fail");
+					return null;
+				}
+				SecretKey secretKey = DiffieHellman.generateSecretKey(DHServerKey, keyAgreement);
+				System.out.println(new String(secretKey.getEncoded()));
+				return secretKey; 
+			}
+			return null;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	public PublicKey loadServerKey() {
+		try {
+			File fsPublicKey = new File("groupserverpublic.key");
+			FileInputStream keyIn = new FileInputStream("groupserverpublic.key");
+			byte[] encPublicKey = new byte[(int) fsPublicKey.length()];
+			keyIn.read(encPublicKey);
+			keyIn.close();
+			KeyFactory kf = KeyFactory.getInstance("RSA", "BC");
+			X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(encPublicKey);
+			PublicKey publicKey = kf.generatePublic(publicKeySpec);
+			System.out.println("Loaded in the server public key");
+			return publicKey;
+		} catch (Exception e) {
+			System.out.println("You need the servers Public Key.");
+			return null;
+		}
 	}
 
 	public KeyPair loadRSA() {
@@ -497,22 +578,5 @@ public class GroupClient extends Client implements GroupClientInterface {
 			System.out.println("unspecified exception thrown");
 			return null;
 		}
-	}
-
-	public String shareRSA(KeyPair keypair) {
-		// Send rsa public key
-		return "";
-	}
-
-	public String authenticateGroupServerRSA() {
-		sessionKey = establishSessionKeyRSA();
-		if (sessionKey == null) {
-			return "Error Authenticating with the Group Server.";
-		}
-		return "OK";
-	}
-
-	public SecretKey establishSessionKeyRSA() {
-		return null;
 	}
 }

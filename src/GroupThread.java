@@ -3,6 +3,11 @@
  */
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.Socket;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
@@ -13,6 +18,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.math.BigInteger;
 
+import java.security.Security;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.KeyPairGenerator;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.security.KeyFactory;
+import java.security.MessageDigest;
+
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
 import javax.crypto.NoSuchPaddingException;
@@ -20,13 +39,16 @@ import javax.crypto.SealedObject;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
+import java.security.spec.X509EncodedKeySpec;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.InvalidKeySpecException;
+
 public class GroupThread extends Thread 
 {
 	private final Socket socket;
 	private GroupServer my_gs;
 	private boolean isSecureConnection;
-	private Cipher AESCipherEncrypt;
-	private Cipher AESCipherDecrypt;
+	private KeyPair rsaKeyPair;
 	private SecretKey sessionKey;
 	private String username = null;
 
@@ -36,20 +58,7 @@ public class GroupThread extends Thread
 		my_gs = _gs;
 		isSecureConnection = false;
 		sessionKey = null;
-		try {
-			AESCipherEncrypt = Cipher.getInstance("AES/CBC/PKCS5Padding");
-		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
-		} catch (NoSuchPaddingException e) {
-			e.printStackTrace();
-		}
-		try {
-			AESCipherDecrypt = Cipher.getInstance("AES/CBC/PKCS5Padding");
-		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
-		} catch (NoSuchPaddingException e) {
-			e.printStackTrace();
-		}
+		rsaKeyPair = my_gs.keyPair;
 	}
 
 	public Envelope buildSuper(Envelope env){
@@ -120,6 +129,38 @@ public class GroupThread extends Thread
 						output.writeObject(response);
 					}
 				}
+				else if (message.getMessage().equals("RSALOGIN")) {
+					String user = (String)message.getObjContents().get(0);
+					SealedObject so = (SealedObject)message.getObjContents().get(1);
+					PublicKey userPublicKey = getUserPublicKey(user);
+					byte[] recvHash = (byte[])CipherBox.decrypt(so, userPublicKey);
+					PublicKey userDHKey = (PublicKey)message.getObjContents().get(2);
+					if (!MessageDigest.isEqual(recvHash, Hasher.hash(userDHKey))) {
+						return;
+					}
+					KeyPair keypair = null;
+					KeyAgreement keyAgreement = null;
+					// generate secret key and send back public key
+					try {
+						keypair = DiffieHellman.genKeyPair();
+						keyAgreement = DiffieHellman.genKeyAgreement(keypair);
+						sessionKey = DiffieHellman.generateSecretKey(userDHKey, keyAgreement);
+						System.out.println(new String(sessionKey.getEncoded()));
+						response = new Envelope("OK");
+						SealedObject sk = CipherBox.encrypt(Hasher.hash(keypair.getPublic()), my_gs.keyPair.getPrivate());
+						response.addObject(sk);
+						response.addObject(keypair.getPublic());
+						output.writeObject(response);
+						System.out.println("Sent");
+						isSecureConnection = true;
+						username = user;
+					} catch(Exception e) {
+						e.printStackTrace();
+						response = new Envelope("FAIL");
+						response.addObject(response);
+						output.writeObject(response);
+					}
+				}
 				else if(message.getMessage().equals("LOGIN") 
 							&& isSecureConnection) {
 
@@ -137,6 +178,7 @@ public class GroupThread extends Thread
 								innerResponse = new Envelope("FAIL");
 								String user = (String)message.getObjContents().get(0);
 								String password = (String)message.getObjContents().get(1);
+								System.out.println(user + " " + password);
 								if (checkUser(user, password)) {
 									username = user;
 									if (checkFlag(username)) {
@@ -166,6 +208,25 @@ public class GroupThread extends Thread
 							if (username != null) {
 								String password = (String)message.getObjContents().get(0);
 								if (setPassword(username, password)) {
+									innerResponse = new Envelope("OK");
+								}
+							}
+						}
+					}
+					response = buildSuper(innerResponse);
+					output.writeObject(response);
+				}
+				else if (message.getMessage().equals("RSAKEY")
+							&& isSecureConnection) {
+					if (message.getObjContents().size() < 1) {
+						innerResponse = new Envelope("FAIL");
+					}
+					else {
+						innerResponse = new Envelope("FAIL");
+						if (message.getObjContents().get(0) != null) {
+							if (username != null) {
+								PublicKey userKey = (PublicKey)message.getObjContents().get(0);
+								if (setRSAKey(username, userKey)) {
 									innerResponse = new Envelope("OK");
 								}
 							}
@@ -760,5 +821,14 @@ public class GroupThread extends Thread
 		my_gs.userList.setPassword(user, hashword);
 		my_gs.userList.setNewPassword(user, false);
 		return true;
+	}
+
+	private boolean setRSAKey(String user, PublicKey key) {
+		my_gs.userList.setPublicKey(user, key);
+		return true;
+	}
+
+	private PublicKey getUserPublicKey(String user) {
+		return my_gs.userList.getPublicKey(user);
 	}
 }
