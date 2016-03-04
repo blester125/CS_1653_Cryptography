@@ -809,7 +809,7 @@ public class ClientApp {
 			return;
 		}
 		// Establish secret key with Diffie-Hellman Protocol
-		if(!RunClient.fileC.establishSessionKey()) {
+		if(RunClient.fileC.establishSessionKey()) {
 			JOptionPane.showMessageDialog(null, "Connection failure. Could not establish a secure connection to FILE server at " + ipAddr + ":" + port + ".", "Connection Failure", JOptionPane.OK_CANCEL_OPTION);
 			return;
 		}

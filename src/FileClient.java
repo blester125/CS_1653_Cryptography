@@ -44,7 +44,7 @@ public class FileClient extends Client implements FileClientInterface {
 
 		try {
 
-			IvParamterSpec ivspec = CipherBox.generateRandomIV();			
+			IvParameterSpec ivspec = CipherBox.generateRandomIV();			
 			Envelope superEnv = new Envelope("SUPER");
 			superEnv.addObject(CipherBox.encrypt(env, secretKey, ivspec));
 
