@@ -246,10 +246,14 @@ public class GroupThread extends Thread
 						innerResponse = new Envelope("FAIL");
 					}
 					else {
+						innerResponse = new Envelope("FAIL");
 						UserToken yourToken = createToken(username); //Create a token
 						//Respond to the client. On error, the client will receive a null token
-						innerResponse = new Envelope("OK");
-						innerResponse.addObject(yourToken);
+						// Sign token
+						if (yourToken.signToken(my_gs.keyPair.getPrivate())) {
+							innerResponse = new Envelope("OK");
+							innerResponse.addObject(yourToken);
+						}
 					}
 					System.out.println("SENT from GET: " + innerResponse);
 					response = buildSuper(innerResponse);
@@ -494,6 +498,7 @@ public class GroupThread extends Thread
 		//Check that user exists
 		if(my_gs.userList.checkUser(username))
 		{
+			//Add the timestamp and signage
 			//Issue a new token with server's name, user's name, and user's groups
 			UserToken yourToken = new Token(my_gs.name, username, my_gs.userList.getUserGroups(username));
 			System.out.println(yourToken);

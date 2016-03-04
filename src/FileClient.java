@@ -25,7 +25,7 @@ public class FileClient extends Client implements FileClientInterface {
 	private SecretKey secretKey;
 	public PublicKey cachedPublicKey;
 	private String fileserverRegistry = "FileServerRegistry.bin";
-	public PublicKey serverPublicKey;
+	public PublicKey serverPublicKey = null;
 	
 	public FileClient() {
 
@@ -53,6 +53,20 @@ public class FileClient extends Client implements FileClientInterface {
 		return env;
 	}
 
+	public void disconnect()	 {
+		if (isConnected()) {
+			try {
+				Envelope message = new Envelope("DISCONNECT");
+				Envelope superE = buildSuper(message);
+				output.writeObject(superE);
+				sock.close(); //close the socket
+			}
+			catch(Exception e) {
+				System.err.println("Error: " + e.getMessage());
+				e.printStackTrace(System.err);
+			}
+		}
+	}
 
 	public boolean delete(String filename, String group, UserToken token) {
 

@@ -9,6 +9,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import java.security.*;
+import javax.crypto.SealedObject;
+
 
 public class Token implements UserToken {
 	private static final long serialVersionUID = 897646161548165146L;
@@ -16,7 +19,7 @@ public class Token implements UserToken {
 	private String subject;
 	private ArrayList<String> groups;
 	private Date timestamp;
-	private byte[] signedHash;
+	private SealedObject signedHash;
 	
 	public static final String sentinal = "#";
 	
@@ -44,35 +47,14 @@ public class Token implements UserToken {
 	 * @return	true on success, false on failure
 	 */
 	public boolean signToken(PrivateKey privateKey) {
-		Signature signature = null;
 		try {
-			signature = Signature.getInstance("SHA256", "BC");
-		} catch (NoSuchAlgorithmException e3) {
-			e3.printStackTrace();
-		} catch (NoSuchProviderException e3) {
-			e3.printStackTrace();
-			return false;
-		}
-	    try {
-			signature.initSign(privateKey, new SecureRandom());
-		} catch (InvalidKeyException e2) {
-			e2.printStackTrace();
-			return false;
-		}
-	    byte[] message = this.toString().getBytes();
-	    try {
-			signature.update(message);
-		} catch (SignatureException e1) {
-			e1.printStackTrace();
-			return false;
-		}
-	    try {
-			this.signedHash = signature.sign();
-		} catch (SignatureException e) {
+			byte[] hashToken = Hasher.hash(this);
+			signedHash = CipherBox.encrypt(hashToken, privateKey);
+			return true;
+		} catch (Exception e) {
 			e.printStackTrace();
 			return false;
 		}
-	    return true;
 	}
 	
 	@Override
@@ -90,7 +72,7 @@ public class Token implements UserToken {
 		return this.groups;
 	}
 	
-	public byte[] getSignedHash() {
+	public SealedObject getSignedHash() {
 		return this.signedHash;
 	}
 
@@ -101,6 +83,13 @@ public class Token implements UserToken {
 			token += sentinal + group;
 		}
 		return token;
+	}
+
+	public static void main(String[] args) {
+		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+		UserToken t = new Token("issue","subject",new ArrayList<String>());
+		System.out.println(new String(Hasher.hash(t)));
+		t.signToken(null);
 	}
 	
 }

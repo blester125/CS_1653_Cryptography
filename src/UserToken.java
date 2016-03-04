@@ -1,6 +1,7 @@
 
 import java.util.List;
-
+import java.security.PrivateKey;
+import javax.crypto.SealedObject;
 /**
  * A simple interface to the token data structure that will be
  * returned by a group server.  
@@ -47,5 +48,11 @@ public interface UserToken extends java.io.Serializable
      *
      */
     public List<String> getGroups();
+
+    public boolean signToken(PrivateKey privateKey);
+
+    public SealedObject getSignedHash();
+
+    public String toString();
 
 }   //-- end interface UserToken
