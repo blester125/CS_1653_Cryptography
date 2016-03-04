@@ -39,55 +39,52 @@ public class GroupClient extends Client implements GroupClientInterface {
 		}
 	}
 
+	public Envelope buildSuper(Envelope env){
+
+		IvParameterSpec ivspec = CipherBox.generateRandomIV();			
+		Envelope superEnv = new Envelope("SUPER");
+		superEnv.addObject(CipherBox.encrypt(env, sessionKey, ivspec));
+		superEnv.addObject(ivspec.getIV());
+
+		return superEnv;
+	}
+
+	public Envelope extractInner(Envelope superInputEnv){
+
+		SealedObject innerEnv = (SealedObject)superInputEnv.getObjContents().get(0);
+		IvParameterSpec decIVSpec = new IvParameterSpec((byte[])superInputEnv.getObjContents().get(1));
+		Envelope env = (Envelope)CipherBox.decrypt(innerEnv, sessionKey, decIVSpec);
+
+		return env;
+	}
+
 	public int authenticateGroupServer(String username, String password) throws Exception {
 		Envelope message, response = null;
 		sessionKey = establishSessionKey();
 		return login(username, password);
-
-		//KeyPair keyPair = DiffieHellman.genKeyPair();
-		//KeyAgreement keyAgree = DiffieHellman.genKeyAgreement(keyPair);
-		//message = new Envelope("LOGIN");
-		//message.addObject(username);
-		//message.addObject(keyPair.getPublic());
-		//output.writeObject(message);
-		//response = (Envelope)input.readObject();
-		//if (response.getMessage().equals("LOGIN")) {
-		//	PublicKey serverPublicKey = (PublicKey)response.getObjContents().get(0);
-		//	if (serverPublicKey != null) 
-		//	{
-		//		sessionKey = DiffieHellman.generateSecretKey(serverPublicKey, keyAgree);
-		//		System.out.println(new String(sessionKey.getEncoded()));
-				// Send { username and password } sessionKey
-				// if "Success"
-					// return true
-				// else if "Change Password"
-					// if this.changePassword(String Password) return true
-						// return true
-
-		//	}
-		//}
-		// return false;
 	}
 
-	public boolean login(String username, String password) throws Exception 
+	public int login(String username, String password) throws Exception 
 	{
 		Envelope contents = new Envelope("LOGIN");
 		contents.addObject(username);
 		contents.addObject(password);
-		IvParameterSpec iv = ChiperBox.generateRandomIV();
-		SealedObject sealedEnvelope = ChiperBox.encrypt(contents, sessionKey, iv);
-		Envelope message = new Envelope("");
-		message.addObject(sealedEnvelope);
-		message.addObject(iv.toByteArray());
+		Envelope message = buildSuper(contents);
+		//IvParameterSpec iv = CipherBox.generateRandomIV();
+		//System.out.println(iv);
+		//SealedObject sealedEnvelope = CipherBox.encrypt(contents, sessionKey, iv);
+		//Envelope message = new Envelope("");
+		//message.addObject(sealedEnvelope);
+		//message.addObject(iv.getIV());
 		output.writeObject(message);
 		Envelope response = (Envelope)input.readObject();
-		sealedEnvelope = response.getObjContents().get(0);
-		iv = response.getObjContents.get(1);
-		contents = (Envelope)ChipherBox.decrypt(sealedEnvelope, sessionKey, iv);
-		if (contents.getMessage().equals("OK")) {
+		//sealedEnvelope = (SealedObject)response.getObjContents().get(0);
+		//iv = (IvParameterSpec)response.getObjContents().get(1);
+		//contents = (Envelope)CipherBox.decrypt(sealedEnvelope, sessionKey, iv);
+		if (response.getMessage().equals("OK")) {
 			return 0;
 		}
-		else if (contents.getMessage().equals("CHANGEPASSWORD")) {
+		else if (response.getMessage().equals("CHANGEPASSWORD")) {
 			return 1;
 		}
 		else 
@@ -110,7 +107,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			//Tell the server to return a token.
 			message = new Envelope("GET");
 			message.addObject(username); //Add user name string
-			output.writeObject(CipherBox.encrypt(message, AESCipherEncrypt));
+			//output.writeObject(CipherBox.encrypt(message, AESCipherEncrypt));
 		
 			//Get the response from the server
 			/*SealedObject sa = (SealedObject)input.readObject();
@@ -120,7 +117,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			cipher.init(Cipher.DECRYPT_MODE, secreteKeySpec);
 			response = (Envelope) CipherBox.decrypt(sa, cipher);
 			System.out.println(response.getMessage());*/
-			response = (Envelope)CipherBox.decrypt((SealedObject)input.readObject(), AESCipherDecrypt);
+			//response = (Envelope)CipherBox.decrypt((SealedObject)input.readObject(), AESCipherDecrypt);
 			
 			
 			//Successful response
@@ -374,7 +371,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			keyAgreement = DiffieHellman.genKeyAgreement(keyPair);
 		} catch (Exception e) {
 			e.printStackTrace();
-			return false;
+			return null;
 		}
 		 try {
 			Envelope message = null, response = null;
@@ -390,7 +387,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 				PublicKey groupServerPK = (PublicKey)response.getObjContents().get(0);
 				// generate the shared secret key
 				SecretKey secretKey = DiffieHellman.generateSecretKey(groupServerPK, keyAgreement);
-				System.out.println(secretKey.getEncoded());
+				System.out.println(new String(secretKey.getEncoded()));
 	
 				return secretKey;
 			}
@@ -401,7 +398,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 		{
 			System.err.println("Error: " + e.getMessage());
 			e.printStackTrace(System.err);
-			return false;
+			return null;
 		}
 	 }
 }
