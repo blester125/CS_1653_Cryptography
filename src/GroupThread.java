@@ -74,7 +74,6 @@ public class GroupThread extends Thread
 	public void run()
 	{
 		boolean proceed = true;
-		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 		try
 		{
 			//Announces connection and opens object streams
@@ -86,6 +85,7 @@ public class GroupThread extends Thread
 			{
 				Envelope message; // = (Envelope)input.readObject();
 				Envelope response;
+				Envelope innerResponse;
 				if(!isSecureConnection) {
 					message = (Envelope)input.readObject();
 				}
@@ -120,9 +120,9 @@ public class GroupThread extends Thread
 						output.writeObject(response);
 					}
 				}
-				else if(message.getMessage().equals("LOGIN")) 
-				{
-					Envelope innerResponse;
+				else if(message.getMessage().equals("LOGIN") 
+							&& isSecureConnection) {
+
 					if (message.getObjContents().size() < 2)
 					{
 				 		innerResponse = new Envelope("FAIL");
@@ -143,12 +143,10 @@ public class GroupThread extends Thread
 										innerResponse = new Envelope("CHANGEPASSWORD");
 									}
 									else {
-										System.out.println("Logged In");
 										innerResponse = new Envelope("OK");
 									}
 								}
 								else {
-									System.out.println("FAIL");
 									innerResponse = new Envelope("FAIL");
 								}
  							}
@@ -158,13 +156,13 @@ public class GroupThread extends Thread
 					output.writeObject(response);
 				}
 				else if (message.getMessage().equals("CHANGEPASSWORD") && isSecureConnection) {
-					Envelope innerResponse;
 					if (message.getObjContents().size() < 1) {
 						innerResponse = new Envelope("FAIL");
 					}
 					else {
 						innerResponse = new Envelope("FAIL");
 						if (message.getObjContents().get(0) != null) {
+							// Force "LOGIN" to have been run before "CHANGEPASSWORD"
 							if (username != null) {
 								String password = (String)message.getObjContents().get(0);
 								if (setPassword(username, password)) {
@@ -176,70 +174,53 @@ public class GroupThread extends Thread
 					response = buildSuper(innerResponse);
 					output.writeObject(response);
 				}
-				else if(message.getMessage().equals("GET") && isSecureConnection)//Client wants a token
-				{
-					String username = (String)message.getObjContents().get(0); //Get the username
-					if(username == null)
-					{
-						response = new Envelope("FAIL");
-						response.addObject(null);
-						System.out.println("SENT from GET: " + response);
-						//output.writeObject(CipherBox.encrypt(response, AESCipherEncrypt));
+				else if (message.getMessage().equals("GET") 
+							&& isSecureConnection) {//Client wants a token
+					String user = (String)message.getObjContents().get(0); //Get the username
+					if (user == null) {
+						innerResponse = new Envelope("FAIL");
 					}
-					else
-					{
+					else {
 						UserToken yourToken = createToken(username); //Create a token
-						
 						//Respond to the client. On error, the client will receive a null token
-						response = new Envelope("OK");
-						response.addObject(yourToken);
-						/*System.out.println("SENT from GET: " + response);
-						Cipher cipher = Cipher.getInstance("AES");
-						SecretKeySpec secreteKeySpec = new SecretKeySpec(new byte[] {(byte)0x01, (byte)0x02, (byte)0x01, (byte)0x02,(byte)0x01, (byte)0x02, (byte)0x01, (byte)0x02,(byte)0x01, (byte)0x02, (byte)0x01, (byte)0x02,(byte)0x01, (byte)0x02, (byte)0x01, (byte)0x02}, "AES");
-						cipher.init(Cipher.ENCRYPT_MODE, secreteKeySpec);
-						SealedObject responseEncrypted = CipherBox.encrypt(response, cipher);
-						output.writeObject(responseEncrypted);*/
-						//output.writeObject(CipherBox.encrypt(response, AESCipherEncrypt));
-						
+						innerResponse = new Envelope("OK");
+						innerResponse.addObject(yourToken);
 					}
+					System.out.println("SENT from GET: " + innerResponse);
+					response = buildSuper(innerResponse);
+					output.writeObject(response);
 				}
-				else if(message.getMessage().equals("CUSER") && isSecureConnection) //Client wants to create a user
-				{
-					if(message.getObjContents().size() < 2)
-					{
-						response = new Envelope("FAIL");
+				else if (message.getMessage().equals("CUSER") 
+							&& isSecureConnection) {
+					if (message.getObjContents().size() < 3) {
+						innerResponse = new Envelope("FAIL");
 					}
-					else
-					{
-						response = new Envelope("FAIL");
-						
-						if(message.getObjContents().get(0) != null)
-						{
-							if(message.getObjContents().get(1) != null)
-							{
-								String username = (String)message.getObjContents().get(0); //Extract the username
-								UserToken yourToken = (UserToken)message.getObjContents().get(1); //Extract the token
-								
-								if(createUser(username, yourToken))
-								{
-									response = new Envelope("OK"); //Success
+					else {
+						innerResponse = new Envelope("FAIL");
+						if(message.getObjContents().get(0) != null) {
+							if(message.getObjContents().get(1) != null) {
+								if (message.getObjContents().get(2) != null) {
+									String username = (String)message.getObjContents().get(0); //Extract the username
+									String password = (String)message.getObjContents().get(1);
+									UserToken yourToken = (UserToken)message.getObjContents().get(2); //Extract the token	
+									if (createUser(username, password, yourToken)) {
+										innerResponse = new Envelope("OK"); //Success
+									}
 								}
 							}
 						}
 					}
-					System.out.println("SENT from CUSER: " + response);
+					System.out.println("SENT from CUSER: " + innerResponse);
+					response = buildSuper(innerResponse);
 					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("DUSER") && isSecureConnection) //Client wants to delete a user
 				{
-					
-					if(message.getObjContents().size() < 2)
-					{
-						response = new Envelope("FAIL");
+					if (message.getObjContents().size() < 2) {
+						innerResponse = new Envelope("FAIL");
 					}
-					else
-					{
-						response = new Envelope("FAIL");
+					else {
+						innerResponse = new Envelope("FAIL");
 						
 						if(message.getObjContents().get(0) != null)
 						{
@@ -250,24 +231,22 @@ public class GroupThread extends Thread
 								
 								if(deleteUser(username, yourToken))
 								{
-									response = new Envelope("OK"); //Success
+									innerResponse = new Envelope("OK"); //Success
 								}
 							}
 						}
 					}
-					System.out.println("SENT from DUSER: " + response);
+					System.out.println("SENT from DUSER: " + innerResponse);
+					response = buildSuper(innerResponse);
 					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("CGROUP") && isSecureConnection) //Client wants to create a group
 				{	
-					//System.out.println("rcvd: " + message + " " + message.getObjContents().size());
-					if(message.getObjContents().size() < 1) //size is always two+? not sure why this was set to < 2
-					{
-						response = new Envelope("FAIL");
+					if (message.getObjContents().size() < 2) {
+						innerResponse = new Envelope("FAIL");
 					}
-					else
-					{
-						response = new Envelope("FAIL");
+					else {
+						innerResponse = new Envelope("FAIL");
 						
 						if(message.getObjContents().get(0) != null)
 						{
@@ -278,25 +257,24 @@ public class GroupThread extends Thread
 								
 								if(createGroup(groupname, yourToken))
 								{
-									response = new Envelope("OK"); //Success
+									innerResponse = new Envelope("OK"); //Success
 								}
 							}
 						}
 					}
 					
-					System.out.println("SENT from CGROUP: " + response);
+					System.out.println("SENT from CGROUP: " + innerResponse);
+					response = buildSuper(innerResponse);
 					output.writeObject(response);
-
 				}
 				else if(message.getMessage().equals("DGROUP") && isSecureConnection) //Client wants to delete a group
 				{
-					if(message.getObjContents().size() < 1)
-					{
-						response = new Envelope("FAIL");
+					if (message.getObjContents().size() < 2) {
+						innerResponse = new Envelope("FAIL");
 					}
 					else
 					{
-						response = new Envelope("FAIL");
+						innerResponse = new Envelope("FAIL");
 						
 						if(message.getObjContents().get(0) != null)
 						{
@@ -307,12 +285,13 @@ public class GroupThread extends Thread
 								
 								if(deleteGroup(groupname, yourToken))
 								{
-									response = new Envelope("OK"); //Success
+									innerResponse = new Envelope("OK"); //Success
 								}
 							}
 						}
 					}
-					System.out.println("SENT from DGROUP: " + response);
+					System.out.println("SENT from DGROUP: " + innerResponse);
+					response = buildSuper(innerResponse);
 					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("LMEMBERS") && isSecureConnection) //Client wants a list of members in a group
@@ -320,11 +299,11 @@ public class GroupThread extends Thread
 					// If there isn't enough information in the envelope
 					if (message.getObjContents().size() < 2) 
 					{
-						response = new Envelope("FAIL");
+						innerResponse = new Envelope("FAIL");
 					}
 					else 
 					{
-						response = new Envelope("FAIL");
+						innerResponse = new Envelope("FAIL");
 						// If there is no groupName
 						if (message.getObjContents().get(0) != null)
 						{
@@ -337,22 +316,21 @@ public class GroupThread extends Thread
 								UserToken yourToken = (UserToken)message.getObjContents().get(1);
 								// Get the memeber list for this group
 								List<String> members = listMembers(groupName, yourToken);
-
-								System.out.println(groupName + " , " + yourToken + " , " + members);
 								// If a list was returned
 								if (members != null) 
 								{
 									// Craft the envelope
-									response = new Envelope("OK");
-									response.addObject(members);
+									innerResponse = new Envelope("OK");
+									innerResponse.addObject(members);
 									
 								}
 							}
 						}
 					}
-					System.out.println("SENT from LMEMBERS: " + response);
+					System.out.println("SENT from LMEMBERS: " + innerResponse);
 					output.flush();
 					output.reset();
+					response = buildSuper(innerResponse);
 					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("AUSERTOGROUP") && isSecureConnection) //Client wants to add user to a group
@@ -360,11 +338,11 @@ public class GroupThread extends Thread
 					// Is there a userName, groupName, and Token in the Envelope
 					if (message.getObjContents().size() < 3)
 					{
-						response = new Envelope("FAIL");
+						innerResponse = new Envelope("FAIL");
 					}
 					else
 					{
-						response = new Envelope("FAIL");
+						innerResponse = new Envelope("FAIL");
 						if (message.getObjContents().get(0) != null)
 						{
 							if (message.getObjContents().get(1) != null)
@@ -376,13 +354,14 @@ public class GroupThread extends Thread
 									UserToken yourToken = (UserToken)message.getObjContents().get(2);
 									if (addUserToGroup(userName, groupName, yourToken))
 									{
-										response = new Envelope("OK");
+										innerResponse = new Envelope("OK");
 									}
 								}
 							}
 						}
 					}
-					System.out.println("SENT from AUSERTOGROUP: " + response);
+					System.out.println("SENT from AUSERTOGROUP: " + innerResponse);
+					response = buildSuper(innerResponse);
 					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("RUSERFROMGROUP") && isSecureConnection) //Client wants to remove user from a group
@@ -390,11 +369,11 @@ public class GroupThread extends Thread
 					// Is there a userName, groupName, and Token in the Envelope
 					if (message.getObjContents().size() < 3)
 					{
-						response = new Envelope("FAIL");
+						innerResponse = new Envelope("FAIL");
 					}
 					else
 					{
-						response = new Envelope("FAIL");
+						innerResponse = new Envelope("FAIL");
 						if (message.getObjContents().get(0) != null)
 						{
 							if (message.getObjContents().get(1) != null)
@@ -406,13 +385,14 @@ public class GroupThread extends Thread
 									UserToken yourToken = (UserToken)message.getObjContents().get(2);
 									if (deleteUserFromGroup(userName, groupName, yourToken))
 									{
-										response = new Envelope("OK");
+										innerResponse = new Envelope("OK");
 									}
 								}
 							}
 						}
 					}
-					System.out.println("SENT from RUSERFROMGROUP: " + response);
+					System.out.println("SENT from RUSERFROMGROUP: " + innerResponse);
+					response = buildSuper(innerResponse);
 					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("DISCONNECT") && isSecureConnection) //Client wants to disconnect
@@ -425,8 +405,9 @@ public class GroupThread extends Thread
 				}
 				else
 				{
-					response = new Envelope("FAIL"); //Server does not understand client request
-					System.out.println("SENT from INVALID MESSAGE: " + response);
+					innerResponse = new Envelope("FAIL"); //Server does not understand client request
+					System.out.println("SENT from INVALID MESSAGE: " + innerResponse);
+					response = buildSuper(innerResponse);
 					output.writeObject(response);
 				}
 			}while(proceed);	
@@ -461,36 +442,37 @@ public class GroupThread extends Thread
 	
 	
 	//Method to create a user
-	private boolean createUser(String username, UserToken yourToken)
-	{
+	private boolean createUser(String username, 
+						String password, 
+						UserToken yourToken) {
 		String requester = yourToken.getSubject();
 		
 		//Check if requester exists
-		if(my_gs.userList.checkUser(requester))
-		{
+		if (my_gs.userList.checkUser(requester)) {
 			//Get the user's groups
 			ArrayList<String> temp = my_gs.userList.getUserGroups(requester);
 			//requester needs to be an administrator
-			if(temp.contains("ADMIN"))
-			{
+			if (temp.contains("ADMIN")) {
 				//Does user already exist?
-				if(my_gs.userList.checkUser(username))
-				{
+				if (my_gs.userList.checkUser(username)) {
 					return false; //User already exists
 				}
-				else
-				{
+				else {
 					my_gs.userList.addUser(username);
+					BigInteger salt = Passwords.generateSalt();
+					my_gs.userList.setSalt(username, salt);
+					byte[] hashword = Passwords.generatePasswordHash(
+													password, 
+													salt); 
+					my_gs.userList.setPassword(username, hashword);
 					return true;
 				}
 			}
-			else
-			{
+			else {
 				return false; //requester not an administrator
 			}
 		}
-		else
-		{
+		else {
 			return false; //requester does not exist
 		}
 	}

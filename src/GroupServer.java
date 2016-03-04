@@ -16,7 +16,6 @@ import java.util.*;
 import java.math.BigInteger;
 import java.security.*;
 
-
 public class GroupServer extends Server {
 
 	public static final int SERVER_PORT = 8765;
@@ -70,7 +69,7 @@ public class GroupServer extends Server {
 			userList.setSalt(username, salt);
 			byte[] hashword = Passwords.generatePasswordHash(password, salt);
 			userList.setPassword(username, hashword);
-			//userList.setNewPassword(username, false);
+			userList.setNewPassword(username, false);
 		}
 		catch(IOException e)
 		{

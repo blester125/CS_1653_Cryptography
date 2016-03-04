@@ -750,7 +750,16 @@ public class ClientApp {
 	//Attempts to log in to the group server with the given username.
 	//Eventually will need authentication via password as well, but 
 	//this is not required for phase 2.
-	public void attemptLogin(JTextField usernameField, JTextField ipField, JTextField portField, JButton btnLogin, JButton btnNewUser, JTabbedPane tabbedPane, JButton btnDeleteUser, JButton btnFileServer, JButton btnLogout) {
+	public void attemptLogin(
+					JTextField usernameField, 
+					JTextField ipField, 
+					JTextField portField, 
+					JButton btnLogin, 
+					JButton btnNewUser, 
+					JTabbedPane tabbedPane, 
+					JButton btnDeleteUser, 
+					JButton btnFileServer, 
+					JButton btnLogout) {
 
 		//Pull information from fields
 		String username = usernameField.getText();
@@ -760,34 +769,49 @@ public class ClientApp {
 
 		//Attempt to connect to group server
 		//If fail, alert of failure
-		if(!RunClient.groupC.connect(ipAddr, port)){
+		if (!RunClient.groupC.connect(ipAddr, port)) {
 			JOptionPane.showMessageDialog(null, "Connection failure. Could not connect to GROUP server at " + ipAddr + ":" + port + ".", "Connection Failure", JOptionPane.OK_CANCEL_OPTION);
 			return;
 		}
-		else{
+		else {
 			// Establish secure connection with Diffie-Hellman Protocol
 			try {
 				int result = RunClient.groupC.authenticateGroupServer(username, password);
-			
-			if(result == -1) {
-				JOptionPane.showMessageDialog(null, "Could not establish a secure connection.", "Incorrect Login", JOptionPane.OK_CANCEL_OPTION);
-				return;
-			}
-			else if (result == 1) {
-				newPassword();
-			}
+				if (result == -2) {
+					JOptionPane.showMessageDialog(
+									null, 
+									"Incorrect Password.", 
+									"Login Error", 
+									JOptionPane.OK_CANCEL_OPTION);
+					return;
+				}
+				if (result == -1) {
+					JOptionPane.showMessageDialog(
+									null, 
+									"Could not establish a secure connection.", 
+									"Session Key Failure", 
+									JOptionPane.OK_CANCEL_OPTION);
+					return;
+				}
+				else if (result == 1) {
+					attemptNewPassword();
+				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 
 			
-			//Examine token, if fail, alert of failure.
+			/*Examine token, if fail, alert of failure.
 			RunClient.uToken = RunClient.groupC.getToken(username);
 
 			if(RunClient.uToken == null){
-				JOptionPane.showMessageDialog(null, "That user does not exist.", "Incorrect Login", JOptionPane.OK_CANCEL_OPTION);
+				JOptionPane.showMessageDialog(
+								null, 
+								"That user does not exist.",
+								"Incorrect Login", 
+								JOptionPane.OK_CANCEL_OPTION);
 				return;
-			}
+			}*/
 
 			//Enable navigation to application resources.
 			usernameField.setEnabled(false);
@@ -815,7 +839,10 @@ public class ClientApp {
 		}
 	}
 
-	public void attemptFileConnection(JTextField fileipField, JTextField filePortField, JTabbedPane tabbedPane) {
+	public void attemptFileConnection(
+					JTextField fileipField, 
+					JTextField filePortField, 
+					JTabbedPane tabbedPane) {
 		String ipAddr = fileIpField.getText();
 		int port = Integer.parseInt(filePortField.getText());
 		if(RunClient.fileC.isConnected()) {
@@ -849,7 +876,12 @@ public class ClientApp {
 		tempright.updateUI();
 	}
 
-	public void attemptLogout(JButton btnLogin, JButton btnNewUser, JTabbedPane tabbedPane, JButton btnDeleteUser, JButton btnFileServer) {
+	public void attemptLogout(
+					JButton btnLogin, 
+					JButton btnNewUser, 
+					JTabbedPane tabbedPane, 
+					JButton btnDeleteUser, 
+					JButton btnFileServer) {
 		if (RunClient.fileC.isConnected()) {
 			RunClient.fileC.disconnect();
 		}
@@ -883,42 +915,78 @@ public class ClientApp {
 		JPanel newUserDialogue = new JPanel();
 		JTextField newUsernameField = new JTextField(20);
 		JLabel usernameDialogueLabel = new JLabel("Please enter a username: ");
+		JTextField newPasswordField = new JPasswordField(20);
+		JLabel passwordDialogueLabel = new JLabel("Please enter a password: ");
 
 		newUserDialogue.add(usernameDialogueLabel);
 		newUserDialogue.add(newUsernameField);
+		newUserDialogue.add(passwordDialogueLabel);
+		newUserDialogue.add(newPasswordField);
 
-		int dialogue = JOptionPane.showOptionDialog(null, newUserDialogue, "New User Creation", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, null, null);
+		int dialogue = JOptionPane.showOptionDialog(
+										null, 
+										newUserDialogue, 
+										"New User Creation", 
+										JOptionPane.OK_CANCEL_OPTION, 
+										JOptionPane.PLAIN_MESSAGE, 
+										null, 
+										null, 
+										null);
 		
 		String newUsername = newUsernameField.getText();
+		String newPassword = newPasswordField.getText();
 		
-		if(newUsername.contains(Token.sentinal)) {
-			JOptionPane.showMessageDialog(null, "The user could not be created. Username cannot contain a '#'", "User Creation Failure", JOptionPane.OK_CANCEL_OPTION);
+		if (newUsername.contains(Token.sentinal)) {
+			JOptionPane.showMessageDialog(
+							null, 
+							"The user could not be created. "
+							+ "Username cannot contain a '#'", 
+							"User Creation Failure", 
+							JOptionPane.OK_CANCEL_OPTION);
 			return;
 		}
 
-		if(dialogue == 0 && newUsername.length() > 0){
-
-			//Create new user with currently logged in user token. If fail, report and return
-			if(!RunClient.groupC.createUser(newUsername, currToken)){
-				JOptionPane.showMessageDialog(null, "The user could not be created.", "User Creation Failure", JOptionPane.OK_CANCEL_OPTION);
+		if (dialogue == 0 && newUsername.length() > 0) {
+			// Create new user with currently logged in user token. 
+			// If fail, report and return
+			if (!RunClient.groupC.createUser(
+									newUsername, 
+									newPassword, 
+									currToken)) {
+				JOptionPane.showMessageDialog(
+								null, 
+								"The user could not be created.", 
+								"User Creation Failure", 
+								JOptionPane.OK_CANCEL_OPTION);
 				return;
 			}
-			
 		}
 	}
 
-	public void newPassword() {
+	public void attemptNewPassword() {
 		JPanel newPasswordDialogue = new JPanel();
 		JPasswordField newPasswordField = new JPasswordField(20);
-		JLabel passwordDialogueLabel = new JLabel("Please enter a new password: ");
+		JLabel passwordDialogueLabel;
+		passwordDialogueLabel = new JLabel("Please enter a new password: ");
 		newPasswordDialogue.add(passwordDialogueLabel);
 		newPasswordDialogue.add(newPasswordField);
-		int dialogue = JOptionPane.showOptionDialog(null, newPasswordDialogue, "New Password Creation", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, null, null);
+		int dialogue = JOptionPane.showOptionDialog(
+										null, 
+										newPasswordDialogue, 
+										"New Password Creation", 
+										JOptionPane.OK_CANCEL_OPTION, 
+										JOptionPane.PLAIN_MESSAGE, 
+										null, 
+										null, 
+										null);
 		String newPassword = newPasswordField.getText();
-		if(dialogue == 0 && newPassword.length() > 0){
-			//Create new user with currently logged in user token. If fail, report and return
-			if(!RunClient.groupC.newPassword(newPassword)){
-				JOptionPane.showMessageDialog(null, "Password Change Failure.", "Password Change Failure", JOptionPane.OK_CANCEL_OPTION);
+		if (dialogue == 0 && newPassword.length() > 0) {
+			if (!RunClient.groupC.newPassword(newPassword)) {
+				JOptionPane.showMessageDialog(
+								null, 
+								"Password Change Failure.", 
+								"Password Change Failure", 
+								JOptionPane.OK_CANCEL_OPTION);
 				return;
 			}
 		}
@@ -1015,20 +1083,35 @@ public class ClientApp {
 		if(loadedGroups != null && loadedGroups.getSelectedValue() != null)
 			currGroup = (String)loadedGroups.getSelectedValue();
 		else{
-			JOptionPane.showMessageDialog(null, "Please select a group.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
+			JOptionPane.showMessageDialog(
+							null, 
+							"Please select a group.", 
+							"User Error", 
+							JOptionPane.OK_CANCEL_OPTION);
 			return;
 		}
 
 		UserToken currToken = RunClient.groupC.getToken(currentUsername);
 
 		if(currToken == null){
-			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
+			JOptionPane.showMessageDialog(
+							null, 
+							"Fatal token error.", 
+							"Token Error", 
+							JOptionPane.OK_CANCEL_OPTION);
 			return;
 		}
 
 		members = (ArrayList<String>)RunClient.groupC.listMembers(currGroup, currToken);
 		System.out.println(members + "\n");
-
+		if (members == null) {
+			JOptionPane.showMessageDialog(
+							null, 
+							"You are not allowed to See the list.", 
+							"Permission Error", 
+							JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
 		final JList usersListView = new JList(members.toArray());
 		usersListView.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		GridBagConstraints gbc_usersListView = new GridBagConstraints();

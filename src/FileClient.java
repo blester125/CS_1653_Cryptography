@@ -101,42 +101,39 @@ public class FileClient extends Client implements FileClientInterface {
 	}
 
 	public boolean download(String sourceFile, String destFile, String group, UserToken token) {
-				if (sourceFile.charAt(0)=='/') {
-					sourceFile = sourceFile.substring(1);
-				}
-				sourceFile = sourceFile + group;			
-				File file = new File(destFile);
-			    	try {
-			    				
+		if (sourceFile.charAt(0)=='/') {
+			sourceFile = sourceFile.substring(1);
+		}
+		sourceFile = sourceFile + group;			
+		File file = new File(destFile);
+    	try {		
+			if (!file.exists()) {
+			file.createNewFile();
+			FileOutputStream fos = new FileOutputStream(file);
+				    
+			Envelope env = new Envelope("DOWNLOADF"); //Success
+			env.addObject(sourceFile);
+			env.addObject(token);
+
+			//build nested envelope, encrypt, and send
+			Envelope superEnv = buildSuper(env);
+			output.writeObject(superEnv); 
 				
-				    if (!file.exists()) {
-				    	file.createNewFile();
-					    FileOutputStream fos = new FileOutputStream(file);
-					    
-					    Envelope env = new Envelope("DOWNLOADF"); //Success
-					    env.addObject(sourceFile);
-					    env.addObject(token);
+			//receive, extract, and decrypt inner envelope
+			env = extractInner((Envelope)input.readObject());
+				    
+			while (env.getMessage().compareTo("CHUNK")==0) { 
+				fos.write((byte[])env.getObjContents().get(0), 0, (Integer)env.getObjContents().get(1));
+				System.out.printf(".");
 
-						//build nested envelope, encrypt, and send
-						Envelope superEnv = buildSuper(env);
-					    output.writeObject(superEnv); 
-					
-					   //receive, extract, and decrypt inner envelope
-						env = extractInner((Envelope)input.readObject());
-					    
-						while (env.getMessage().compareTo("CHUNK")==0) { 
-								fos.write((byte[])env.getObjContents().get(0), 0, (Integer)env.getObjContents().get(1));
-								System.out.printf(".");
-
-								env = new Envelope("DOWNLOADF"); //Success
-								output.writeObject(buildSuper(env));
-
-								env = extractInner((Envelope)input.readObject());									
-						}										
-						fos.close();
+				env = new Envelope("DOWNLOADF"); //Success
+				output.writeObject(buildSuper(env));
+				env = extractInner((Envelope)input.readObject());									
+			}										
+			fos.close();
 						
-					    if(env.getMessage().compareTo("EOF")==0) {
-					    	 fos.close();
+		    if(env.getMessage().compareTo("EOF")==0) {
+				fos.close();
 								System.out.printf("\nTransfer successful file %s\n", sourceFile);
 								env = new Envelope("OK"); //Success
 								output.writeObject(buildSuper(env));

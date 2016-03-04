@@ -51,7 +51,10 @@ public interface GroupClientInterface
      * @return true if the new user was created, false otherwise
      *
      */
-    public boolean createUser(final String username, final UserToken token);
+    public boolean createUser(
+                    final String username,
+                    final String password, 
+                    final UserToken token);
 
 
     /**
