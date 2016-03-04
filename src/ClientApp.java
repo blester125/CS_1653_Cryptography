@@ -18,8 +18,9 @@ import java.awt.Insets;
 
 import javax.swing.JTextField;
 import javax.swing.JScrollBar;
-
+import javax.swing.JComponent;
 import java.awt.GridLayout;
+import java.awt.Dimension;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -739,12 +740,12 @@ public class ClientApp {
 		//-------------------------------------------------------------------------
 
 		//Set Enabled/Disabled functionality on startup
-		tabbedPane.setEnabledAt(1, false);
-		tabbedPane.setEnabledAt(2, false);
-		btnNewUser.setEnabled(false);
-		btnDeleteUser.setEnabled(false);
-		btnFileServer.setEnabled(false);
-		btnLogout.setEnabled(false);
+		tabbedPane.setEnabledAt(1, true);
+		tabbedPane.setEnabledAt(2, true);
+		btnNewUser.setEnabled(true);
+		btnDeleteUser.setEnabled(true);
+		btnFileServer.setEnabled(true);
+		btnLogout.setEnabled(true);
 	}
 
 	//Attempts to log in to the group server with the given username.
@@ -854,13 +855,57 @@ public class ClientApp {
 			return;
 		}
 		// Establish secret key with Diffie-Hellman Protocol
-		if(RunClient.fileC.establishSessionKey() != null) {
+		if(RunClient.fileC.establishSessionKey() == null) {
 			JOptionPane.showMessageDialog(null, "Connection failure. Could not establish a secure connection to FILE server at " + ipAddr + ":" + port + ".", "Connection Failure", JOptionPane.OK_CANCEL_OPTION);
 			return;
 		}
 		// Authenticate file server
 		if(!RunClient.fileC.authenticateServer()) {
 			//TODO: Carmen generate the pop-up and call RunClient.fileC.addServerToRegistry if they trust the server
+			
+
+			//Construct a dialogue box to capture user input and do so.
+			JPanel alertServerDialog = new JPanel();
+			JLabel serverDialogLabel = new JLabel("Public Key Not Found!");
+			JLabel serverHostnamePort = new JLabel("Hostname:Port - " + RunClient.fileC.sock.getInetAddress().getHostName() + ":" + Integer.toString(RunClient.fileC.sock.getPort()));
+			JTextField serverExpectedKey = new JTextField("Expected Key: " + RunClient.fileC.cachedPublicKey);
+			JTextField serverCurrentKey = new JTextField("Received Key: " + RunClient.fileC.serverPublicKey);
+			JLabel serverWarning = new JLabel("Please verify the integrity of this server with your system administrator before connecting.");
+
+			alertServerDialog.setLayout(new BoxLayout(alertServerDialog, BoxLayout.Y_AXIS));
+			alertServerDialog.setPreferredSize(new Dimension(800,150));
+			serverExpectedKey.setEditable(false);
+			serverCurrentKey.setEditable(false);
+			serverExpectedKey.setCaretPosition(0);
+			serverCurrentKey.setCaretPosition(0);
+
+			alertServerDialog.add(serverDialogLabel);
+			alertServerDialog.add(serverHostnamePort);
+			alertServerDialog.add(serverExpectedKey);
+			alertServerDialog.add(serverCurrentKey);
+			alertServerDialog.add(serverWarning);
+
+
+
+			int dialogue = JOptionPane.showOptionDialog(null, alertServerDialog, "Public Key Not Found", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, null, null);
+
+
+
+			if(dialogue == 0){
+
+				RunClient.fileC.addServerToRegistry();
+
+				if(!RunClient.fileC.issueChallenge()){
+					JOptionPane.showMessageDialog(null, "Server failed to correctly answer the challenge.", "Challenge Failure", JOptionPane.OK_CANCEL_OPTION);
+					RunClient.fileC.disconnect();
+				}
+
+			}
+			else {
+				JOptionPane.showMessageDialog(null, "Connection aborted. Please alert your system administrator of suspicious file servers.", "Connection Aborted", JOptionPane.OK_CANCEL_OPTION);
+				RunClient.fileC.disconnect();
+			}
+
 		}
 		
 		tabbedPane.setEnabledAt(2,true);
