@@ -20,7 +20,6 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 
 import java.security.KeyPair;
-import java.security.SealedObject;
 
 import java.security.SecureRandom;
 import javax.crypto.spec.IvParameterSpec;

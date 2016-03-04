@@ -74,6 +74,7 @@ public class GroupThread extends Thread
 					Envelope superE = (Envelope)input.readObject();
 					SealedObject sealedEnvelope = (SealedObject)superE.getObjContents().get(0);
 					IvParameterSpec ivspec = new IvParameterSpec((byte[])superE.getObjContents().get(1));
+					System.out.println(sealedEnvelope + " " + ivspec);
 					message = (Envelope)CipherBox.decrypt(sealedEnvelope, sessionKey, ivspec);
 				}
 				System.out.println("Request received: " + message.getMessage());
@@ -88,8 +89,8 @@ public class GroupThread extends Thread
 					try {
 						keypair = DiffieHellman.genKeyPair();
 						keyAgreement = DiffieHellman.genKeyAgreement(keypair);
-						SecretKey secretKey = DiffieHellman.generateSecretKey(clientPK, keyAgreement);
-						System.out.println(secretKey.getEncoded());
+						sessionKey = DiffieHellman.generateSecretKey(clientPK, keyAgreement);
+						System.out.println(new String(sessionKey.getEncoded()));
 						response = new Envelope("OK");
 						response.addObject(keypair.getPublic());
 						output.writeObject(response);

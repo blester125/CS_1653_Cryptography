@@ -754,7 +754,9 @@ public class ClientApp {
 		}
 		else{
 			// Establish secure connection with Diffie-Hellman Protocol
-			int result = RunClient.groupC.authenticateGroupServer(username, password);
+			try {
+				int result = RunClient.groupC.authenticateGroupServer(username, password);
+			
 			if(result == -1) {
 				JOptionPane.showMessageDialog(null, "Could not establish a secure connection.", "Incorrect Login", JOptionPane.OK_CANCEL_OPTION);
 				return;
@@ -762,6 +764,10 @@ public class ClientApp {
 			else if (result == 1) {
 				newPassword();
 			}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
 			
 			//Examine token, if fail, alert of failure.
 			RunClient.uToken = RunClient.groupC.getToken(username);

@@ -75,6 +75,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 		contents.addObject(username);
 		contents.addObject(password);
 		IvParameterSpec iv = CipherBox.generateRandomIV();
+		System.out.println(iv);
 		SealedObject sealedEnvelope = CipherBox.encrypt(contents, sessionKey, iv);
 		Envelope message = new Envelope("");
 		message.addObject(sealedEnvelope);
@@ -390,7 +391,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 				PublicKey groupServerPK = (PublicKey)response.getObjContents().get(0);
 				// generate the shared secret key
 				SecretKey secretKey = DiffieHellman.generateSecretKey(groupServerPK, keyAgreement);
-				System.out.println(secretKey.getEncoded());
+				System.out.println(new String(secretKey.getEncoded()));
 	
 				return secretKey;
 			}

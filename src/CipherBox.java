@@ -4,6 +4,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.SecureRandom;
+import java.security.*;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -12,10 +13,10 @@ import javax.crypto.SealedObject;
 import javax.crypto.spec.IvParameterSpec;
 
 
-public class CipherBox{
+public class CipherBox {
 	// ciphers for AES and RSA encryption and decryption
 	private static Cipher AESCipherEncrypt;
-	private static Cipher AESCipherDecrypt; 
+	private static Cipher AESCipherDecrypt;
 	private static Cipher RSACipherEncrypt;
 	private static Cipher RSACipherDecrypt; 
 	
@@ -40,10 +41,13 @@ public class CipherBox{
 	 */
 	public static SealedObject encrypt(Serializable plainText, Key key, IvParameterSpec iv) {
 		try {
+			AESCipherEncrypt = Cipher.getInstance("AES/CBC/PKCS5Padding");
 			AESCipherEncrypt.init(Cipher.ENCRYPT_MODE, key, iv);
 		} catch (InvalidKeyException e) {
 			e.printStackTrace();
 		} catch (InvalidAlgorithmParameterException e) {
+			e.printStackTrace();
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		try {
@@ -65,10 +69,11 @@ public class CipherBox{
 	 */
 	public static Object decrypt(SealedObject encrypted, Key key, IvParameterSpec iv) {
 		try {
+			AESCipherDecrypt = Cipher.getInstance("AES/CBC/PKCS5Padding");
 			AESCipherDecrypt.init(Cipher.DECRYPT_MODE, key, iv);
 		} catch (InvalidKeyException e1) {
 			e1.printStackTrace();
-		} catch (InvalidAlgorithmParameterException e1) {
+		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
 		
