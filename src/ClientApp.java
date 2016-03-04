@@ -1045,12 +1045,12 @@ public class ClientApp {
 				return;
 			}
 
-			if(!RunClient.fileC.issueChallenge()){
-				JOptionPane.showMessageDialog(null, "Server failed to correctly answer the challenge.", "Challenge Failure", JOptionPane.OK_CANCEL_OPTION);
-				RunClient.fileC.disconnect();
-				return;
-			}
+		}
 
+		if(!RunClient.fileC.issueChallenge()){
+			JOptionPane.showMessageDialog(null, "Server failed to correctly answer the challenge.", "Challenge Failure", JOptionPane.OK_CANCEL_OPTION);
+			RunClient.fileC.disconnect();
+			return;
 		}
 		
 		tabbedPane.setEnabledAt(2,true);
