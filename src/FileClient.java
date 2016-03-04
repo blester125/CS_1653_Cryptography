@@ -354,57 +354,58 @@ public class FileClient extends Client implements FileClientInterface {
 	  * @return	true if the public key is cached and matches the host:port
 	  * for the file server, false otherwise 
 	  */
-	public boolean authenticateServer(){
+	public boolean authenticateServer() {
 		// check the client's file server registry for the hostname:ip
 		// pairing with the corresponding public key
-		FileInputStream fis;
 		ServerRegistry fsReg;
-		try {
-			fis = new FileInputStream(fileserverRegistry);
-		} catch (FileNotFoundException e1) {
-			File temp = new File(fileserverRegistry);
-			try{
-				fis = new FileInputStream(temp);
-			} catch (Exception e){
+
+		//attempt to load serverregistry from file
+		try{
+
+			File registryFile = new File(fileserverRegistry);
+			FileInputStream fis = new FileInputStream(fileserverRegistry);
+			ObjectInputStream ois = new ObjectInputStream(fis);
+
+			fsReg = (ServerRegistry)ois.readObject();
+
+			ois.close();
+			fis.close();
+
+		}
+		catch (FileNotFoundException e){
+			//If file not found, make new fileserverRegistry file
+			try {
+				FileOutputStream fout = new FileOutputStream(fileserverRegistry);
+				ObjectOutputStream oout = new ObjectOutputStream(fout);
+
+				fsReg = new ServerRegistry();
+
+				oout.writeObject(fsReg);
+
+				oout.close();
+				fout.close();
+			} 
+			catch (Exception e1) {
+
+				e.printStackTrace();
 				return false;
 			}
+
 		}
-		ObjectInputStream fsStream = null;
-		// read the object
-		try {
-			fsStream = new ObjectInputStream(fis);
-		} catch (IOException e1) {
-			e1.printStackTrace();
-			try {
-				fsStream.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			return false;
-		}
-		try {
-			fsReg = (ServerRegistry)fsStream.readObject();
-			this.cachedPublicKey = fsReg.getServerPublicKey(new ServerInfo(this.sock.getInetAddress().getHostName(), 
-					Integer.toString(this.sock.getPort())));
-			fsStream.close();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-			try {
-				fsStream.close();
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			}
-			return false;
-		} catch (IOException e) {
+		catch (Exception e){
+
 			e.printStackTrace();
 			return false;
 		}
-		ServerInfo connectedFS = new ServerInfo(this.sock.getInetAddress().getHostName(), 
-				Integer.toString(this.sock.getPort()));
-		if(fsReg.getServerPublicKey(connectedFS) != null && 
-				fsReg.getServerPublicKey(connectedFS).equals(serverPublicKey)) {
+
+		//retrieve cached EXPECTED public key
+		cachedPublicKey = fsReg.getServerPublicKey(new ServerInfo(this.sock.getInetAddress().getHostName(), Integer.toString(this.sock.getPort())));
+
+		//compare with current key
+		if(cachedPublicKey != null && cachedPublicKey.equals(serverPublicKey)){
 			return true;
 		}
+
 		
 		return false;
 	}
@@ -415,65 +416,53 @@ public class FileClient extends Client implements FileClientInterface {
 	 */
 	public boolean addServerToRegistry() {
 		// retrieve the registry
-		FileInputStream fis;
+
 		ServerRegistry fsReg;
-		try {
-			fis = new FileInputStream(fileserverRegistry);
-		} catch (FileNotFoundException e1) {
-			File temp = new File(fileserverRegistry);
-			try{
-				fis = new FileInputStream(temp);
-			} catch (Exception e){
-				return false;
-			}
+
+		//attempt to load serverregistry from file
+		try{
+
+			File registryFile = new File(fileserverRegistry);
+			FileInputStream fis = new FileInputStream(fileserverRegistry);
+			ObjectInputStream ois = new ObjectInputStream(fis);
+
+			fsReg = (ServerRegistry)ois.readObject();
+
+			ois.close();
+			fis.close();
+
 		}
-		ObjectInputStream fsStream = null;
-		try {
-			fsStream = new ObjectInputStream(fis);
-		} catch (IOException e1) {
-			e1.printStackTrace();
-			try {
-				fsStream.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			return false;
-		}
-		try {
-			fsReg = (ServerRegistry)fsStream.readObject();
-			fsStream.close();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-			try {
-				fsStream.close();
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			}
-			return false;
-		} catch (IOException e) {
+		catch (Exception e){
+
 			e.printStackTrace();
 			return false;
 		}
-		// save the updated registry
-		fsReg.insertServerInfo(
-				new ServerInfo(this.sock.getInetAddress().getHostName(), Integer.toString(this.sock.getPort())), 
-				this.serverPublicKey);
-		ObjectOutputStream outStream = null;
-		try
-		{
-			outStream = new ObjectOutputStream(new FileOutputStream(fileserverRegistry));
-			outStream.writeObject(fsReg);
-			outStream.close();
-		} catch(Exception e) {
-			e.printStackTrace();
-			try {
-				outStream.close();
-			} catch (IOException e1) {
+
+		System.out.println(this.sock.getInetAddress().getHostName());
+		System.out.println(Integer.toString(this.sock.getPort()));
+		System.out.println(this.serverPublicKey);
+
+		//Add server to registry
+		fsReg.insertServerInfo(new ServerInfo(this.sock.getInetAddress().getHostName(), Integer.toString(this.sock.getPort())), this.serverPublicKey);
+
+		System.out.println(fsReg.getServerPublicKey(new ServerInfo(this.sock.getInetAddress().getHostName(), Integer.toString(this.sock.getPort()))));
+
+		//Write out to file
+		try {
+			FileOutputStream fout = new FileOutputStream(fileserverRegistry);
+			ObjectOutputStream oout = new ObjectOutputStream(fout);
+
+			oout.writeObject(fsReg);
+
+			oout.close();
+			fout.close();
+		} 
+		catch (Exception e1) {
+
 				e1.printStackTrace();
 				return false;
-			}
-			return false;
 		}
+
 		return true;
 	}
 
