@@ -948,6 +948,24 @@ public class ClientApp {
 			// Establish secure connection with Diffie-Hellman Protocol
 			try {
 				int result = RunClient.groupC.authenticateGroupServerRSA(username);
+				if (result == -2) {
+					// Error sending response
+					JOptionPane.showMessageDialog(
+									null, 
+									"Unable to send Success response.", 
+									"Protocol Failure", 
+									JOptionPane.OK_CANCEL_OPTION);
+					return;
+				} 
+				else if (result == -1) {
+					// Error getting session key
+					JOptionPane.showMessageDialog(
+									null, 
+									"Could not establish a secure connection.", 
+									"Session Key Failure", 
+									JOptionPane.OK_CANCEL_OPTION);
+					return;
+				}
 			}
 			catch (Exception e) {
 				e.printStackTrace();
