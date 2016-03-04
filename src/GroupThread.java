@@ -146,12 +146,11 @@ public class GroupThread extends Thread
 						keyAgreement = DiffieHellman.genKeyAgreement(keypair);
 						sessionKey = DiffieHellman.generateSecretKey(userDHKey, keyAgreement);
 						System.out.println(new String(sessionKey.getEncoded()));
-						response = new Envelope("OK");
+						response = new Envelope("RSALOGINOK");
 						SealedObject sk = CipherBox.encrypt(Hasher.hash(keypair.getPublic()), my_gs.keyPair.getPrivate());
 						response.addObject(sk);
 						response.addObject(keypair.getPublic());
 						output.writeObject(response);
-						System.out.println("Sent");
 						isSecureConnection = true;
 						username = user;
 					} catch(Exception e) {

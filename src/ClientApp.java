@@ -970,7 +970,7 @@ public class ClientApp {
 		btnChangePwd.setEnabled(true);
 		btnRSA.setEnabled(false);
 		btnRSASetup.setEnabled(true);
-		//currentUsername = username;
+		currentUsername = username;
 	}
 
 	public void attemptRSASetup(JTextField usernameField) {

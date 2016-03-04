@@ -461,15 +461,11 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message.addObject(key);
 			message.addObject(DHKeyPair.getPublic());
 			output.writeObject(message);
-			System.out.println("Waiting");
-
-			//WHHHHAHAAATTTTT
-			// This object is not getting read from the socket :(
 			Envelope response = (Envelope)input.readObject();
-			if (response.getMessage().equals("RSALOGIN")) {
+			if (response.getMessage().equals("RSALOGINOK")) {
 				SealedObject so = (SealedObject)response.getObjContents().get(0);
 				byte[] recvHash = (byte[])CipherBox.decrypt(so, serverKey);
-				PublicKey DHServerKey = (PublicKey)message.getObjContents().get(1);
+				PublicKey DHServerKey = (PublicKey)response.getObjContents().get(1);
 				if (!MessageDigest.isEqual(recvHash, Hasher.hash(DHServerKey))) {
 					System.out.println("Fail");
 					return null;
