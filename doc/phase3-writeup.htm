@@ -97,9 +97,9 @@ server, a "u" the user, and an "f" a file server.</p>
   communication over an insecure channel. They do this using Diffie-Hellman to 
   create a shared secret key, <b>K</b> that will be used for symmetric key 
   cryptography.
-  This Diffie-Hellman protocol will use these values <b>g</b> = NUMBER and 
+  This Diffie-Hellman protocol will use these values <b>g</b> = 2 and 
   <b>q</b>
-   = NUMBER.
+   = 2^2048 - 2^1984 - 1 + 2^64 * { [2^1918 pi] + 124476 }.
   The numbers <b>b</b> and <b>s</b> will be selected at random by Bob and 
   the Server respectively 
   using the java.security.SecureRandom library. The secret key <b>K</b> is computed
@@ -364,8 +364,8 @@ server, a "u" the user, and an "f" a file server.</p>
   the file server must first set up a secure communication over an insecure channel.
   This is accomplished using the Diffie-Hellman protocol to create a shared session key,
   <b>K</b>, that will be used for the remainder of their session for symmetric key cryptography.
-  This Diffie-Hellman protocol will use the values <b>g</b> = NUMBER and <b>q</b> = 
-  NUMBER, with the values of <b>b</b> and <b>s</b> being generated at random with the
+  This Diffie-Hellman protocol will use the values <b>g</b> = 2 and <b>q</b> = 
+  2^2048 - 2^1984 - 1 + 2^64 * { [2^1918 pi] + 124476 }, with the values of <b>b</b> and <b>s</b> being generated at random with the
   java.security.SecureRandom library by Bob and the file server, respectively. 
   Just like in our password authentication solution above, the secret session key 
   <b>K</b> will be computed with <b>K</b> = g<sup>bs</sup> mod q. We will employ AES 
@@ -618,7 +618,7 @@ server, a "u" the user, and an "f" a file server.</p>
   -->
   This protocol uses Diffie-Hellman to create a shared secret key, <b>K</b>, that 
   will be used for symmetric key cryptography. This Diffie-Hellman protocol will 
-  use these values <b>g</b> = NUMBER and <b>q</b> = NUMBER. The numbers <b>b</b> 
+  use these values <b>g</b> = 2 and <b>q</b> = 2^2048 - 2^1984 - 1 + 2^64 * { [2^1918 pi] + 124476 }. The numbers <b>b</b> 
   and <b>s</b> will be selected at random by Bob and the Server respectively 
   using the java.security.SecureRandom library. The secret key <b>K</b> is computed
   with <b>K</b> = g<sup>bs</sup> mod q. This symmetric key cryptography system would 
