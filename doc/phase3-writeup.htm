@@ -293,7 +293,7 @@ server, a "u" the user, and an "f" a file server.</p>
   be solved with timestamps. This achieves freshness for a token and mitigates the threat of
   a replay attack of the token by only allowing a certain token to be used within a small
   and reasonable frame of time for it to be transmitted securely over the network,
-  on the order of a couple of seconds (about 30 seconds in our implementation). The time the token was issued will be added as a new field in the Token object.
+  on the order of a couple of seconds (about 10 seconds in our implementation). The time the token was issued will be added as a new field in the Token object.
   This changes the aforementioned serialization
   by adding in the concatenation of the timestamp, which will also be used in the signed hash
   the group server creates, and so the agreed upon scheme between the group server and file server

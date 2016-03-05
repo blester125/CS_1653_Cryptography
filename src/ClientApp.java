@@ -1107,8 +1107,6 @@ public class ClientApp {
 	//a user is logged in.
 	public void attemptNewUser(){
 
-		UserToken currToken = RunClient.groupC.getToken(currentUsername);
-
 		//Construct a dialogue box to capture user input and do so.
 		JPanel newUserDialogue = new JPanel();
 		JTextField newUsernameField = new JTextField(20);
@@ -1133,6 +1131,8 @@ public class ClientApp {
 		
 		String newUsername = newUsernameField.getText();
 		String newPassword = newPasswordField.getText();
+
+		UserToken currToken = RunClient.groupC.getToken(currentUsername);
 		
 		if (newUsername.contains(Token.sentinal)) {
 			JOptionPane.showMessageDialog(
@@ -1205,9 +1205,7 @@ public class ClientApp {
 	//Should only work if a user is admin. Only functions after
 	//a user is logged in.
 	public void attemptDeleteUser(){
-
-		UserToken currToken = RunClient.groupC.getToken(currentUsername);
-
+	
 		//Construct a dialogue box to capture user input and do so.
 		JPanel deleteUserDialogue = new JPanel();
 		JTextField delUsernameField = new JTextField(20);
@@ -1219,6 +1217,8 @@ public class ClientApp {
 		int dialogue = JOptionPane.showOptionDialog(null, deleteUserDialogue, "Delete User", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, null, null);
 		
 		String delUsername = delUsernameField.getText();
+
+		UserToken currToken = RunClient.groupC.getToken(currentUsername);
 
 		if(dialogue == 0 && delUsername.length() > 0 && !(currentUsername.equals(delUsername))){
 
@@ -1344,8 +1344,7 @@ public class ClientApp {
 	//the user who created it ownership rights.
 	public void attemptCreateGroup(JPanel groupsListPanel){
 
-		UserToken currToken = RunClient.groupC.getToken(currentUsername);
-
+		
 		//Construct a dialogue box to capture user input and do so.
 		JPanel newGroupDialogue = new JPanel();
 		JTextField newGroupField = new JTextField(20);
@@ -1357,6 +1356,8 @@ public class ClientApp {
 		int dialogue = JOptionPane.showOptionDialog(null, newGroupDialogue, "New Group Creation", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, null, null);
 		
 		String newGroup = newGroupField.getText();
+
+		UserToken currToken = RunClient.groupC.getToken(currentUsername);
 
 		if(dialogue == 0 && newGroup.length() > 0){
 
@@ -1382,15 +1383,18 @@ public class ClientApp {
 			return;
 		}
 
-		UserToken currToken = RunClient.groupC.getToken(currentUsername);
-
-		if(currToken == null){
-			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
-			return;
-		}
-
 		int confirm = JOptionPane.showConfirmDialog(null, "Delete group " + currGroup + "?","Really?", JOptionPane.YES_NO_OPTION);
+		
+
 		if (confirm == JOptionPane.YES_OPTION) {
+
+			UserToken currToken = RunClient.groupC.getToken(currentUsername);
+
+			if(currToken == null){
+				JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
+				return;
+			}
+
 			if (RunClient.groupC.deleteGroup(currGroup, currToken)) {
 				populateGroupList(groupsListPanel);
 			} else
@@ -1409,14 +1413,7 @@ public class ClientApp {
 			JOptionPane.showMessageDialog(null, "Please select a group.", "Select Error", JOptionPane.OK_CANCEL_OPTION);
 			return;
 		}
-
-		UserToken currToken = RunClient.groupC.getToken(currentUsername);
-
-		if(currToken == null){
-			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
-			return;
-		}
-
+		
 		//Construct a dialogue box to capture user input and do so.
 		JPanel chooseUserDialogue = new JPanel();
 		JTextField chooseUsernameField = new JTextField(20);
@@ -1428,6 +1425,13 @@ public class ClientApp {
 		int dialogue = JOptionPane.showOptionDialog(null, chooseUserDialogue, "Choose User", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, null, null);
 		
 		String chooseUsername = chooseUsernameField.getText();
+
+		UserToken currToken = RunClient.groupC.getToken(currentUsername);
+
+		if(currToken == null){
+			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
 
 		if(dialogue == 0 && chooseUsername.length() > 0 && !(currentUsername.equals(chooseUsername))){
 
@@ -1639,13 +1643,6 @@ public class ClientApp {
 			return;
 		}
 
-		UserToken currToken = RunClient.groupC.getToken(currentUsername);
-
-		if(currToken == null){
-			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
-			return;
-		}
-
 		//Construct a dialogue box to capture user input and do so.
 		JPanel chooseFileDialogue = new JPanel();
 		JTextField chooseFileField = new JTextField(20);
@@ -1662,6 +1659,13 @@ public class ClientApp {
 
 		File tempTest = new File(chooseFile);
 
+		UserToken currToken = RunClient.groupC.getToken(currentUsername);
+
+		if(currToken == null){
+			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+
 		if(dialogue == 0 && chooseFile.length() > 0 && tempTest.exists()){
 
 			if(!RunClient.fileC.upload(chooseFile, destFile, currGroup, currToken)){
@@ -1670,6 +1674,8 @@ public class ClientApp {
 			}
 
 			System.out.println("File Uploaded!");
+
+			viewAllFiles(filesPane);
 			
 		}
 
@@ -1705,7 +1711,7 @@ public class ClientApp {
 		if(currFile.length() > 0){
 
 			if(!RunClient.fileC.delete(currFile, currGroup, currToken)){
-				JOptionPane.showMessageDialog(null, "The file could not be removed.", "User Remove Failure", JOptionPane.OK_CANCEL_OPTION);
+				JOptionPane.showMessageDialog(null, "The file could not be removed.", "File Delete Failure", JOptionPane.OK_CANCEL_OPTION);
 				return;
 			}
 
@@ -1734,13 +1740,6 @@ public class ClientApp {
 			return;
 		}
 
-		UserToken currToken = RunClient.groupC.getToken(currentUsername);
-
-		if(currToken == null){
-			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
-			return;
-		}
-
 		//Construct a dialogue box to capture user input and do so.
 		JPanel chooseFileDialogue = new JPanel();
 		JTextField chooseFileField = new JTextField(20);
@@ -1752,6 +1751,13 @@ public class ClientApp {
 		int dialogue = JOptionPane.showOptionDialog(null, chooseFileDialogue, "Save File", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, null, null);
 		
 		String destFile = chooseFileField.getText();
+
+		UserToken currToken = RunClient.groupC.getToken(currentUsername);
+
+		if(currToken == null){
+			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
 
 		if(currFile.length() > 0){
 
