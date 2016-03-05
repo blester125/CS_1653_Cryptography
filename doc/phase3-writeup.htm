@@ -630,7 +630,65 @@ server, a "u" the user, and an "f" a file server.</p>
     <section id="discussion">
       <h2>Discussion</h2>
 <!-- BEGIN CHANGES HERE -->
-
+<p>
+The first branching of possibilities we experience was for log-in authentication.
+We weighed the pros and cons of password authentication versus RSA public-private key authentication.
+The advantage of RSA being, under the assumption that users are not to be trusted,
+most especially in giving them the freedom to create their own passwords, that RSA
+forces them to use a cryptographically secure authentication protocol. However, it is the
+keyword forced which made a counter-point for password log-in. Psychological acceptability
+is a major concern when designing a system. We do not want our security to overshadow
+the actual functionality of the deployed system, and username/password log-in is
+common, and something the majority of users are comfortable with. We decided to do both,
+as it did not require a drastic increase to a work-load especially given one will
+already be completed. Password authentication was prioritized ultimately over RSA
+for ease-of-use, and with the fact that these users who are operating in a file-system
+emphasized for its security, to perhaps have some idea of creating acceptable password.
+This, and with the frequent interaction with the administrators who are assumed to be
+knowledgable in the system's security, it ultimately was chosen as the primary authentication
+over RSA (even though we have both). The choice satisfies many of the pros of each.
+</p>
+<p>
+There were a multitude of "gotcha's" that were discovered throughout the development phase.
+One underestimate of ours about how malicious a user may be was the injection attack
+where a field may be purposefully constructed so as to hash to a desired token. 
+It was helpful to keep in mind that threats were equally present, both internally and externally of the system.
+Another difficulty was establishing freshness for the tokens with our timestamp scheme.
+There is no "right" value, though you can certainly formulate an intelligent guess, there
+is always some trade-off between false-positives and false-negatives, and which we would choose to prioritize.
+Under the assumptions of the system being deployed in a largely local setting, false-positives (an attacker
+replaying old tokens) is less favorable, so the time frame was skewed in this manner.
+There were other gotcha's from our security implementation which even affected our
+client-side application in unexpected ways. To borrow once more from timestamps and freshness,
+whenever a client needs to make a request to the file server, they must retrieve a fresh
+token from the group server. In our GUI, this retrieval for some of the operations was done in
+a step before the actual request to the file server was going to be made, causing freshness failures 
+on the file server's side. For instance, a user clicks upload file, receives a token from the group server,
+and then they input the file they wish to upload and make the request to the file server, where
+the time it takes to actually input a file for upload will cause the token to expire.
+</p>
+<p>
+From the outset, we knew obscure and unexpected difficulties like this would arise, so we
+were as proactive as possible in outlining our threats, policy, and mechanism before even starting the implementation.
+About half of our time was used in this way preparing ourselves for the implementation, as 
+trying to fix an ever-growing amount of unexpected while developing this phase would have
+been slower, uglier, and probably weaker overall from a security stand-point, so we made
+an attempt at rigorously defining these aspects of the system before implementation. Even the threats and policy,
+while partially outlined in the rubric from a very broad perspective, were not yet sufficient
+for us to continue into the coding. Multiple verifications with our Professor were done,
+and carrying on this sense of explicit outline, we arrived at a clear destination and path to that destination
+for how we wanted the system by the end of this phase. The write-up and our diagrams were mostly completed and correct
+before any coding was carried out. The interplay in our final proposed mechanisms we deem as secure with the given assumptions.
+As going through the flow, we see a user must first authenticate with the group server securely over an insecure public channel,
+receive a correct token upon authentication, that must be used with immediacy with an authenticated file server (done
+securely by being in person with an admin) and all of the checks of the prior phase have been unaffected and are correct,
+such as you must belong to that group to upload files, only an owner of the group can delete the group, etc. All of this comes together
+to form a cohesive system. We finished in a timely manner and tested on the environment specified (machines in 6110 using linux) as
+well as with our own machines. Testing uncovered a few more "gotcha's" that we were able to deal with, and we arrived at
+both a system that is satisfactory and secure under the given assumptions, using a cohesive, clean,
+and largely symmetric/simple protocols for like operations, and one that exceeds the requirements provided
+in multiple-allowed forms of authentication (password and RSA).
+</p>
 <p>Below is a diagram of the full suite in action. In order to make use that 
   servers continue to talk to the same user that they authenticated they encrypt 
   communication with symmetric session keys. This authentication protocol ends 
