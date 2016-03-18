@@ -815,9 +815,9 @@ public class ClientApp {
 					JTabbedPane tabbedPane, 
 					JButton btnDeleteUser, 
 					JButton btnFileServer, 
-					JButton btnLogout,
-					JButton btnChangePwd,
-					JButton btnRSA,
+					JButton btnLogout, 
+					JButton btnChangePwd, 
+					JButton btnRSA, 
 					JButton btnRSASetup) {
 
 		//Pull information from fields
