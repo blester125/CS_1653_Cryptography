@@ -65,7 +65,7 @@ public class GroupThread extends Thread
 			
 			do
 			{
-				Envelope message; // = (Envelope)input.readObject();
+				Envelope message = null; // = (Envelope)input.readObject();
 				Envelope response;
 				Envelope innerResponse;
 				if(!isSecureConnection) {
@@ -74,9 +74,23 @@ public class GroupThread extends Thread
 				// decrypt envelopes after establishing a secure connection with
 				// a shared symmetric secret key
 				else {
-					Envelope superE = (Envelope)input.readObject();
-					message = extractInner(superE);
+					try {
+						Envelope superE = (Envelope)input.readObject();
+						message = extractInner(superE);
+					} catch(Exception e) {
+						e.printStackTrace();
+						response = new Envelope("FAIL");
+						response.addObject(response);
+						output.writeObject(response);
+					}
 				}
+				// null message check
+				if(message == null) {
+					response = new Envelope("FAIL");
+					response.addObject(response);
+					output.writeObject(response);
+				}
+				
 				System.out.println("Request received: " + message.getMessage());
 				
 				// Client wishes to establish a shared symmetric secret key

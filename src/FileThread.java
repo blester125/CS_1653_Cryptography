@@ -3,8 +3,10 @@
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.math.BigInteger;
 import java.net.Socket;
 import java.security.KeyFactory;
@@ -27,7 +29,7 @@ public class FileThread extends Thread
 	private boolean isAuthenticated;
 	private SecretKey secretKey;
 	private KeyPair rsaPair;
-	// Group Server Publi Key
+	// Group Server Public Key
 	public PublicKey serverPublicKey = null;
 
 	public FileThread(Socket _socket, KeyPair _rsaPair)
@@ -68,23 +70,40 @@ public class FileThread extends Thread
 			System.out.println("*** New connection from " + socket.getInetAddress() + ":" + socket.getPort() + "***");
 			final ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
 			final ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
-			Envelope response;
+			Envelope response = null;
 
 			do
 			{
-				Envelope e;
+				Envelope e = null;
 
 				if(!isSecureConnection) {
-					e = (Envelope)input.readObject();
+					try {
+						e = (Envelope)input.readObject();
+					} catch(Exception exception) {
+						exception.printStackTrace();
+						sendFail(response, output);
+						continue;
+					}
 				}
 				else {
-					e = extractInner((Envelope)input.readObject());
+					try {
+						e = extractInner((Envelope)input.readObject());
+					} catch(Exception exception) {
+						exception.printStackTrace();
+						sendFail(response, output);
+						continue;
+					}
+				}
+				// null envelope check
+				if(e == null) {
+					sendFail(response, output);
+					continue;
 				}
 
 				System.out.println("Request received: " + e.getMessage());
 
 				// Client wishes to establish a shared symmetric secret key
-				if(e.getMessage().equals("SESSIONKEY")) {
+				if(e.getMessage().equals("SESSIONKEY") && e.getObjContents() != null && e.getObjContents().get(0) != null) {
 
 					// Retrieve Client's public key
 					PublicKey clientPK = (PublicKey)e.getObjContents().get(0);
@@ -113,8 +132,14 @@ public class FileThread extends Thread
 				}
 				// Client sends server the challenge, server will decrypt and respond
 				else if(e.getMessage().equals("CHALLENGE") && isSecureConnection){
-
 					try {
+						// null checks
+						if(e.getObjContents() == null || e.getObjContents().size() < 1) {
+					    	response = new Envelope("FAIL-BADCONTENTS");
+						}
+						else if(e.getObjContents().get(0) == null) {
+							response = new Envelope("FAIL");
+						}
 						//Recover sealedobject of challenge from envelope, then decrypt
 						SealedObject encRSA_R1 = (SealedObject)e.getObjContents().get(0);
 						BigInteger r1 = (BigInteger)CipherBox.decrypt(encRSA_R1, rsaPair.getPrivate());
@@ -127,7 +152,6 @@ public class FileThread extends Thread
 						output.writeObject(buildSuper(response));
 						System.out.println("SENT from CHALLENGE: " + response);
 					} catch (Exception exception) {
-
 						exception.printStackTrace();
 						response = new Envelope("FAIL");
 						response.addObject(response);
@@ -136,8 +160,7 @@ public class FileThread extends Thread
 
 				}
 				// If successful, set your flag and carry on
-				else if(e.getMessage().equals("AUTH_SUCCESS") && isSecureConnection){
-
+				else if(e.getMessage().equals("AUTH_SUCCESS") && isSecureConnection) {
 					isAuthenticated = true;
 					System.out.println("Client authenticated the file server!");
 				}
@@ -190,13 +213,16 @@ public class FileThread extends Thread
 				if(e.getMessage().equals("LFILESG") && isSecureConnection && isAuthenticated) //List only files in specified group
 				{
 				    //Do error handling
-				    if(e.getObjContents().size() < 1) 
+				    if(e.getObjContents()== null || e.getObjContents().size() < 1) 
 				    {
 				    	response = new Envelope("FAIL-BADCONTENTS");
 				    }
 				    else 
 				    {
-				    	if(e.getObjContents().get(0) == null) 
+				    	if(e.getObjContents().get(0) == null) {
+							response = new Envelope("FAIL-BADGROUP");
+				    	}
+				    	else if(e.getObjContents().get(1) == null) 
 				    	{
 				    		response = new Envelope("FAIL-BADTOKEN");
 				    	}
@@ -242,7 +268,7 @@ public class FileThread extends Thread
 				if(e.getMessage().equals("UPLOADF") && isSecureConnection && isAuthenticated)
 				{
 
-					if(e.getObjContents().size() < 3)
+					if(e.getObjContents() == null || e.getObjContents().size() < 3)
 					{
 						response = new Envelope("FAIL-BADCONTENTS");
 					}
@@ -251,10 +277,10 @@ public class FileThread extends Thread
 						if(e.getObjContents().get(0) == null) {
 							response = new Envelope("FAIL-BADPATH");
 						}
-						if(e.getObjContents().get(1) == null) {
+						else if(e.getObjContents().get(1) == null) {
 							response = new Envelope("FAIL-BADGROUP");
 						}
-						if(e.getObjContents().get(2) == null) {
+						else if(e.getObjContents().get(2) == null) {
 							response = new Envelope("FAIL-BADTOKEN");
 						}
 						else {
@@ -318,23 +344,30 @@ public class FileThread extends Thread
 
 					String remotePath = (String)e.getObjContents().get(0);
 					Token t = (Token)e.getObjContents().get(1);
-					if (verifiyToken(t)) {
+					if(e.getObjContents() == null || e.getObjContents().size() < 2) {
+						response = new Envelope("FAIL-BADCONTENTS");
+					}
+					else if(e.getObjContents().get(0) == null) {
+						response = new Envelope("FAIL-BADPATH");
+					}
+					else if(e.getObjContents().get(1) == null) {
+						response = new Envelope("FAIL-BADTOKEN");
+					}
+					else if (verifiyToken(t)) {
 						ShareFile sf = FileServer.fileList.getFile("/"+remotePath);
 
 						if (sf == null) 
 						{
 							System.out.printf("Error: File %s doesn't exist\n", remotePath);
-							e = new Envelope("ERROR_FILEMISSING");
-							output.writeObject(buildSuper(e));
+							response = new Envelope("ERROR_FILEMISSING");
 							System.out.println("SENT from DOWNLOADF - ERROR_FILEMISSING: " + e);
 
 						}	
 						else if (!t.getGroups().contains(sf.getGroup()))
 						{
 							System.out.printf("Error user %s doesn't have permission\n", t.getSubject());
-							e = new Envelope("ERROR_PERMISSION");
-							output.writeObject(buildSuper(e));
-							System.out.println("SENT from DOWNLOADF - ERROR_PERMISSION: " + e);
+							response = new Envelope("ERROR_PERMISSION");
+							System.out.println("SENT from DOWNLOADF - ERROR_PERMISSION: " + response);
 						}
 						else {
 
@@ -344,9 +377,8 @@ public class FileThread extends Thread
 								if (!f.exists()) 
 								{
 									System.out.printf("Error file %s missing from disk\n", "_"+remotePath.replace('/', '_'));
-									e = new Envelope("ERROR_NOTONDISK");
-									output.writeObject(buildSuper(e));
-									System.out.println("SENT from DOWNLOADF - ERROR_NOTONDISK: " + e);
+									response = new Envelope("ERROR_NOTONDISK");
+									System.out.println("SENT from DOWNLOADF - ERROR_NOTONDISK: " + response);
 								}
 								else 
 								{
@@ -359,7 +391,7 @@ public class FileThread extends Thread
 											System.out.printf("Server error: %s\n", e.getMessage());
 											break;
 										}
-										e = new Envelope("CHUNK");
+										response = new Envelope("CHUNK");
 										int n = fis.read(buf); //can throw an IOException
 										if (n > 0) 
 										{
@@ -367,26 +399,27 @@ public class FileThread extends Thread
 										} 
 										else if (n < 0) 
 										{
-											System.out.println("Read error");		
+											System.out.println("Read error");
+											sendFail(response, output);
 										}
 
-										e.addObject(buf);
-										e.addObject(new Integer(n));
+										response.addObject(buf);
+										response.addObject(new Integer(n));
 
-										output.writeObject(buildSuper(e));
-										System.out.println("SENT from DOWNLOADF: " + e);
+										output.writeObject(buildSuper(response));
+										System.out.println("SENT from DOWNLOADF: " + response);
 
 										e = extractInner((Envelope)input.readObject());
 									}
 									while (fis.available()>0);
 
 									//If server indicates success, return the member list
-									if(e.getMessage().compareTo("DOWNLOADF")==0 && isSecureConnection  && isAuthenticated)
+									if(e != null && e.getMessage().compareTo("DOWNLOADF")==0 && isSecureConnection  && isAuthenticated)
 									{
 
-										e = new Envelope("EOF");
-										output.writeObject(buildSuper(e));
-										System.out.println("SENT from DOWNLOADF - EOF: " + e);
+										response = new Envelope("EOF");
+										output.writeObject(buildSuper(response));
+										System.out.println("SENT from DOWNLOADF - EOF: " + response);
 
 										e = extractInner((Envelope)input.readObject());
 										if(e.getMessage().compareTo("OK")==0) {
@@ -394,11 +427,13 @@ public class FileThread extends Thread
 										}
 										else {
 											System.out.printf("Upload failed: %s\n", e.getMessage());
+											sendFail(response, output);
 										}
 									}
 									else {
 
 										System.out.printf("Upload failed: %s\n", e.getMessage());
+										sendFail(response, output);
 									}
 
 									fis.close();
@@ -408,14 +443,29 @@ public class FileThread extends Thread
 							{
 								System.err.println("Error: " + e.getMessage());
 								e1.printStackTrace(System.err);
+								sendFail(response, output);
 							}
 						}
 					}
+					
+					output.writeObject(buildSuper(response));
+					System.out.println("SENT from UPLOADF: " + response);
 				}
 				else if (e.getMessage().compareTo("DELETEF")==0 && isSecureConnection && isAuthenticated) {
+					if(e.getObjContents() == null || e.getObjContents().size() < 2) {
+						response = new Envelope("FAIL-BADCONTENTS");
+						output.writeObject(response);
+						continue;
+					}
 					String remotePath = (String)e.getObjContents().get(0);
 					Token t = (Token)e.getObjContents().get(1);
-					if (verifiyToken(t)) {
+					if(e.getObjContents().get(0) == null){
+						response = new Envelope("FAIL-BADPATH");
+					}
+					else if(e.getObjContents().get(1) == null){
+						response = new Envelope("FAIL-BADTOKEN");
+					}
+					else if (verifiyToken(t)) {
 						ShareFile sf = FileServer.fileList.getFile("/"+remotePath);
 						if (sf == null) {
 							System.out.printf("Error: File %s doesn't exist\n", remotePath);
@@ -508,5 +558,20 @@ public class FileThread extends Thread
 			}
 		}
 		return serverPublicKey;
+	}
+	
+	/**
+	 * creates a FAIL response
+	 * @param response	envelope being send
+	 * @param ouput	output stream being sent through
+	 */
+	private void sendFail(Envelope response, ObjectOutputStream output) {
+		response = new Envelope("FAIL");
+		response.addObject(response);
+		try {
+			output.writeObject(buildSuper(response));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 }
