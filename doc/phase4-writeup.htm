@@ -19,7 +19,9 @@ header {
       <h2>
 <!-- BEGIN CHANGES HERE -->
 
-William Garrison
+Brian Lester (bdl20)
+Carmen Condeluci (crc73)
+Ryan Conley (rgc11)
 
 <!-- END CHANGES HERE -->
       </h2>
@@ -37,7 +39,7 @@ your group has decided to use to address threats T5–T7.</p>
       <h2>Threat T5: Message Reorder, Replay, or Modification</h2>
 <!-- BEGIN CHANGES HERE -->
 
-<p>Begin this section by describing threat T5. This may include describing
+<!---<p>Begin this section by describing threat T5. This may include describing
 examples of the threat being exploited by an adversary, a short discussion of
 why this threat is problematic and needs to be addressed, and/or diagrams
 showing how the threat might manifest in your group’s implementation from Phase
@@ -56,7 +58,25 @@ sufficiently addresses this particular threat. This argument should address the
 correctness of your approach, as well as its overall security. For example, if
 your mechanism involves a key agreement or key exchange protocol, you should
 argue that both parties agree on the same key (correctnes) and that no other
-party can figure out the key (security).</p>
+party can figure out the key (security).</p> -->
+<p>
+Threat 5 is the threat of Message Reorder, Replay, or Modification by an attacker on the system. These kind of attacks often manifest as a Man in the Middle attack where each of the non malicious entities believe they are talking to each other when really they are talking to the Man in the Middle. This can lead to them disclosing sensitive information to the attacker. This threat could easily be realized in our current implementation. For example, during user authentication the user preforms Diffie-Hellman key exchange with the groupserver to create a shared secret <b>k</b>. The user then sends their username and password encrypted with <b>k</b>. The problem is what if the user is not talking to the groupserver? The user would then establish a shared key <b>k'</b> with the attacker (because the g and q in Diffie-Hellman are public knowledge an attacker could easily implement a Difie-Hellman protocol that would work with ours). The user then sends their username and password encrypted with <b>k'</b>. This means that the attack now has the users username and password and could log on to the server as the user.
+<br>
+In the case of reordering attacks this could manifest as the attacker sending the wrong message to try to mess with the system hoping to cause an error when the system is presented with unexpected input.
+</p>
+
+<p>
+We stop this attack using public key cryptography and signed Diffie-Hellman key exchange. There are two communications that needs to be protected this way. The first is the communication between the groupserver and the client. When a user account is created it will be the ADMIN of the groupserver's responsibility to get the users public key that they will use to log into the system with. This public key will be stored in the User object on the groupserver. It will the User's responsibility to get the groupserver's public key when they are configuring their client application. This is similar to the way ssh works. Once each party has each others public keys they can use signed Diffie-Hellman to exchange a symmetric key. The fact that this Diffie-Hellman is signed authenticates the user and the groupserver to one another. The exchanged key is used to encrypt all further messages. <b>INSERT IMAGE HERE</b>
+<br>
+The second communication that needs to be protected is the communication between the user and the fileserver. There are too many fileservers to the client to be expected to know them all therefore the fileserver's public key must be exchanged. This is done by the user connecting to the fileserver and requesting the fileservers public key. This is then sent to the user who must verify it out of band like in SSH. Once the user has verified the key the user will send their key encrypted with the fileservers public key. This encryption will stop an attacker from modifying the user's public key. Once the public keys are exchanged then the user and the fileserver preform Diffie-Hellman to establish a shared key that is used to encrypt the rest of the messages between the targets.
+<br>
+Message reordering will be defended against by having checks in the servers that gracefully handle the wrong message rather than having some sort of software crash that could compromise the system. 
+</p>
+
+<p>
+
+</p>  
+
 
 <!-- END CHANGES HERE -->
     </section>
