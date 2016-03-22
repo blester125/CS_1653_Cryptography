@@ -996,14 +996,16 @@ public class ClientApp {
 			return;
 		}
 		// Authenticate file server
-		if(!RunClient.fileC.authenticateServer()) {			
+		if(!RunClient.fileC.authenticateServer()) {	
+
+			RunClient.fileC.generateFingerprints();	
 
 			//Construct a dialogue box to capture user input and do so.
 			JPanel alertServerDialog = new JPanel();
 			JLabel serverDialogLabel = new JLabel("Public Key Not Found!");
 			JLabel serverHostnamePort = new JLabel("Hostname:Port - " + RunClient.fileC.sock.getInetAddress().getHostName() + ":" + Integer.toString(RunClient.fileC.sock.getPort()));
-			JTextField serverExpectedKey = new JTextField("Expected Key: " + RunClient.fileC.cachedPublicKey);
-			JTextField serverCurrentKey = new JTextField("Received Key: " + RunClient.fileC.serverPublicKey);
+			JTextField serverExpectedKey = new JTextField("Expected Key: " + RunClient.fileC.cachedKeyFingerprint);
+			JTextField serverCurrentKey = new JTextField("Received Key: " + RunClient.fileC.serverKeyFingerprint);
 			JLabel serverWarning = new JLabel("Please verify the integrity of this server with your system administrator before connecting.");
 
 			alertServerDialog.setLayout(new BoxLayout(alertServerDialog, BoxLayout.Y_AXIS));
