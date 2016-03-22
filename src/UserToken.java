@@ -1,6 +1,8 @@
 
 import java.util.List;
+import java.security.Key;
 import java.security.PrivateKey;
+
 import javax.crypto.SealedObject;
 /**
  * A simple interface to the token data structure that will be
@@ -52,6 +54,8 @@ public interface UserToken extends java.io.Serializable
     public boolean signToken(PrivateKey privateKey);
 
     public SealedObject getSignedHash();
+    
+    public Key getPublicKey();
 
     public String toString();
     
