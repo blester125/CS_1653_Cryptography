@@ -1,3 +1,0 @@
-#!/bin/sh
-
-javac -cp .:bcprov-jdk15on-154.jar *.java
