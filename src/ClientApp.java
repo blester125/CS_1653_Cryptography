@@ -822,7 +822,7 @@ public class ClientApp {
 
 		//Pull information from fields
 		String username = usernameField.getText();
-		String password = passwordField.getText();
+		String password = String.valueOf(passwordField.getPassword());
 		String ipAddr = ipField.getText();
 		int port = Integer.parseInt(portField.getText());
 
@@ -1167,7 +1167,7 @@ public class ClientApp {
 										null, 
 										null, 
 										null);
-		String newPassword = newPasswordField.getText();
+		String newPassword = String.valueOf(newPasswordField.getPassword());
 		if (dialogue == 0 && newPassword.length() > 0) {
 			if (!RunClient.groupC.newPassword(newPassword)) {
 				JOptionPane.showMessageDialog(
