@@ -193,7 +193,9 @@ public class GroupThread extends Thread
 					response = buildSuper(innerResponse);
 					output.writeObject(response);
 				}
-				else if (message.getMessage().equals("CHANGEPASSWORD") && isSecureConnection && username != null) {
+				else if (message.getMessage().equals("CHANGEPASSWORD") 
+							&& isSecureConnection 
+							&& username != null) {
 					if (message.getObjContents().size() < 1) {
 						innerResponse = new Envelope("FAIL");
 					}
@@ -242,10 +244,12 @@ public class GroupThread extends Thread
 						innerResponse = new Envelope("FAIL");
 						UserToken yourToken = createToken(username); //Create a token
 						//Respond to the client. On error, the client will receive a null token
+						
 						// Sign token
 						if (yourToken.signToken(my_gs.keyPair.getPrivate())) {
 							innerResponse = new Envelope("OK");
 							innerResponse.addObject(yourToken);
+							ArrayList<Group> = my_gs.
 						}
 					}
 					System.out.println("SENT from GET: " + innerResponse);
