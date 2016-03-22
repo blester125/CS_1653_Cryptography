@@ -23,6 +23,8 @@ public class FileClient extends Client implements FileClientInterface {
 	public PublicKey cachedPublicKey;
 	private String fileserverRegistry = "FileServerRegistry.bin";
 	public PublicKey serverPublicKey = null;
+	public String cachedKeyFingerprint;
+	public String serverKeyFingerprint;
 	
 	public FileClient() {
 
@@ -554,6 +556,13 @@ public class FileClient extends Client implements FileClientInterface {
 
 	 		return false;
 	 	}
+
+	 }
+
+	 public void generateFingerprints(){
+
+	 	cachedKeyFingerprint = javax.xml.bind.DatatypeConverter.printHexBinary(Hasher.hash(cachedPublicKey));
+	 	serverKeyFingerprint = javax.xml.bind.DatatypeConverter.printHexBinary(Hasher.hash(serverPublicKey));
 
 	 }
 }

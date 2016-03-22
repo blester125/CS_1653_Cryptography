@@ -1,6 +1,2 @@
 #!/bin/sh
-if [ "$1" -eq "clean"]
-  then
-	rm *.class
-	rm *.bin
-fi
+javac -cp .:bcprov-jdk15on-154.jar *.java
