@@ -244,12 +244,18 @@ public class GroupThread extends Thread
 						innerResponse = new Envelope("FAIL");
 						UserToken yourToken = createToken(username); //Create a token
 						//Respond to the client. On error, the client will receive a null token
-						
-						// Sign token
-						if (yourToken.signToken(my_gs.keyPair.getPrivate())) {
-							innerResponse = new Envelope("OK");
-							innerResponse.addObject(yourToken);
-							ArrayList<Group> = my_gs.
+						if (yourToken != null) {
+							// Sign token
+							if (yourToken.signToken(my_gs.keyPair.getPrivate())) {
+								innerResponse = new Envelope("OK");
+								innerResponse.addObject(yourToken);
+								// If Token didn't fail the user exists no need to check here
+								ArrayList<String> groups = my_gs.userList.getUserGroups(user);
+								for (String group : groups) {
+									// The group names are from the UserList so don't need to check if they are there
+									innerResponse.add(my_gs.groupList.getGroupMetadata(group));
+								}
+							}
 						}
 					}
 					System.out.println("SENT from GET: " + innerResponse);

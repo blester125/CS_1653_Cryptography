@@ -16,7 +16,7 @@ import java.util.*;
 	
 	public synchronized void addFile(String owner, String group, String path)
 	{
-		ShareFile newFile = new ShareFile(owner, group, path);
+		ShareFile newFile = new ShareFile(owner, group, path, 0, 0);
 		list.add(newFile);
 	}
 	
