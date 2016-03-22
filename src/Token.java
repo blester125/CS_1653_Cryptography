@@ -1,3 +1,4 @@
+import java.security.Key;
 import java.security.PrivateKey;
 import java.security.Security;
 import java.util.ArrayList;
@@ -15,6 +16,7 @@ public class Token implements UserToken {
 	private Date timestamp;
 	private SealedObject signedHash;
 	private final long networkTolerance = 10000L;
+	private Key publicKey;
 	
 	public static final String sentinal = "#";
 	
@@ -25,6 +27,16 @@ public class Token implements UserToken {
 		for(String group : in_groups)
 			this.groups.add(group);
 		this.timestamp = new Date();
+	}
+	
+	Token(String issuer, String subject, ArrayList<String> in_groups, Key publicKey) {
+		this.issuer = issuer;
+		this.subject = subject;
+		this.groups = new ArrayList<String>(in_groups.size());
+		for(String group : in_groups)
+			this.groups.add(group);
+		this.timestamp = new Date();
+		this.publicKey = publicKey;
 	}
 	
 	Token(String issuer, String subject, ArrayList<String> in_groups, Date timestamp) {
@@ -71,6 +83,10 @@ public class Token implements UserToken {
 		return this.signedHash;
 	}
 	
+	public Key getPublicKey() {
+		return this.publicKey;
+	}
+	
 	@Override
 	public boolean isFresh() {
 		Date currentTime = new Date();
@@ -86,6 +102,7 @@ public class Token implements UserToken {
 		for(String group : this.groups) {
 			token += sentinal + group;
 		}
+		token += sentinal + this.publicKey;
 		return token;
 	}
 
