@@ -66,7 +66,7 @@ your mechanism involves a key agreement or key exchange protocol, you should
 argue that both parties agree on the same key (correctnes) and that no other
 party can figure out the key (security).</p> -->
 <p>
-Threat 5 is the threat of Message Reorder, Replay, or Modification by an attacker on the system. These kind of attacks often manifest as a Man in the Middle attack where each of the non malicious entities believe they are talking to each other when really they are talking to the Man in the Middle. This can lead to them disclosing sensitive information to the attacker. This threat could easily be realized in our current implementation. For example, during user authentication the user preforms Diffie-Hellman key exchange with the groupserver to create a shared secret <b>k</b>. The user then sends their username and password encrypted with <b>k</b>. The problem is what if the user is not talking to the groupserver? The user would then establish a shared key <b>k'</b> with the attacker (because the g and q in Diffie-Hellman are public knowledge an attacker could easily implement a Difie-Hellman protocol that would work with ours). The user then sends their username and password encrypted with <b>k'</b>. This means that the attack now has the users username and password and could log on to the server as the user.
+Threat 5 is the threat of Message Reorder, Replay, or Modification by an attacker on the system. These kind of attacks often manifest as a Man in the Middle attack where each of the non malicious entities believe they are talking to each other when really they are talking to the Man in the Middle. This can lead to them disclosing sensitive information to the attacker. This threat could easily be realized in our current implementation. For example, during user authentication the user preforms Diffie-Hellman key exchange with the groupserver to create a shared secret <b>k</b>. The user then sends their username and password encrypted with <b>k</b>. The problem is what if the user is not talking to the groupserver? The user would then establish a shared key <b>k'</b> with the attacker (because the g and q in Diffie-Hellman are public knowledge an attacker could easily implement a Diffie-Hellman protocol that would work with ours). The user then sends their username and password encrypted with <b>k'</b>. This means that the attack now has the users username and password and could log on to the server as the user.
 <br>
 In the case of reordering attacks this could manifest as the attacker sending the wrong message to try to mess with the system hoping to cause an error when the system is presented with unexpected input.
 </p>
@@ -164,7 +164,30 @@ with each section separated with the "#" sign, as well as each group being delim
 too. With this new destination information and its inclusion into the signed hash, 
 a server will be able to verify that a token can only be used within the server 
 that they are meant to, as tokens are already secured to be un-modifiable.
+</p>
 
+<p>
+One question that stands out when considering the implications of this destination 
+field is: "What is stopping the file servers from simply ignoring the destination 
+field of the token?" Our trust model states that file servers are largely untrusted.
+The destination field certainly ensures that stolen tokens will not be able to be used to 
+complete any group operations, as the group server is assumed to be trustworthy, but a 
+malicious file server may ignore it. The solution to this issue can be realized by 
+considering that if a file server cannot be trusted to enforce these restrictions, 
+they cannot be trusted with any files existing on their server either (as outlined 
+in T6). By protecting against the threat of file leakage by a malicious server in T6, 
+we can assume that any files that are leaked by malicious servers, even if they use a 
+stolen token and ignore the destination field, are still unusable by attackers. 
+</p>
+
+<p>
+Overall, this defense mechanism adequately addresses the threat of token theft. 
+By including both a timestamp and the intended token destination in the token itself, 
+the stolen token cannot be feasibly distributed or used to allow attackers to gain 
+permissions on both the group server or other file servers. As outlined in our previous 
+phase (Phase 3), tokens are made to be un-modifiable via a digitally signed hash of 
+an agreed-upon serialization of the complete token (T2), so a stolen token cannot be 
+modified in an attempt to attack these new restrictions.
 </p>
 <!-- END CHANGES HERE -->
     </section>
