@@ -237,7 +237,6 @@ public class GroupServer extends Server {
 			return null;
 		}
 	}
-
 }
 
 //This thread saves the user list

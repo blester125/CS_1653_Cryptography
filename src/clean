@@ -1,0 +1,6 @@
+#!/bin/sh
+
+rm -r shared_files
+rm *.key
+rm *.class
+rm *.bin
