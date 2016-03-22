@@ -37,8 +37,8 @@ public class ShareFile implements java.io.Serializable, Comparable<ShareFile> {
 		return group;
 	}
 
-	public int getGroupServer() {
-		return groupServer;
+	public int getGroupVersion() {
+		return groupVersion;
 	}
 
 	public int getKeyVersion() {

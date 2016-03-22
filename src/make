@@ -1,0 +1,6 @@
+#!/bin/sh
+if [ "$1" -eq "clean"]
+  then
+	rm *.class
+	rm *.bin
+fi
