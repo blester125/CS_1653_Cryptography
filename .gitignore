@@ -4,8 +4,12 @@
 *.bin
 *.classpath
 *.metadata
-
+*.txt
 *~
 shared_files
 *.pptx
 *.xcf
+build
+run
+clean
+*.key
