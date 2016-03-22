@@ -72,9 +72,14 @@ In the case of reordering attacks this could manifest as the attacker sending th
 </p>
 
 <p>
-We stop this attack using public key cryptography and signed Diffie-Hellman key exchange. There are two communications that needs to be protected this way. The first is the communication between the groupserver and the client. When a user account is created it will be the ADMIN of the groupserver's responsibility to get the users public key that they will use to log into the system with. This public key will be stored in the User object on the groupserver. It will the User's responsibility to get the groupserver's public key when they are configuring their client application. This is similar to the way ssh works. Once each party has each others public keys they can use signed Diffie-Hellman to exchange a symmetric key. The fact that this Diffie-Hellman is signed authenticates the user and the groupserver to one another. The exchanged key is used to encrypt all further messages. <b>INSERT IMAGE HERE</b>
+We stop this attack using public key cryptography and signed Diffie-Hellman key exchange. There are two communications that needs to be protected this way. The first is the communication between the groupserver and the client. When a user account is created it will be the ADMIN of the groupserver's responsibility to get the users public key that they will use to log into the system with. This public key will be stored in the User object on the groupserver. It will the User's responsibility to get the groupserver's public key when they are configuring their client application. This is similar to the way ssh works. Once each party has each others public keys they can use signed Diffie-Hellman to exchange a symmetric key. The fact that this Diffie-Hellman is signed authenticates the user and the groupserver to one another. The exchanged key is used to encrypt all further messages. <br><br>
+<img src="images/signeddh.png">
+<br>
 <br>
 The second communication that needs to be protected is the communication between the user and the fileserver. There are too many fileservers to the client to be expected to know them all therefore the fileserver's public key must be exchanged. This is done by the user connecting to the fileserver and requesting the fileservers public key. This is then sent to the user who must verify it out of band like in SSH. Once the user has verified the key the user will send their key encrypted with the fileservers public key. This encryption will stop an attacker from modifying the user's public key. Once the public keys are exchanged then the user and the fileserver preform Diffie-Hellman to establish a shared key that is used to encrypt the rest of the messages between the targets.
+<br><br>
+<img src="images/fileserversigneddh.png">
+<br>
 <br>
 Message reordering will be defended against by having checks in the servers that gracefully handle the wrong message rather than having some sort of software crash that could compromise the system. 
 </p>
