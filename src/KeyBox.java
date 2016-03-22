@@ -48,4 +48,12 @@ public class KeyBox {
 			return null;
 		}
 	}
+
+	public static boolean compareKey(Key keyOne, Key keyTwo){
+
+		if(keyOne.equals(keyTwo))
+			return true;
+		
+		return false;
+	}
 }
