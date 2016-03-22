@@ -12,7 +12,6 @@ import javax.crypto.spec.SecretKeySpec;
     public synchronized void createGroup(String groupName, String username) {
       Group newGroup = new Group(username);
       groups.put(groupName, newGroup);
-      gr
     } 
 
     public synchronized void deleteGroup(String groupName) {
@@ -116,11 +115,7 @@ import javax.crypto.spec.SecretKeySpec;
     	// decrement key hashes by one
     	else {
     		currentKeyVer--;
-    		byte[] keyBytes = currentRootKey.getEncoded();
-    		for(int i = 0; i < currentKeyVer; i++) {
-    			keyBytes = Hasher.hash(keyBytes);
-    		}
-    		currentKey = new SecretKeySpec(keyBytes, 0, 16, "AES");
+    		currentKey = KeyBox.evolveKey(currentRootKey, currentKeyVer);
     	}
     	
     }
