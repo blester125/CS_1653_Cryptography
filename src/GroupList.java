@@ -2,6 +2,7 @@ import java.security.Key;
 import java.util.*;
 
 import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
   public class GroupList implements java.io.Serializable {
@@ -56,8 +57,8 @@ import javax.crypto.spec.SecretKeySpec;
     private static final long serialVersionUID = -7700097447400932609L;
     private ArrayList<String> users;
     private String owner;
-    private Key currentRootKey;
-    private Key currentKey;
+    private SecretKey currentRootKey;
+    private SecretKey currentKey;
     private int currentKeyVer;
     private ArrayList<Key> oldKeys;
     private static final int maxKeyVersions = 99;
@@ -65,6 +66,10 @@ import javax.crypto.spec.SecretKeySpec;
     public Group(String creator) {
       users = new ArrayList<String>();
       this.owner = creator;
+      this.currentRootKey = KeyBox.generateKey();
+      this.currentKeyVer = maxKeyVersions;
+      this.currentKey = KeyBox.evolveKey(currentKey, currentKeyVer);
+      this.oldKeys = new ArrayList<Key>();
     }
 
     public ArrayList<String> getUsers() {
@@ -103,29 +108,14 @@ import javax.crypto.spec.SecretKeySpec;
     	// need to generate a new key
     	if(currentKeyVer == 0) {
     		oldKeys.add(currentKey);
-    		KeyGenerator keyGen = null;
-			try {
-				keyGen = KeyGenerator.getInstance("AES");
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-    		keyGen.init(128);
-    		currentRootKey = keyGen.generateKey();
+    		currentRootKey = KeyBox.generateKey();
     		currentKeyVer = maxKeyVersions;
-    		byte[] keyBytes = currentKey.getEncoded();
-    		for(int i = 0; i < currentKeyVer; i++) {
-    			keyBytes = Hasher.hash(keyBytes);
-    		}
-    		currentKey = new SecretKeySpec(keyBytes, 0, 16, "AES");
+    		currentKey = KeyBox.evolveKey(currentRootKey, currentKeyVer);
     	}
     	// decrement key hashes by one
     	else {
     		currentKeyVer--;
-    		byte[] keyBytes = currentRootKey.getEncoded();
-    		for(int i = 0; i < currentKeyVer; i++) {
-    			keyBytes = Hasher.hash(keyBytes);
-    		}
-    		currentKey = new SecretKeySpec(keyBytes, 0, 16, "AES");
+    		currentKey = KeyBox.evolveKey(currentRootKey, currentKeyVer);
     	}
     	
     }
