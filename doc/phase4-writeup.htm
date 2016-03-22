@@ -74,7 +74,11 @@ Message reordering will be defended against by having checks in the servers that
 </p>
 
 <p>
-
+These defenses are sufficient to stop the threat. Signed Diffie-Hellmen defeats the Man in the Middle attack because the g<sup>x</sup>mod q's are digitally signed. This means that while an attacker could unsign the message but they could not modify it then resign it because they do not know the private key used to sign the message. This means that the message must be coming from the party that it is supposed to be coming from. 
+<br>
+The key verification out of band is used to stop an attacker from swapping their key with the server's key. If they managed to do this then the user could assume that the signed message is from the server but it is really signed with the attackers private key. This cannot happen because the user verifies the key out of band so they always verify that the keys are correct.
+<br>
+Having code that gracefully handles unexpected input means that unexpected crashes will not occur that could compromise system integrity.
 </p>  
 
 
