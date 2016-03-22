@@ -8,8 +8,11 @@ import java.security.SecureRandom;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.KeyGenerator;
 import javax.crypto.SealedObject;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 public class KeyBox {
 
@@ -27,12 +30,22 @@ public class KeyBox {
 		}
 	}
 
+	/**
+	 * evolves the key by hashing it a given amount of times
+	 * @param key
+	 * @param repeat
+	 * @return	null on failure
+	 */
 	public static SecretKey evolveKey(SecretKey key, int repeat) {
 		try {
 			byte[] keyBytes = key.getEncoded();
 			for (int i = 0; i < repeat; i++) {
 				keyBytes = Hasher.hash(keyBytes);
 			}
-			return new SecretKeySpec(keyBytes, 0, 16, "AES")
+			return new SecretKeySpec(keyBytes, 0, 16, "AES");
+		} catch(Exception e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 }
