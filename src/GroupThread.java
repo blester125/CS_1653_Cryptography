@@ -21,9 +21,10 @@ public class GroupThread extends Thread
 	private final Socket socket;
 	private GroupServer my_gs;
 	private boolean isSecureConnection;
+	private boolean isAuthenticated;
+	private int sequenceNumber;
 	private KeyPair rsaKeyPair;
 	private SecretKey sessionKey;
-	private String username = null;
 
 	public GroupThread(Socket _socket, GroupServer _gs)
 	{
@@ -142,7 +143,7 @@ public class GroupThread extends Thread
 								Envelope innerCheck = extractInner(check);
 								if (innerCheck.getMessage().equals("SUCCESS")) {
 									isSecureConnection = true;
-									username = user;
+									isAuthenticated = true;
 								}
 							} catch(Exception e) {
 								e.printStackTrace();
@@ -176,7 +177,7 @@ public class GroupThread extends Thread
 								String user = (String)message.getObjContents().get(0);
 								String password = (String)message.getObjContents().get(1);
 								if (checkUser(user, password)) {
-									username = user;
+									isAuthenticated = true;
 									if (checkFlag(username)) {
 										innerResponse = new Envelope("CHANGEPASSWORD");
 									}
@@ -195,7 +196,7 @@ public class GroupThread extends Thread
 				}
 				else if (message.getMessage().equals("CHANGEPASSWORD") 
 							&& isSecureConnection 
-							&& username != null) {
+							&& isAuthenticated) {
 					if (message.getObjContents().size() < 1) {
 						innerResponse = new Envelope("FAIL");
 					}
@@ -215,7 +216,8 @@ public class GroupThread extends Thread
 					output.writeObject(response);
 				}
 				else if (message.getMessage().equals("RSAKEY")
-							&& isSecureConnection) {
+							&& isSecureConnection
+							&& isAuthenticated) {
 					if (message.getObjContents().size() < 1) {
 						innerResponse = new Envelope("FAIL");
 					}
@@ -235,7 +237,7 @@ public class GroupThread extends Thread
 				}
 				else if (message.getMessage().equals("GET") 
 							&& isSecureConnection
-							&& username != null) {//Client wants a token
+							&& isAuthenticated) {//Client wants a token
 					String user = (String)message.getObjContents().get(0); //Get the username
 					if (user == null) {
 						innerResponse = new Envelope("FAIL");
@@ -266,7 +268,7 @@ public class GroupThread extends Thread
 				}
 				else if (message.getMessage().equals("CUSER") 
 							&& isSecureConnection
-							&& username != null) {
+							&& isAuthenticated) {
 					if (message.getObjContents().size() < 3) {
 						innerResponse = new Envelope("FAIL");
 					}
@@ -291,7 +293,7 @@ public class GroupThread extends Thread
 				}
 				else if(message.getMessage().equals("DUSER") 
 						&& isSecureConnection
-						&& username != null) //Client wants to delete a user
+						&& isAuthenticated) //Client wants to delete a user
 				{
 					if (message.getObjContents().size() < 2) {
 						innerResponse = new Envelope("FAIL");
@@ -319,7 +321,7 @@ public class GroupThread extends Thread
 				}
 				else if(message.getMessage().equals("CGROUP") 
 						&& isSecureConnection
-						&& username != null) //Client wants to create a group
+						&& isAuthenticated) //Client wants to create a group
 				{	
 					if (message.getObjContents().size() < 2) {
 						innerResponse = new Envelope("FAIL");
@@ -348,7 +350,7 @@ public class GroupThread extends Thread
 				}
 				else if(message.getMessage().equals("DGROUP") 
 						&& isSecureConnection
-						&& username != null) //Client wants to delete a group
+						&& isAuthenticated) //Client wants to delete a group
 				{
 					if (message.getObjContents().size() < 2) {
 						innerResponse = new Envelope("FAIL");
@@ -377,7 +379,7 @@ public class GroupThread extends Thread
 				}
 				else if(message.getMessage().equals("LMEMBERS") 
 						&& isSecureConnection
-						&& username != null) //Client wants a list of members in a group
+						&& isAuthenticated) //Client wants a list of members in a group
 				{
 					// If there isn't enough information in the envelope
 					if (message.getObjContents().size() < 2) 
@@ -418,7 +420,7 @@ public class GroupThread extends Thread
 				}
 				else if(message.getMessage().equals("AUSERTOGROUP") 
 						&& isSecureConnection
-						&& username != null) //Client wants to add user to a group
+						&& isAuthenticated) //Client wants to add user to a group
 				{
 					// Is there a userName, groupName, and Token in the Envelope
 					if (message.getObjContents().size() < 3)
@@ -451,7 +453,7 @@ public class GroupThread extends Thread
 				}
 				else if(message.getMessage().equals("RUSERFROMGROUP") 
 						&& isSecureConnection
-						&& username != null) //Client wants to remove user from a group
+						&& isAuthenticated) //Client wants to remove user from a group
 				{
 					// Is there a userName, groupName, and Token in the Envelope
 					if (message.getObjContents().size() < 3)
@@ -484,7 +486,7 @@ public class GroupThread extends Thread
 				}
 				else if(message.getMessage().equals("DISCONNECT") 
 						&& isSecureConnection
-						&& username != null) //Client wants to disconnect
+						&& isAuthenticated) //Client wants to disconnect
 				{
 					isSecureConnection = false;
 					username = null;
