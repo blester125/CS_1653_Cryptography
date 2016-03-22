@@ -251,12 +251,12 @@ public class GroupThread extends Thread
 								innerResponse.addObject(yourToken);
 								// If Token didn't fail the user exists no need to check here
 								ArrayList<String> groups = my_gs.userList.getUserGroups(user);
-								ArrayList<GroupMetadata> data = new ArrayList<GroupMetaData>();
+								ArrayList<GroupMetadata> data = new ArrayList<GroupMetadata>();
 								for (String group : groups) {
 									// The group names are from the UserList so don't need to check if they are there
 									data.add(my_gs.groupList.getGroupMetadata(group));
 								}
-								innerResponse.add(data);
+								innerResponse.addObject(data);
 							}
 						}
 					}
