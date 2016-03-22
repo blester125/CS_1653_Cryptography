@@ -48,7 +48,7 @@ import javax.crypto.spec.SecretKeySpec;
      * @return	GroupMetadata
      */
     public synchronized GroupMetadata getGroupMetadata(String groupname) {
-    	return new GroupMetadata(groups.get(groupname).getCurrentKey(), groups.get(groupname).getCurrentKeyVer(), 
+    	return new GroupMetadata(groupname, groups.get(groupname).getCurrentKey(), groups.get(groupname).getCurrentKeyVer(), 
     			groups.get(groupname).getOldKeys());
     }
 
@@ -129,30 +129,5 @@ import javax.crypto.spec.SecretKeySpec;
     	}
     	
     }
-  }
-  
-  class GroupMetadata implements java.io.Serializable {
-	    private static final long serialVersionUID = -8960097447400932609L;
-	    private Key currentKey;
-	    private int currentKeyVer;
-	    private ArrayList<Key> oldKeys;
-	    
-	    public GroupMetadata(Key currentKey, int currentKeyVer, ArrayList<Key> oldKeys) {
-	    	this.currentKey = currentKey;
-	    	this.currentKeyVer = currentKeyVer;
-	    	this.oldKeys = oldKeys;
-		}
-	    
-	    public Key getCurrentKey() {
-	    	return currentKey;
-	    }
-
-	    public int getCurrentKeyVer() {
-	    	return currentKeyVer;
-	    }
-	    
-	    public ArrayList<Key> getOldKeys() {
-	    	return oldKeys;
-	    }
   }
 }
