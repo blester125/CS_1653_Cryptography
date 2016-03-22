@@ -859,18 +859,6 @@ public class ClientApp {
 				e.printStackTrace();
 			}
 
-			
-			/*Examine token, if fail, alert of failure.
-			RunClient.uToken = RunClient.groupC.getToken(username);
-
-			if(RunClient.uToken == null){
-				JOptionPane.showMessageDialog(
-								null, 
-								"That user does not exist.",
-								"Incorrect Login", 
-								JOptionPane.OK_CANCEL_OPTION);
-				return;
-			}*/
 
 			//Enable navigation to application resources.
 			usernameField.setEnabled(false);

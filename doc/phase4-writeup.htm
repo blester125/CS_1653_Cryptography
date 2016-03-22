@@ -94,8 +94,7 @@ Having code that gracefully handles unexpected input means that unexpected crash
       <h2>Threat T6: File Leakage</h2>
 <!-- BEGIN CHANGES HERE -->
 
-<p>The threat of token theft by a file server is a security problem that our 
-system faces. 
+<p>
 
 </p>
 
@@ -105,8 +104,68 @@ system faces.
       <h2>Threat T7: Token Theft</h2>
 <!-- BEGIN CHANGES HERE -->
 
-<p></p>
+<p>
+The threat of token theft by a file server is a security problem that our 
+system faces, as we must assume from our threat model that file servers are 
+largely untrusted. If a rogue file server were to capture and distribute a user's 
+token, attackers in control of this token could utilize it to perform operations
+ such as adding themselves to the "ADMIN" group, add or remove other users from 
+groups, upload/download files freely, and generally have access to any functionality 
+that was granted to the original owner of the stolen token. This stolen token could 
+also be utilized on multiple different servers outside of the rogue server that 
+distributed it, which would effectively compromise the entire system. Although this is 
+a similar security threat to those we have addressed in previous phases (T2), the 
+tokens in this scenario are unmodified and genuine, as in, they are not forged or 
+altered by malicious users. To combat this security issue, a system that ensures 
+tokens cannot be utilized outside of their destinations (in this case, the file 
+server) is required in order to protect against this threat.
+</p>
 
+<p>
+The first step in implementing a mechanism to solve the issue of token theft is a 
+solution that we previously implemented in response to T2 in Phase 3. Tokens include 
+the following information in our Phase 3 implementation: issuer, subject, group list, 
+a hash of the token digitally signed with the group server's private key, and most 
+importantly, a timestamp. This timestamp achieves freshness for the token, making it 
+impossible to utilize the token after the window of network tolerance expires (10 
+seconds in our implementation). An attacker cannot modify the timestamp, as the 
+timestamp is included in the hash of the token. As previously outlined in Phase 3, 
+the agreed-upon serialization of the token is a concatenation of the issuer, subject, 
+group list, and timestamp with each section separated by a sentinal character ("#" 
+in our implementation) that is disallowed from use in any of the sections. The token 
+will appear as follows: { token || [token]K<sub>g</sub><sup>-1</sup> }K<sub>uf</sub>, where the token = timestamp || issuer || subject || groups with each section 
+separated with the "#" sign, as well as each group being delimited too.
+Just as in Phase 3, we will be using SHA-2 with a 256-bit digest (SHA-256), which is, 
+at the present momement, known to be secure and is forecasted to continue to be so 
+in the near future. By restricting the time window in which a token can be utilized, 
+it reduces the feasibility of a large-scale compromise of the system to only those 
+that can be conducted completely within the window of network tolerance.
+</p>
+
+<p>
+However, timestamps alone are not enough to protect against this threat, as a file 
+server could possibly distribute a stolen token to an attacker, with that attacker 
+quickly adding themself to whatever groups the original owner of the token had 
+permission to add users to. If this is achieved within the time-frame of the 
+network tolerance, the attacker can then freely perform all the group and file 
+operations it can with their newfound permissions even after the stolen token has 
+"expired". As we need to ensure that tokens cannot be used outside their destination, 
+then the solution is to add the intended destination of the token to the token 
+itself as an additional section. In this case, the destination will be the 
+"hostname:port" string of the intended file or group server (with which the client is 
+already connected and authenticated with) that the user is attempting to perform 
+an operation with. The client will send this information along with their username 
+to the group server when they request a token, which will return to them a token 
+generated with this destination information as well as a digitally signed hash (
+with the group server's private key) of the serialization of the token. The returned 
+token will appear as follows: { token || [token]K<sub>g</sub><sup>-1</sup> }K<sub>
+uf</sub>, where the token = timestamp || destination || issuer || subject || groups 
+with each section separated with the "#" sign, as well as each group being delimited 
+too. With this new destination information and its inclusion into the signed hash, 
+a server will be able to verify that a token can only be used within the server 
+that they are meant to, as tokens are already secured to be un-modifiable.
+
+</p>
 <!-- END CHANGES HERE -->
     </section>
     <section id="discussion">
