@@ -31,6 +31,7 @@ public class GroupThread extends Thread
 		socket = _socket;
 		my_gs = _gs;
 		isSecureConnection = false;
+		isAuthenticated = false
 		sessionKey = null;
 		rsaKeyPair = my_gs.keyPair;
 	}
@@ -159,7 +160,7 @@ public class GroupThread extends Thread
 						output.writeObject(response);
 					}
 				}
-				else if(message.getMessage().equals("LOGIN") 
+				/*else if(message.getMessage().equals("LOGIN") 
 							&& isSecureConnection) {
 
 					if (message.getObjContents().size() < 2)
@@ -193,7 +194,7 @@ public class GroupThread extends Thread
 					}
 					response = buildSuper(innerResponse);
 					output.writeObject(response);
-				}
+				}*/
 				else if (message.getMessage().equals("CHANGEPASSWORD") 
 							&& isSecureConnection 
 							&& isAuthenticated) {
