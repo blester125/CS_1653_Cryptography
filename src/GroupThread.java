@@ -280,7 +280,10 @@ public class GroupThread extends Thread
 								if (message.getObjContents().get(2) != null) {
 									String username = (String)message.getObjContents().get(0); //Extract the username
 									String password = (String)message.getObjContents().get(1);
-									UserToken yourToken = (UserToken)message.getObjContents().get(2); //Extract the token	
+									UserToken yourToken = (UserToken)message.getObjContents().get(2); //Extract the token
+									if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
+										innerResponse = new Envelope("FAIL");
+									}	
 									if (createUser(username, password, yourToken)) {
 										innerResponse = new Envelope("OK"); //Success
 									}
@@ -308,6 +311,11 @@ public class GroupThread extends Thread
 							{
 								String username = (String)message.getObjContents().get(0); //Extract the username
 								UserToken yourToken = (UserToken)message.getObjContents().get(1); //Extract the token
+
+								//check token to ensure expected and actual public keys match
+								if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
+									innerResponse = new Envelope("FAIL");
+								}	
 								
 								if(deleteUser(username, yourToken))
 								{
@@ -336,6 +344,11 @@ public class GroupThread extends Thread
 							{
 								String groupname = (String)message.getObjContents().get(0); //Extract the groupname
 								UserToken yourToken = (UserToken)message.getObjContents().get(1); //Extract the token
+
+								//check token to ensure expected and actual public keys match
+								if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
+									innerResponse = new Envelope("FAIL");
+								}
 								
 								if(createGroup(groupname, yourToken))
 								{
@@ -366,6 +379,11 @@ public class GroupThread extends Thread
 							{
 								String groupname = (String)message.getObjContents().get(0); //Extract the groupname
 								UserToken yourToken = (UserToken)message.getObjContents().get(1); //Extract the token
+
+								//check token to ensure expected and actual public keys match
+								if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
+									innerResponse = new Envelope("FAIL");
+								}
 								
 								if(deleteGroup(groupname, yourToken))
 								{
@@ -400,6 +418,12 @@ public class GroupThread extends Thread
 								String groupName = (String)message.getObjContents().get(0);
 								// Extract Token 
 								UserToken yourToken = (UserToken)message.getObjContents().get(1);
+
+								//check token to ensure expected and actual public keys match
+								if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
+									innerResponse = new Envelope("FAIL");
+								}
+
 								// Get the memeber list for this group
 								List<String> members = listMembers(groupName, yourToken);
 								// If a list was returned
@@ -440,6 +464,12 @@ public class GroupThread extends Thread
 									String userName = (String)message.getObjContents().get(0);
 									String groupName = (String)message.getObjContents().get(1);
 									UserToken yourToken = (UserToken)message.getObjContents().get(2);
+
+									//check token to ensure expected and actual public keys match
+									if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
+										innerResponse = new Envelope("FAIL");
+									}
+
 									if (addUserToGroup(userName, groupName, yourToken))
 									{
 										innerResponse = new Envelope("OK");
@@ -473,6 +503,12 @@ public class GroupThread extends Thread
 									String userName = (String)message.getObjContents().get(0);
 									String groupName = (String)message.getObjContents().get(1);
 									UserToken yourToken = (UserToken)message.getObjContents().get(2);
+
+									//check token to ensure expected and actual public keys match
+									if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
+										innerResponse = new Envelope("FAIL");
+									}
+									
 									if (deleteUserFromGroup(userName, groupName, yourToken))
 									{
 										innerResponse = new Envelope("OK");

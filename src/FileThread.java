@@ -182,7 +182,7 @@ public class FileThread extends Thread
 						    ArrayList<String> filteredFiles = new ArrayList<String>();
 						    UserToken tok = (UserToken)e.getObjContents().get(0);
 						    // Verify Token
-						    if (verifiyToken(tok)) {
+						    if (verifyToken(tok)) {
 
 						   		//Get all files from the FileServer
 							    ArrayList<ShareFile> all = FileServer.fileList.getFiles();
@@ -234,7 +234,7 @@ public class FileThread extends Thread
 						    ArrayList<ShareFile> filteredFiles = new ArrayList<ShareFile>();
 						    String groupName = (String)e.getObjContents().get(0);
 						    UserToken tok = (UserToken)e.getObjContents().get(1);
-						    if (verifiyToken(tok)) {
+						    if (verifyToken(tok)) {
 
 							    //Get all files from the FileServer
 							    ArrayList<ShareFile> all = FileServer.fileList.getFiles();
@@ -289,7 +289,7 @@ public class FileThread extends Thread
 							String group = (String)e.getObjContents().get(1);
 							remotePath = remotePath + group;
 							UserToken yourToken = (UserToken)e.getObjContents().get(2); //Extract token
-							if (verifiyToken(yourToken)) {
+							if (verifyToken(yourToken)) {
 								if (FileServer.fileList.checkFile(remotePath)) {
 									System.out.printf("Error: file already exists at %s\n", remotePath);
 									response = new Envelope("FAIL-FILEEXISTS"); //Success
@@ -353,7 +353,7 @@ public class FileThread extends Thread
 					else if(e.getObjContents().get(1) == null) {
 						response = new Envelope("FAIL-BADTOKEN");
 					}
-					else if (verifiyToken(t)) {
+					else if (verifyToken(t)) {
 						ShareFile sf = FileServer.fileList.getFile("/"+remotePath);
 
 						if (sf == null) 
@@ -465,7 +465,7 @@ public class FileThread extends Thread
 					else if(e.getObjContents().get(1) == null){
 						response = new Envelope("FAIL-BADTOKEN");
 					}
-					else if (verifiyToken(t)) {
+					else if (verifyToken(t)) {
 						ShareFile sf = FileServer.fileList.getFile("/"+remotePath);
 						if (sf == null) {
 							System.out.printf("Error: File %s doesn't exist\n", remotePath);
@@ -521,13 +521,20 @@ public class FileThread extends Thread
 		}
 	}
 
-	private boolean verifiyToken(UserToken token) {
+	private boolean verifyToken(UserToken token) {
 		// check for token freshness
 		System.out.println("verify");
 		if(!token.isFresh()) {
 			System.out.println("old token");
 			return false;
 		}
+
+		//check token to ensure expected and actual public keys match
+		if (KeyBox.compareKey(token.getPublicKey(), rsaPair.getPublic())) {
+			return false;
+		}
+
+		//get group server public key
 		serverPublicKey = loadServerKey();
 		SealedObject recvSignedHash = token.getSignedHash();
 		byte[] recvHash = (byte[])CipherBox.decrypt(recvSignedHash, serverPublicKey);
