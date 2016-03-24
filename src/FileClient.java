@@ -300,7 +300,7 @@ public class FileClient extends Client implements FileClientInterface {
 										
 			 }
 			 while (fis.available()>0);		 
-					 
+			 fis.close();
 			 //If server indicates success, return the member list
 			 if(env.getMessage().compareTo("READY")==0)
 			 { 
