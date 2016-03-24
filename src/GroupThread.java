@@ -100,7 +100,7 @@ public class GroupThread extends Thread
 				System.out.println("Request received: " + message.getMessage());
 				
 				// Client wishes to establish a shared symmetric secret key
-				if(message.getMessage().equals("SESSIONKEY")) {
+				/*if(message.getMessage().equals("SESSIONKEY")) {
 					// Retrieve Client's public key
 					PublicKey clientPK = (PublicKey)message.getObjContents().get(0);
 					KeyPair keypair = null;
@@ -120,50 +120,83 @@ public class GroupThread extends Thread
 						response.addObject(response);
 						output.writeObject(response);
 					}
-				}
-				else if (message.getMessage().equals("RSALOGIN")) {
-					String user = (String)message.getObjContents().get(0);
-					SealedObject sealedHash = (SealedObject)message.getObjContents().get(1);
-					PublicKey userPublicKey = getUserPublicKey(user);
-					if (userPublicKey != null) {
-						byte[] recvHash = (byte[])CipherBox.decrypt(sealedHash, userPublicKey);
-						PublicKey DHuserKey = (PublicKey)message.getObjContents().get(2);
-						if (MessageDigest.isEqual(recvHash, Hasher.hash(DHuserKey))) {
-							
-							KeyPair keyPair = null;
-							KeyAgreement keyAgreement = null;
-							// generate secret key and send back public key
-							try {
-								keyPair = DiffieHellman.genKeyPair();
-								keyAgreement = DiffieHellman.genKeyAgreement(keyPair);
-								sessionKey = DiffieHellman.generateSecretKey(DHuserKey, keyAgreement);
-								response = new Envelope("RSALOGINOK");
-								byte[] hashedPublicKey = Hasher.hash(keyPair.getPublic());
-								SealedObject sealedKey;
-								sealedKey = CipherBox.encrypt(hashedPublicKey, my_gs.keyPair.getPrivate());
-								response.addObject(sealedKey);
-								response.addObject(keyPair.getPublic());
-								output.writeObject(response);
-								Envelope check = (Envelope)input.readObject();
-								Envelope innerCheck = Envelope.extractInner(check, sessionKey);
-								if (innerCheck.getMessage().equals("SUCCESS")) {
-									isSecureConnection = true;
-									isAuthenticated = true;
-									username = user;
-								}
-							} catch(Exception e) {
-								e.printStackTrace();
-							}
-						}
-						else {
-							response = new Envelope("FAIL");
-							output.writeObject(response);
-						}
+				}*/
+				if (message.getMessage().equals("RSALOGIN")) {
+					Envelope innerResponse;
+					Envelope response = new Envelope("FAIL");
+					if (message.getObjContents().length < 3) {
+						response = new Envelope("FAIL");
 					}
 					else {
-						response = new Envelope("FAIL");
-						output.writeObject(response);
+						// Get first message
+						if (message.getObjContents().get(0) != null) {
+							if (message.getObjContents().get(1) != null) {
+								if (message.getObjContents().get(2) != null) {
+									String user = (String)message.getObjContents().get(0);
+									SealedObject sealedHash = (SealedObject)message.getObjContents().get(1);
+									PublicKey recvdKey = (PublicKey)message.getObjContents().get(2);
+									PublicKey userPublicKey = getUserPublicKey(user);
+									if (userPublicKey != null) {
+										byte[] recvHash = (byte[])CipherBox.decrypt(sealedHash, userPublicKey);
+										byte[] madeHash = Hasher.hash(recvdKey);
+										if (Hasher.verifiyHash(recvHash, madeHash) {
+											KeyPair keyPair = null;
+											KeyAgreement keyAgreement = null;
+											// generate secret key and send back public key
+											try {
+												keyPair = DiffieHellman.genKeyPair();
+												keyAgreement = DiffieHellman.genKeyAgreement(keyPair);
+												sessionKey = DiffieHellman.generateSecretKey(recvKey, keyAgreement);
+												// Send second message
+												response = new Envelope("RSALOGINOK");
+												byte[] hashedPublicKey = Hasher.hash(keyPair.getPublic());
+												SealedObject sealedKey;
+												sealedKey = CipherBox.encrypt(hashedPublicKey, my_gs.keyPair.getPrivate());
+												response.addObject(sealedKey);
+												response.addObject(keyPair.getPublic());
+												output.writeObject(response);
+												// Get third message
+												Envelope check = (Envelope)input.readObject();
+												Envelope innerCheck = Envelope.extractInner(check, sessionKey);
+												response = new Envelope("FAIL");
+												if (innerCheck != null) {
+													if (innerCheck.getMessage().equals("SUCCESS")) {
+														if (innerCheck.getObjContents().length == 2) {
+															if (innerCheck.getObjContents().get(0) != null) {
+																if (innerCheck.getObjContents().get(1) != null) {
+																	byte[] recvHashWord = innerCheck.getObjContents().get(0);
+																	String keyPlusWord = CipherBox.getKeyAsString(sessionKey);
+																	keyPlusWord = keyPlusWord + username;
+																	byte[] madeHashWord = Hasher.hash(keyPlusWord);
+																	if (Hasher.verifiyHash(recvHashWord, madeHashWord)) {
+																		isSecureConnection = true;
+																		isAuthenticated = true;
+																		username = user;
+																		sequenceNumber = (Integer)innerCheck.getObjContents().get(1);
+																		// Send 4th message
+																		innerResponse = new Envelope("SUCCESS");
+																		keyPlusWord = CipherBox.getKeyAsString(sessionKey);
+																		keyPlusWord = keyPlusWord + "groupserver";
+																		byte[] hashResponse = Hasher.hash(keyPlusWord);
+																		response.addObject(hashResponse);
+																		response.addObject(sequenceNumber + 1);
+																		response = Envelope.buildSuper(innerResponse, sessionKey);
+																	}
+																}
+															}
+														}
+													}
+												} 
+											} catch(Exception e) {
+												e.printStackTrace();
+											}
+										}
+									}
+								}
+							}
+						}
 					}
+					output.writeObject(response);
 				}
 				/*else if(message.getMessage().equals("LOGIN") 
 							&& isSecureConnection) {

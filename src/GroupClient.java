@@ -25,6 +25,7 @@ import javax.crypto.spec.IvParameterSpec;
 
 public class GroupClient extends Client implements GroupClientInterface {
 	private SecretKey sessionKey;
+	private int sequenceNumber;
 
 	static final int RSA_BIT_KEYSIZE = 2048;
 	
@@ -421,8 +422,11 @@ public class GroupClient extends Client implements GroupClientInterface {
 	}
 
 	// Login the group server with RSA
-	public int authenticateGroupServerRSA(String username) {
-		KeyPair keyPair = loadRSA();
+	public int authenticateGroupServerRSA(
+					String username, 
+					String publicKeyPath, 
+					String privateKeyPath) {
+		KeyPair keyPair = loadRSA(publicKeyPath, privateKeyPath);
 		PublicKey serverKey = loadServerKey();
 		sessionKey = establishSessionKeyRSA(username, keyPair, serverKey);
 		if (sessionKey == null) {
@@ -434,7 +438,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			Envelope response = Envelope.buildSuper(innerResponse, sessionKey);
 			output.writeObject(response);
 		} catch (Exception e) {
-			// Error send success response
+			// Error sending success response
 			return -2;
 		}
 		return 0;
@@ -453,21 +457,64 @@ public class GroupClient extends Client implements GroupClientInterface {
 			byte[] hashedPublicKey = Hasher.hash(DHKeyPair.getPublic());
 			SealedObject sealedKey;
 			sealedKey = CipherBox.encrypt(hashedPublicKey, keyPair.getPrivate());
+			// Send message 1
 			Envelope message = new Envelope("RSALOGIN");
 			message.addObject(username);
 			message.addObject(sealedKey);
 			message.addObject(DHKeyPair.getPublic());
 			output.writeObject(message);
+			// Recive Message 2
 			Envelope response = (Envelope)input.readObject();
-			if (response.getMessage().equals("RSALOGINOK")) {
-				SealedObject recvSealedHash = (SealedObject)response.getObjContents().get(0);
-				byte[] recvHash = (byte[])CipherBox.decrypt(recvSealedHash, serverKey);
-				PublicKey DHServerKey = (PublicKey)response.getObjContents().get(1);
-				if (!MessageDigest.isEqual(recvHash, Hasher.hash(DHServerKey))) {
-					return null;
+			if (response != null) {
+				if (response.getMessage().equals("RSALOGINOK")) {
+					if (response.getObjContents().length == 2) {
+						if (response.getObjectContents().get(0) != null) {
+							if (reponse.getObjectContents().get(1) != null) {
+								SealedObject recvSealedHash = (SealedObject)response.getObjContents().get(0);
+								byte[] recvHash = (byte[])CipherBox.decrypt(recvSealedHash, serverKey);
+								PublicKey DHServerKey = (PublicKey)response.getObjContents().get(1);
+								byte[] madeHash = Hasher.hash(DHServerKey);
+								if (Hasher.verifiyHash(recvHash, madeHash)) {
+									SecretKey sessionKey = DiffieHellman.generateSecretKey(DHServerKey, keyAgreement);
+									// Send Message 3
+									innerResponse = new Envelope("SUCCESS");
+									String keyPlusName = CipherBox.getKeyAsString(sessionKey);
+									String keyPlusName = keyPlusName + username;
+									byte[] hashSuccess = Hasher.hash(keyPlusName);
+									innerResponse.addObject(hashSucces);
+									SecureRandom rand = new SecureRandom();
+									sequenceNumber = rand.getInt(101);
+									innerResponse.addObject(sequenceNumber);
+									response = Envelope.buildSuper(innerResponse, sessionKey);
+									output.writeObject(response);
+									// Recive Message 4
+									response = Envelope.extractInner((Envelope)output.readObject());
+									if (response != null) {
+										if (response.getMessage().equals("SUCESS")) {
+											if (response.getObjContents().length == 2) {
+												if (response.getObjContents().get(0) != null) {
+													if (response.getObjContents().get(1) != null) {
+														byte[] recvHash = response.getObjContents().get(0);
+														int seqNum = response.getObjContents().get(1);
+														String keyPlusWord = CipherBox.getKeyAsString(sessionKey);
+														keyPlusWord = "groupserver";
+														byte[] madeHash = Hasher.hash(keyPlusWord);
+														if (Hasher.verifiyHash(recvHash, madeHash)) {
+															if (seqNum == sequenceNumber + 1) {
+																sequenceNumber += 2;
+																return sessionKey;
+															}
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
 				}
-				SecretKey secretKey = DiffieHellman.generateSecretKey(DHServerKey, keyAgreement);
-				return secretKey; 
 			}
 			return null;
 		} catch (Exception e) {
@@ -496,18 +543,18 @@ public class GroupClient extends Client implements GroupClientInterface {
 	}
 
 	// Loads my RSA keys
-	public KeyPair loadRSA() {
+	public KeyPair loadRSA(String publicKeyPath, String privateKeyPath) {
 		//Attempt to load RSA key pair from file
 		try{
 			KeyPair rsaPair;
-			File fsPublicKey = new File("userpublic.key");
-			FileInputStream keyIn = new FileInputStream("userpublic.key");
+			File fsPublicKey = new File(publicKeyPath);
+			FileInputStream keyIn = new FileInputStream(publicKeyPath);
 			byte[] encPublicKey = new byte[(int) fsPublicKey.length()];
 			keyIn.read(encPublicKey);
 			keyIn.close();
 
-			File fsPrivateKey = new File("userprivate.key");
-			keyIn = new FileInputStream("userprivate.key");
+			File fsPrivateKey = new File(privateKeyPath);
+			keyIn = new FileInputStream(privateKeyPath);
 			byte[] encPrivateKey = new byte[(int) fsPrivateKey.length()];
 			keyIn.read(encPrivateKey);
 			keyIn.close();
