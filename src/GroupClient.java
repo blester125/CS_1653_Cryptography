@@ -15,6 +15,7 @@ import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -467,9 +468,9 @@ public class GroupClient extends Client implements GroupClientInterface {
 			Envelope response = (Envelope)input.readObject();
 			if (response != null) {
 				if (response.getMessage().equals("RSALOGINOK")) {
-					if (response.getObjContents().length == 2) {
-						if (response.getObjectContents().get(0) != null) {
-							if (reponse.getObjectContents().get(1) != null) {
+					if (response.getObjContents().size() == 2) {
+						if (response.getObjContents().get(0) != null) {
+							if (response.getObjContents().get(1) != null) {
 								SealedObject recvSealedHash = (SealedObject)response.getObjContents().get(0);
 								byte[] recvHash = (byte[])CipherBox.decrypt(recvSealedHash, serverKey);
 								PublicKey DHServerKey = (PublicKey)response.getObjContents().get(1);
@@ -477,28 +478,28 @@ public class GroupClient extends Client implements GroupClientInterface {
 								if (Hasher.verifiyHash(recvHash, madeHash)) {
 									SecretKey sessionKey = DiffieHellman.generateSecretKey(DHServerKey, keyAgreement);
 									// Send Message 3
-									innerResponse = new Envelope("SUCCESS");
+									Envelope innerResponse = new Envelope("SUCCESS");
 									String keyPlusName = CipherBox.getKeyAsString(sessionKey);
-									String keyPlusName = keyPlusName + username;
+									keyPlusName = keyPlusName + username;
 									byte[] hashSuccess = Hasher.hash(keyPlusName);
-									innerResponse.addObject(hashSucces);
+									innerResponse.addObject(hashSuccess);
 									SecureRandom rand = new SecureRandom();
-									sequenceNumber = rand.getInt(101);
+									sequenceNumber = rand.nextInt(101);
 									innerResponse.addObject(sequenceNumber);
 									response = Envelope.buildSuper(innerResponse, sessionKey);
 									output.writeObject(response);
 									// Recive Message 4
-									response = Envelope.extractInner((Envelope)output.readObject());
+									response = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
 									if (response != null) {
 										if (response.getMessage().equals("SUCESS")) {
-											if (response.getObjContents().length == 2) {
+											if (response.getObjContents().size() == 2) {
 												if (response.getObjContents().get(0) != null) {
 													if (response.getObjContents().get(1) != null) {
-														byte[] recvHash = response.getObjContents().get(0);
-														int seqNum = response.getObjContents().get(1);
+														recvHash = (byte[])response.getObjContents().get(0);
+														Integer seqNum = (Integer)response.getObjContents().get(1);
 														String keyPlusWord = CipherBox.getKeyAsString(sessionKey);
 														keyPlusWord = "groupserver";
-														byte[] madeHash = Hasher.hash(keyPlusWord);
+														madeHash = Hasher.hash(keyPlusWord);
 														if (Hasher.verifiyHash(recvHash, madeHash)) {
 															if (seqNum == sequenceNumber + 1) {
 																sequenceNumber += 2;

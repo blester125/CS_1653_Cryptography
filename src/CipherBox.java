@@ -144,6 +144,6 @@ public class CipherBox {
 	}
 
 	public static String getKeyAsString(Key key) {
-		return new BASE64Encoder().encode(key); 
+		return new BASE64Encoder().encode(key.getEncoded()); 
 	}
 }

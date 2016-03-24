@@ -30,7 +30,7 @@ public class Hasher {
 			Mac mac = Mac.getInstance("HmacSHA256", "BC");
 			mac.init(k);
 			byte[] raw = mac.doFinal(obj.toString().getBytes("UTF-8"));
-			return raw
+			return raw;
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
@@ -42,9 +42,9 @@ public class Hasher {
 		return MessageDigest.isEqual(revHash, madeHash);
 	}
 
-	public static boolean verifyHMAC(String revHMAC, Key k, Object obj) {
-		String madeHMAC = generateHMAC(k, obj);
-		return MessageDigest.isEqual(revHMAC.getBytes(), madeHMAC.getBytes());
+	public static boolean verifyHMAC(byte[] revHMAC, Key k, Object obj) {
+		byte[] madeHMAC = generateHMAC(k, obj);
+		return MessageDigest.isEqual(revHMAC, madeHMAC);
 	}
 
 	public static void main(String args[]) throws Exception {

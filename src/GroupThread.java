@@ -122,9 +122,8 @@ public class GroupThread extends Thread
 					}
 				}*/
 				if (message.getMessage().equals("RSALOGIN")) {
-					Envelope innerResponse;
-					Envelope response = new Envelope("FAIL");
-					if (message.getObjContents().length < 3) {
+					response = new Envelope("FAIL");
+					if (message.getObjContents().size() < 3) {
 						response = new Envelope("FAIL");
 					}
 					else {
@@ -146,7 +145,7 @@ public class GroupThread extends Thread
 											try {
 												keyPair = DiffieHellman.genKeyPair();
 												keyAgreement = DiffieHellman.genKeyAgreement(keyPair);
-												sessionKey = DiffieHellman.generateSecretKey(recvKey, keyAgreement);
+												sessionKey = DiffieHellman.generateSecretKey(recvdKey, keyAgreement);
 												// Send second message
 												response = new Envelope("RSALOGINOK");
 												byte[] hashedPublicKey = Hasher.hash(keyPair.getPublic());
@@ -161,10 +160,10 @@ public class GroupThread extends Thread
 												response = new Envelope("FAIL");
 												if (innerCheck != null) {
 													if (innerCheck.getMessage().equals("SUCCESS")) {
-														if (innerCheck.getObjContents().length == 2) {
+														if (innerCheck.getObjContents().size() == 2) {
 															if (innerCheck.getObjContents().get(0) != null) {
 																if (innerCheck.getObjContents().get(1) != null) {
-																	byte[] recvHashWord = innerCheck.getObjContents().get(0);
+																	byte[] recvHashWord = (byte[])innerCheck.getObjContents().get(0);
 																	String keyPlusWord = CipherBox.getKeyAsString(sessionKey);
 																	keyPlusWord = keyPlusWord + username;
 																	byte[] madeHashWord = Hasher.hash(keyPlusWord);
