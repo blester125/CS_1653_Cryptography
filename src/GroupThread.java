@@ -204,12 +204,9 @@ public class GroupThread extends Thread
 					else {
 						innerResponse = new Envelope("FAIL");
 						if (message.getObjContents().get(0) != null) {
-							// Force "LOGIN" to have been run before "CHANGEPASSWORD"
-							if (username != null) {
-								String password = (String)message.getObjContents().get(0);
-								if (setPassword(username, password)) {
-									innerResponse = new Envelope("OK");
-								}
+							String password = (String)message.getObjContents().get(0);
+							if (setPassword(username, password)) {
+								innerResponse = new Envelope("OK");
 							}
 						}
 					}

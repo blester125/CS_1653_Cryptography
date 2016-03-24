@@ -1,5 +1,6 @@
 import java.security.MessageDigest;
 import java.security.Security;
+import javax.crypto.Mac;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -13,6 +14,28 @@ public class Hasher {
 			e.printStackTrace();
 			return null;
 		}
+	}
+
+	public static String generateHMAC(Key k, Object obj) {
+		try {		
+			Mac mac = Mac.getInstance("HmacSHA256");
+			mac.init(k);
+			byte[] raw = mac.doFinal(obj.toString().getBytes("UTF-8"));
+			return Encoding.EncodeBase64(raw);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}	
+	}
+
+	public static boolean verifiyHash(byte[] revHash, Object obj) {
+		byte[] madeHash = hash(obj);
+		return MessageDigest.isEqual(revHash, madeHash);
+	}
+
+	public static boolean verifiyHMAC(String revHMAC, Key k, Object obj) {
+		String madeHMAC = generateHMAC(k, obj);
+		return MessageDigest.isEqual(revHMAC, madeHMAC.getBytes());
 	}
 
 	public static void main(String args[]) throws Exception {

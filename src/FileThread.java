@@ -32,8 +32,7 @@ public class FileThread extends Thread
 	// Group Server Public Key
 	public PublicKey serverPublicKey = null;
 
-	public FileThread(Socket _socket, KeyPair _rsaPair)
-	{
+	public FileThread (Socket _socket, KeyPair _rsaPair) {
 		socket = _socket;
 		rsaPair = _rsaPair;
 		isSecureConnection = false;
@@ -41,22 +40,18 @@ public class FileThread extends Thread
 		
 	}
 
-	public Envelope buildSuper(Envelope env){
-
+	public Envelope buildSuper (Envelope env) {
 		IvParameterSpec ivspec = CipherBox.generateRandomIV();			
 		Envelope superEnv = new Envelope("SUPER");
 		superEnv.addObject(CipherBox.encrypt(env, secretKey, ivspec));
 		superEnv.addObject(ivspec.getIV());
-
 		return superEnv;
 	}
 
 	public Envelope extractInner(Envelope superInputEnv){
-
 		SealedObject innerEnv = (SealedObject)superInputEnv.getObjContents().get(0);
 		IvParameterSpec decIVSpec = new IvParameterSpec((byte[])superInputEnv.getObjContents().get(1));
 		Envelope env = (Envelope)CipherBox.decrypt(innerEnv, secretKey, decIVSpec);
-
 		return env;
 	}
 
