@@ -265,7 +265,7 @@ public class FileThread extends Thread
 				if(e.getMessage().equals("UPLOADF") && isSecureConnection && isAuthenticated)
 				{
 
-					if(e.getObjContents() == null || e.getObjContents().size() < 3)
+					if(e.getObjContents() == null || e.getObjContents().size() < 4)
 					{
 						response = new Envelope("FAIL-BADCONTENTS");
 					}
@@ -279,6 +279,9 @@ public class FileThread extends Thread
 						}
 						else if(e.getObjContents().get(2) == null) {
 							response = new Envelope("FAIL-BADTOKEN");
+						}
+						else if(e.getObjContents().get(3) == null){
+							response = new Envelope("FAIL-BADMETADATA");
 						}
 						else {
 							response = new Envelope("FAIL");

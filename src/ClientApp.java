@@ -1655,10 +1655,25 @@ public class ClientApp {
 			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
 			return;
 		}
-
+		ArrayList<GroupMetadata> userGroupsMetadata = RunClient.groupC.getGroupsMetadata(currToken);
+		if(userGroupsMetadata == null) {
+			JOptionPane.showMessageDialog(null, "Fatal group meta-data error.", "Group Meta-data Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+		// find the group meta-data for the current group
+		GroupMetadata currGroupMetadata = null;
+		for(GroupMetadata group : userGroupsMetadata) {
+			if(group.getGroupname().equals(currGroup)) {
+				currGroupMetadata = group;
+			}
+		}
+		if(currGroupMetadata == null){
+			JOptionPane.showMessageDialog(null, "Fatal group meta-data error.", "Group Meta-data Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
 		if(dialogue == 0 && chooseFile.length() > 0 && tempTest.exists()){
 
-			if(!RunClient.fileC.upload(chooseFile, destFile, currGroup, currToken)){
+			if(!RunClient.fileC.upload(chooseFile, destFile, currGroup, currToken, currGroupMetadata)){
 				JOptionPane.showMessageDialog(null, "The file could not be uploaded.", "File Upload Failure", JOptionPane.OK_CANCEL_OPTION);
 				return;
 			}

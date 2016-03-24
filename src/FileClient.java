@@ -11,6 +11,7 @@ import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.crypto.KeyAgreement;
@@ -237,7 +238,7 @@ public class FileClient extends Client implements FileClientInterface {
 	}
 
 	public boolean upload(String sourceFile, String destFile, String group,
-			UserToken token) {
+			UserToken token, GroupMetadata groupMetadata) {
 			
 		if (destFile.charAt(0)!='/') {
 			 destFile = "/" + destFile;
@@ -252,6 +253,7 @@ public class FileClient extends Client implements FileClientInterface {
 			 message.addObject(destFile);
 			 message.addObject(group);
 			 message.addObject(token); //Add requester's token
+			 message.addObject(groupMetadata);
 			 output.writeObject(Envelope.buildSuper(message, secretKey));
 			
 			 

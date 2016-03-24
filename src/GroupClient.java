@@ -149,6 +149,48 @@ public class GroupClient extends Client implements GroupClientInterface {
 		}
 		
 	 }
+	
+	/**
+	 * retreives the meta-data for all of a user's groups
+	 * i.e. old keys, current key, current key version, and the associated
+	 * group name
+	 * @param	user's token
+	 * @return	group metadata for each group
+	 */
+	public ArrayList<GroupMetadata> getGroupsMetadata(UserToken	token) {
+		try {
+			ArrayList<GroupMetadata> groupsmd = null;
+			Envelope message = null, response = null;
+			Envelope superE = null, superResponse = null;
+			//Tell the server to return the user's groups meta-data.
+			message = new Envelope("GET-GMETADATA");
+			message.addObject(token); //Add requester's token
+			superE = Envelope.buildSuper(message, sessionKey);
+			output.writeObject(superE);
+			
+			//Get the response from the server
+			superResponse = (Envelope)input.readObject();
+			response = Envelope.extractInner(superResponse, sessionKey);			
+			//Successful response
+			if(response.getMessage().equals("OK"))
+			{
+				//If there is a token in the Envelope, return it 
+				ArrayList<Object> temp = null;
+				temp = response.getObjContents();
+				if(temp.size() == 1)
+				{
+					groupsmd = (ArrayList<GroupMetadata>)temp.get(0);
+					return groupsmd;
+				}
+			}
+			return null;
+		}
+		catch(Exception e) {
+			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace(System.err);
+			return null;
+		}
+	}
 	 
 	public boolean createUser(
 					String username, 
