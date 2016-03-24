@@ -1,3 +1,5 @@
+import javax.crypto.spec.IvParameterSpec;
+
 public class ShareFile implements java.io.Serializable, Comparable<ShareFile> {
 
 	/**
@@ -7,20 +9,22 @@ public class ShareFile implements java.io.Serializable, Comparable<ShareFile> {
 	private String group;
 	private String path;
 	private String owner;
-	private int groupVersion;
+	private int key;
 	private int keyVersion;
+	private IvParameterSpec iv;
 	
 	public ShareFile(
 						String _owner, 
 						String _group, 
 						String _path, 
-						int _groupVersion,
+						int _key,
 						int _keyVersion) {
 		group = _group;
 		owner = _owner;
 		path = _path;
-		groupVersion = _groupVersion;
+		key = _key;
 		keyVersion = _keyVersion;
+		iv = CipherBox.generateRandomIV();
 	}
 	
 	public String getPath()
@@ -37,12 +41,16 @@ public class ShareFile implements java.io.Serializable, Comparable<ShareFile> {
 		return group;
 	}
 
-	public int getGroupVersion() {
-		return groupVersion;
+	public int getKey() {
+		return key;
 	}
 
 	public int getKeyVersion() {
 		return keyVersion;
+	}
+	
+	public IvParameterSpec getIvParameterSpec() {
+		return iv;
 	}
 	
 	public int compareTo(ShareFile rhs) {
