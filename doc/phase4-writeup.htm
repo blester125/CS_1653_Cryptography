@@ -141,6 +141,9 @@ cannot decrypt it if the untrusted file server happens to leak said file. Our cr
 is SHA-2 with a 256 bit digest. The key that will be generated from
 this one-time password scheme will be a 128-bit AES key. The files will be encrypted/decrypted with CBC mode, PKCS5 padding scheme, 
 and a unique IV for each file.
+<br><br>
+<img src="images/file_leakge.png">
+<br><br>
 </p>
 <p>
 This protocol is correct as any authorized group member who wished to decrypt a file will be able to as all files
