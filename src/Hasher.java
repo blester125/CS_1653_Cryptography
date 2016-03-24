@@ -25,13 +25,12 @@ public class Hasher {
 		}
 	}
 
-	public static String generateHMAC(Key k, Object obj) {
+	public static byte[] generateHMAC(Key k, Object obj) {
 		try {		
 			Mac mac = Mac.getInstance("HmacSHA256", "BC");
 			mac.init(k);
 			byte[] raw = mac.doFinal(obj.toString().getBytes("UTF-8"));
-			String encoded = new BASE64Encoder().encode(raw);
-			return encoded;
+			return raw
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
