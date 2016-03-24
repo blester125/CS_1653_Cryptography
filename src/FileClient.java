@@ -270,6 +270,7 @@ public class FileClient extends Client implements FileClientInterface {
 			 else {
 				
 				 System.out.printf("Upload failed: %s\n", env.getMessage());
+				 fis.close();
 				 return false;
 			 }
 			 
@@ -278,6 +279,7 @@ public class FileClient extends Client implements FileClientInterface {
 				 byte[] buf = new byte[4096];
 				 	if (env.getMessage().compareTo("READY")!=0) {
 				 		System.out.printf("Server error: %s\n", env.getMessage());
+				 		fis.close();
 				 		return false;
 				 	}
 				 	message = new Envelope("CHUNK");
@@ -286,6 +288,7 @@ public class FileClient extends Client implements FileClientInterface {
 						System.out.printf(".");
 					} else if (n < 0) {
 						System.out.println("Read error");
+						fis.close();
 						return false;
 					}
 					
