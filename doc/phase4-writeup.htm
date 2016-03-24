@@ -94,6 +94,22 @@ Having code that gracefully handles unexpected input means that unexpected crash
 <!-- BEGIN CHANGES HERE -->
 
 <p>
+Threat 6 is the threat of file leakage by the file servers. In this phase of the project, it is assumed that
+file server are largely untrusted, and in this way they may attempt to leak files to unauthorized
+users or attackers. Under this assumption of untrusted file servers that are unable to protect
+a group's files from unauthorized principals, a fundamental property of the group
+file sharing system is undermined: only the current members of the group may access the group's files,
+and the secrecy of a group's files must remain intact as the group changes. This means that when
+a member of the group leaves, though they will still have access to all files up until
+their termination from the group, as it can't be prevent for a group member to save a file locally,
+if a file is leaked by the untrusted file servers to this past group member, they
+should be unable to decrypt the files that were uploaded after said termination. 
+In addition, when a new member joins a group, they should be able to view all files
+from before their joining and all files following until their termination from the group.
+What this necessitates is an evolving key to encrypt files with that evolves as the members
+of the group evolves.
+</p>
+<p>
 
 </p>
 
