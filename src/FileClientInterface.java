@@ -55,7 +55,12 @@ public interface FileClientInterface
      * @return true on success, false on failure
      *
      */
-    public boolean upload(final String sourceFile, final String destFile, final String group, final UserToken token);
+    public boolean upload(
+                        final String sourceFile, 
+                        final String destFile, 
+                        final String group, 
+                        final UserToken token, 
+                        final GroupMetadata groupMetadata);
 
 
     /**
@@ -69,7 +74,11 @@ public interface FileClientInterface
      * @return true on success, false on failure
      *
      */
-    public boolean download(final String sourceFile, final String destFile, final String group, final UserToken token);
+    public boolean download(
+                        final String sourceFile, 
+                        final String destFile, 
+                        final String group, 
+                        final UserToken token);
 
 
     /**

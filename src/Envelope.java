@@ -45,7 +45,7 @@ public class Envelope implements java.io.Serializable {
 		IvParameterSpec ivSpec = CipherBox.generateRandomIV();
 		Envelope superEnv = new Envelope("SUPER");
 		SealedObject sealedEnv = CipherBox.encrypt(env, key, ivSpec);
-		String HMAC = Hasher.generateHMAC(key, sealedEnv);
+		byte[] HMAC = Hasher.generateHMAC(key, sealedEnv);
 		superEnv.addObject(sealedEnv);
 		superEnv.addObject(ivSpec);
 		superEnv.addObject(HMAC);
@@ -60,8 +60,8 @@ public class Envelope implements java.io.Serializable {
 						if (env.getObjContents().get(2) != null) {
 							SealedObject sealedEnv = (SealedObject)env.getObjContents().get(0);
 							IvParameterSpec ivSpec = new IvParameterSpec((byte[])env.getObjContents().get(1));
-							String HMAC = (String)env.getObjContents().get(2);
-							if (Hasher.verifyHMAC(HMAC, key, sealedEnv)) {
+							byte[] HMAC = (byte[])env.getObjContents().get(2);
+							if (Hasher.verifiyHMAC(HMAC, key, sealedEnv)) {
 								return (Envelope)CipherBox.decrypt(sealedEnv, key, ivSpec);
 							}
 						}
