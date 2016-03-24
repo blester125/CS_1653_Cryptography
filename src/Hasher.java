@@ -2,7 +2,16 @@ import java.security.MessageDigest;
 import java.security.Security;
 import javax.crypto.Mac;
 
+import javax.crypto.KeyAgreement;
+import javax.crypto.SealedObject;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+
+import java.security.Key;
+
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
+import sun.misc.BASE64Encoder;
 
 public class Hasher {
 	public static byte[] hash(Object obj) {
@@ -21,7 +30,8 @@ public class Hasher {
 			Mac mac = Mac.getInstance("HmacSHA256");
 			mac.init(k);
 			byte[] raw = mac.doFinal(obj.toString().getBytes("UTF-8"));
-			return Encoding.EncodeBase64(raw);
+			String encoded = new BASE64Encoder().encode(raw);
+			return encoded;
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
@@ -33,9 +43,9 @@ public class Hasher {
 		return MessageDigest.isEqual(revHash, madeHash);
 	}
 
-	public static boolean verifiyHMAC(String revHMAC, Key k, Object obj) {
+	public static boolean verifyHMAC(String revHMAC, Key k, Object obj) {
 		String madeHMAC = generateHMAC(k, obj);
-		return MessageDigest.isEqual(revHMAC, madeHMAC.getBytes());
+		return MessageDigest.isEqual(revHMAC.getBytes(), madeHMAC.getBytes());
 	}
 
 	public static void main(String args[]) throws Exception {

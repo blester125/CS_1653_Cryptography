@@ -25,35 +25,39 @@ public class GroupThread extends Thread
 	private int sequenceNumber;
 	private KeyPair rsaKeyPair;
 	private SecretKey sessionKey;
+	private String username;
 
 	public GroupThread(Socket _socket, GroupServer _gs)
 	{
 		socket = _socket;
 		my_gs = _gs;
 		isSecureConnection = false;
-		isAuthenticated = false
+		isAuthenticated = false;
 		sessionKey = null;
 		rsaKeyPair = my_gs.keyPair;
+		username = "";
 	}
 
-	public Envelope buildSuper(Envelope env){
+	//buildSuper and extractInner are now static functions within Envelope
 
-		IvParameterSpec ivspec = CipherBox.generateRandomIV();			
-		Envelope superEnv = new Envelope("SUPER");
-		superEnv.addObject(CipherBox.encrypt(env, sessionKey, ivspec));
-		superEnv.addObject(ivspec.getIV());
+	// public Envelope buildSuper(Envelope env){
 
-		return superEnv;
-	}
+	// 	IvParameterSpec ivspec = CipherBox.generateRandomIV();			
+	// 	Envelope superEnv = new Envelope("SUPER");
+	// 	superEnv.addObject(CipherBox.encrypt(env, sessionKey, ivspec));
+	// 	superEnv.addObject(ivspec.getIV());
 
-	public Envelope extractInner(Envelope superInputEnv){
+	// 	return superEnv;
+	// }
 
-		SealedObject innerEnv = (SealedObject)superInputEnv.getObjContents().get(0);
-		IvParameterSpec decIVSpec = new IvParameterSpec((byte[])superInputEnv.getObjContents().get(1));
-		Envelope env = (Envelope)CipherBox.decrypt(innerEnv, sessionKey, decIVSpec);
+	// public Envelope extractInner(Envelope superInputEnv){
 
-		return env;
-	}
+	// 	SealedObject innerEnv = (SealedObject)superInputEnv.getObjContents().get(0);
+	// 	IvParameterSpec decIVSpec = new IvParameterSpec((byte[])superInputEnv.getObjContents().get(1));
+	// 	Envelope env = (Envelope)CipherBox.decrypt(innerEnv, sessionKey, decIVSpec);
+
+	// 	return env;
+	// }
 	
 	public void run()
 	{
@@ -78,7 +82,7 @@ public class GroupThread extends Thread
 				else {
 					try {
 						Envelope superE = (Envelope)input.readObject();
-						message = extractInner(superE);
+						message = Envelope.extractInner(superE, sessionKey);
 					} catch(Exception e) {
 						e.printStackTrace();
 						response = new Envelope("FAIL");
@@ -141,10 +145,11 @@ public class GroupThread extends Thread
 								response.addObject(keyPair.getPublic());
 								output.writeObject(response);
 								Envelope check = (Envelope)input.readObject();
-								Envelope innerCheck = extractInner(check);
+								Envelope innerCheck = Envelope.extractInner(check, sessionKey);
 								if (innerCheck.getMessage().equals("SUCCESS")) {
 									isSecureConnection = true;
 									isAuthenticated = true;
+									username = user;
 								}
 							} catch(Exception e) {
 								e.printStackTrace();
@@ -194,7 +199,7 @@ public class GroupThread extends Thread
 					}
 					response = buildSuper(innerResponse);
 					output.writeObject(response);
-				}*/
+				}
 				else if (message.getMessage().equals("CHANGEPASSWORD") 
 							&& isSecureConnection 
 							&& isAuthenticated) {
@@ -210,9 +215,9 @@ public class GroupThread extends Thread
 							}
 						}
 					}
-					response = buildSuper(innerResponse);
+					response = Envelope.buildSuper(innerResponse, sessionKey);
 					output.writeObject(response);
-				}
+				}*/
 				else if (message.getMessage().equals("RSAKEY")
 							&& isSecureConnection
 							&& isAuthenticated) {
@@ -230,7 +235,7 @@ public class GroupThread extends Thread
 							}
 						}
 					}
-					response = buildSuper(innerResponse);
+					response = Envelope.buildSuper(innerResponse, sessionKey);
 					output.writeObject(response);
 				}
 				else if (message.getMessage().equals("GET") 
@@ -261,7 +266,7 @@ public class GroupThread extends Thread
 						}
 					}
 					System.out.println("SENT from GET: " + innerResponse);
-					response = buildSuper(innerResponse);
+					response = Envelope.buildSuper(innerResponse, sessionKey);
 					output.writeObject(response);
 				}
 				else if (message.getMessage().equals("CUSER") 
@@ -289,7 +294,7 @@ public class GroupThread extends Thread
 						}
 					}
 					System.out.println("SENT from CUSER: " + innerResponse);
-					response = buildSuper(innerResponse);
+					response = Envelope.buildSuper(innerResponse, sessionKey);
 					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("DUSER") 
@@ -322,7 +327,7 @@ public class GroupThread extends Thread
 						}
 					}
 					System.out.println("SENT from DUSER: " + innerResponse);
-					response = buildSuper(innerResponse);
+					response = Envelope.buildSuper(innerResponse, sessionKey);
 					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("CGROUP") 
@@ -356,7 +361,7 @@ public class GroupThread extends Thread
 					}
 					
 					System.out.println("SENT from CGROUP: " + innerResponse);
-					response = buildSuper(innerResponse);
+					response = Envelope.buildSuper(innerResponse, sessionKey);
 					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("DGROUP") 
@@ -390,7 +395,7 @@ public class GroupThread extends Thread
 						}
 					}
 					System.out.println("SENT from DGROUP: " + innerResponse);
-					response = buildSuper(innerResponse);
+					response = Envelope.buildSuper(innerResponse, sessionKey);
 					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("LMEMBERS") 
@@ -437,7 +442,7 @@ public class GroupThread extends Thread
 					System.out.println("SENT from LMEMBERS: " + innerResponse);
 					output.flush();
 					output.reset();
-					response = buildSuper(innerResponse);
+					response = Envelope.buildSuper(innerResponse, sessionKey);
 					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("AUSERTOGROUP") 
@@ -476,7 +481,7 @@ public class GroupThread extends Thread
 						}
 					}
 					System.out.println("SENT from AUSERTOGROUP: " + innerResponse);
-					response = buildSuper(innerResponse);
+					response = Envelope.buildSuper(innerResponse, sessionKey);
 					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("RUSERFROMGROUP") 
@@ -515,7 +520,7 @@ public class GroupThread extends Thread
 						}
 					}
 					System.out.println("SENT from RUSERFROMGROUP: " + innerResponse);
-					response = buildSuper(innerResponse);
+					response = Envelope.buildSuper(innerResponse, sessionKey);
 					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("DISCONNECT") 
@@ -532,7 +537,7 @@ public class GroupThread extends Thread
 				{
 					innerResponse = new Envelope("FAIL"); //Server does not understand client request
 					System.out.println("SENT from INVALID MESSAGE: " + innerResponse);
-					response = buildSuper(innerResponse);
+					response = Envelope.buildSuper(innerResponse, sessionKey);
 					output.writeObject(response);
 				}
 			}while(proceed);	
