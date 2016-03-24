@@ -401,7 +401,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 	}
 
 	public int setUpRSA() throws Exception {
-		KeyPair keyPair = loadRSA();
+		KeyPair keyPair = loadRSA("","");
 		return shareRSA(keyPair);
 	}
 

@@ -139,7 +139,7 @@ public class GroupThread extends Thread
 									if (userPublicKey != null) {
 										byte[] recvHash = (byte[])CipherBox.decrypt(sealedHash, userPublicKey);
 										byte[] madeHash = Hasher.hash(recvdKey);
-										if (Hasher.verifiyHash(recvHash, madeHash) {
+										if (Hasher.verifiyHash(recvHash, madeHash)) {
 											KeyPair keyPair = null;
 											KeyAgreement keyAgreement = null;
 											// generate secret key and send back public key

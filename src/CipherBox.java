@@ -11,6 +11,8 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.SealedObject;
 import javax.crypto.spec.IvParameterSpec;
 
+import sun.misc.BASE64Encoder;
+
 
 public class CipherBox {
 	// ciphers for AES and RSA encryption and decryption
@@ -139,5 +141,9 @@ public class CipherBox {
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	public static String getKeyAsString(Key key) {
+		return new BASE64Encoder().encode(key); 
 	}
 }
