@@ -11,6 +11,7 @@ import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.crypto.KeyAgreement;
@@ -237,7 +238,7 @@ public class FileClient extends Client implements FileClientInterface {
 	}
 
 	public boolean upload(String sourceFile, String destFile, String group,
-			UserToken token) {
+			UserToken token, GroupMetadata groupMetadata) {
 			
 		if (destFile.charAt(0)!='/') {
 			 destFile = "/" + destFile;
@@ -252,6 +253,7 @@ public class FileClient extends Client implements FileClientInterface {
 			 message.addObject(destFile);
 			 message.addObject(group);
 			 message.addObject(token); //Add requester's token
+			 message.addObject(groupMetadata);
 			 output.writeObject(Envelope.buildSuper(message, secretKey));
 			
 			 
@@ -268,6 +270,7 @@ public class FileClient extends Client implements FileClientInterface {
 			 else {
 				
 				 System.out.printf("Upload failed: %s\n", env.getMessage());
+				 fis.close();
 				 return false;
 			 }
 			 
@@ -276,6 +279,7 @@ public class FileClient extends Client implements FileClientInterface {
 				 byte[] buf = new byte[4096];
 				 	if (env.getMessage().compareTo("READY")!=0) {
 				 		System.out.printf("Server error: %s\n", env.getMessage());
+				 		fis.close();
 				 		return false;
 				 	}
 				 	message = new Envelope("CHUNK");
@@ -284,6 +288,7 @@ public class FileClient extends Client implements FileClientInterface {
 						System.out.printf(".");
 					} else if (n < 0) {
 						System.out.println("Read error");
+						fis.close();
 						return false;
 					}
 					
@@ -298,7 +303,7 @@ public class FileClient extends Client implements FileClientInterface {
 										
 			 }
 			 while (fis.available()>0);		 
-					 
+			 fis.close();
 			 //If server indicates success, return the member list
 			 if(env.getMessage().compareTo("READY")==0)
 			 { 

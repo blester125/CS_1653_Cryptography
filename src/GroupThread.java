@@ -301,6 +301,39 @@ public class GroupThread extends Thread
 					response = Envelope.buildSuper(innerResponse, sessionKey);
 					output.writeObject(response);
 				}
+				// retrieve the user's groups meta-data
+				// should only be called on file upload/download after get token
+				else if (message.getMessage().equals("GET-GMETADATA") 
+						&& isSecureConnection
+						&& isAuthenticated) {//Client wants a token
+					String user = (String)message.getObjContents().get(0); //Get the username
+					if (user == null) {
+						innerResponse = new Envelope("FAIL");
+					}
+					else {
+						innerResponse = new Envelope("FAIL");
+						// If there is no groupName
+						//If there is no Token
+						if (message.getObjContents().get(0) != null)
+						{
+							// Extract Token 
+							UserToken yourToken = (UserToken)message.getObjContents().get(0);
+
+							//check token to ensure expected and actual public keys match
+							if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
+								innerResponse = new Envelope("FAIL");
+							}
+							
+							ArrayList<GroupMetadata> gMetaData = retrieveGroupsMetadata(yourToken);
+							if(gMetaData != null) {
+								innerResponse.addObject(gMetaData);
+							}
+						}
+					}
+					System.out.println("SENT from GET-GMETADATA: " + innerResponse);
+					response = Envelope.buildSuper(innerResponse, sessionKey);
+					output.writeObject(response);
+				}
 				else if (message.getMessage().equals("CUSER") 
 							&& isSecureConnection
 							&& isAuthenticated) {
@@ -935,5 +968,25 @@ public class GroupThread extends Thread
 
 	private PublicKey getUserPublicKey(String user) {
 		return my_gs.userList.getPublicKey(user);
+	}
+	/**
+	 * return the group meta-data for all of the user's groups
+	 * @param token	token
+	 * @return	arraylist of groups and their meta-data
+	 */
+	private ArrayList<GroupMetadata> retrieveGroupsMetadata(UserToken token) {
+		ArrayList<GroupMetadata> uGroupMetadata = new ArrayList<GroupMetadata>();
+		String requester = token.getSubject();
+		// check user exists
+		if(my_gs.userList.checkUser(requester)) {
+			for(String group : token.getGroups()){
+				if(my_gs.groupList.getGroupMetadata(group) == null) {
+					return null;
+				}
+				uGroupMetadata.add(my_gs.groupList.getGroupMetadata(group));
+			}
+			return uGroupMetadata;
+		}
+		return null;
 	}
 }

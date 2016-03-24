@@ -117,7 +117,6 @@ import javax.crypto.spec.SecretKeySpec;
     		currentKeyVer--;
     		currentKey = KeyBox.evolveKey(currentRootKey, currentKeyVer);
     	}
-    	
     }
   }
 }
