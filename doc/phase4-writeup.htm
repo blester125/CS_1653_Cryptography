@@ -142,6 +142,36 @@ is SHA-2 with a 256 bit digest. The key that will be generated from
 this one-time password scheme will be a 128-bit AES key. The files will be encrypted/decrypted with CBC mode, PKCS5 padding scheme, 
 and a unique IV for each file.
 </p>
+<p>
+This protocol is correct as any authorized group member who wished to decrypt a file will be able to as all files
+a group member is authorized to decrypt is encrypted with a key that is either the present key provided to them by the group server,
+a past key version of this key which is obtained by hashing the current key the necessary amount of times, or an old key which hash
+used all of its versions and this old key which is hashed zero times can be hashed the necessary number of times to compute an old key
+version from a key which has been expended due to group membership changes. It can be said to be secure due to our other mechanisms in place
+which are said to be secure under the present threat model. What this means is that only an authorized user for thaat user's authorized groups
+can obtain the present keys and the list of old keys for their groups. It cannot be prevent that once a user is removed from a group
+that they can no longer view the files that were uploaded to the file server prior to their
+removal from the group due to the user storing them on their local machine, however, they will be unable to decrypt files uploaded
+to a file server in the future for the group due to the preimage of resistance of SHA-2, which is at the present considered to be
+a cryptographically secure hash function. Furthermore, if one of the keys is compromised by an attacker they will only be able to decrypt
+messages uploaded at in the current group version, or prior, and what's more is that the compromise of one key also limits this to only being
+valuable to a maximum of 100 group version. The number of key evolutions was chosen by weighing the time it takes to repeatedly hash
+a value some number of times relative to the time it takes to decrypt a file and the size of they key list for a group
+that will need to be maintained by the file server relative to how many group versions may come to exist for a group.
+There are 100 versions of a key per root key including the root key, meaning the client will have to hash the password at most
+99 times. This is thought to be a reasonable number, as the cost of decrypting a file will almost always eclipse the cost of these hashes
+for all but the smallest of files. This value also allows for 100 group members to leave a group before a new key is needed. It is doubtful
+that such a group will exist such that the group server will need to maintain a lengthy list of old keys. Forward secrecy is a concern,
+but is less prioiritized over the group server storage (which should be fairly sparse) as the system is thought to be secure under the
+current threat model, making the event of a key leak to be extremely unlikely. A unique IV is associated with each IV so that no
+sort of codebook can be built up, leading to malicious file insertions or detections of the semantics or semantic changes within files.
+A proper padding scheme is used to maintain the security of the encryption and bring the file size to the correct bit multiple. Symmetric key
+cryptography with a 128-bit AES key is used in CBC mode due to the speed of symmetric key cryptography and the propagation of the cipher text
+to the rest of the encryption (as hard drive storage should be relatively error free). Though the IV and group meta-data 
+(key information) do not need to remain secret, they will still be encrypted with an established shared symmetric key 
+as outlined in the prior phase, in-keeping with our pattern. AES with a 128-bit key has no known vulnerabilities or breaks at this time,
+and is being used for all symmetric keys in the system, and so here too. 
+</p>
 
 <!-- END CHANGES HERE -->
     </section>
