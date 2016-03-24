@@ -32,28 +32,29 @@ public class GroupClient extends Client implements GroupClientInterface {
 		
 	}
 
-	private Envelope buildSuper(Envelope env){
+	//buildSuper and extractInner are now static functions within Envelope
+	// private Envelope buildSuper(Envelope env){
 
-		IvParameterSpec ivspec = CipherBox.generateRandomIV();			
-		Envelope superEnv = new Envelope("SUPER");
-		superEnv.addObject(CipherBox.encrypt(env, sessionKey, ivspec));
-		superEnv.addObject(ivspec.getIV());
-		return superEnv;
-	}
+	// 	IvParameterSpec ivspec = CipherBox.generateRandomIV();			
+	// 	Envelope superEnv = new Envelope("SUPER");
+	// 	superEnv.addObject(CipherBox.encrypt(env, sessionKey, ivspec));
+	// 	superEnv.addObject(ivspec.getIV());
+	// 	return superEnv;
+	// }
 
-	private Envelope extractInner(Envelope superInputEnv){
+	// private Envelope extractInner(Envelope superInputEnv){
 
-		SealedObject innerEnv = (SealedObject)superInputEnv.getObjContents().get(0);
-		IvParameterSpec decIVSpec = new IvParameterSpec((byte[])superInputEnv.getObjContents().get(1));
-		Envelope env = (Envelope)CipherBox.decrypt(innerEnv, sessionKey, decIVSpec);
-		return env;
-	}
+	// 	SealedObject innerEnv = (SealedObject)superInputEnv.getObjContents().get(0);
+	// 	IvParameterSpec decIVSpec = new IvParameterSpec((byte[])superInputEnv.getObjContents().get(1));
+	// 	Envelope env = (Envelope)CipherBox.decrypt(innerEnv, sessionKey, decIVSpec);
+	// 	return env;
+	// }
 
 	public void disconnect()	 {
 		if (isConnected()) {
 			try {
 				Envelope message = new Envelope("DISCONNECT");
-				Envelope superE = buildSuper(message);
+				Envelope superE = Envelope.buildSuper(message, sessionKey);
 				output.writeObject(superE);
 				sock.close(); //close the socket
 			}
@@ -78,10 +79,10 @@ public class GroupClient extends Client implements GroupClientInterface {
 		Envelope contents = new Envelope("LOGIN");
 		contents.addObject(username);
 		contents.addObject(password);
-		Envelope message = buildSuper(contents);
+		Envelope message = Envelope.buildSuper(contents, sessionKey);
 		output.writeObject(message);
 		Envelope superResponse = (Envelope)input.readObject();
-		Envelope response = extractInner(superResponse);
+		Envelope response = Envelope.extractInner(superResponse, sessionKey);
 		if (response.getMessage().equals("OK")) {
 			return 0;
 		}
@@ -99,10 +100,10 @@ public class GroupClient extends Client implements GroupClientInterface {
  		try {
 	 		Envelope contents = new Envelope("CHANGEPASSWORD");
  			contents.addObject(password);
- 			Envelope message = buildSuper(contents);
+ 			Envelope message = Envelope.buildSuper(contents, sessionKey);
 	 		output.writeObject(message);
  			Envelope superResponse = (Envelope)input.readObject();
- 			Envelope response = extractInner(superResponse);
+ 			Envelope response = Envelope.extractInner(superResponse, sessionKey);
  			if (response.getMessage().equals("OK")) {
 	 			return true;
  			}
@@ -121,12 +122,12 @@ public class GroupClient extends Client implements GroupClientInterface {
 			//Tell the server to return a token.
 			message = new Envelope("GET");
 			message.addObject(username); //Add user name string
-			superE = buildSuper(message);
+			superE = Envelope.buildSuper(message, sessionKey);
 			output.writeObject(superE);
 			
 			//Get the response from the server
 			superResponse = (Envelope)input.readObject();
-			response = extractInner(superResponse);			
+			response = Envelope.extractInner(superResponse, sessionKey);			
 			//Successful response
 			if(response.getMessage().equals("OK"))
 			{
@@ -161,10 +162,10 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message.addObject(username); //Add user name string
 			message.addObject(password);
 			message.addObject(token); //Add the requester's token
-			superE = buildSuper(message);
+			superE = Envelope.buildSuper(message, sessionKey);
 			output.writeObject(superE);
 			superResponse = (Envelope)input.readObject();
-			response = extractInner(superResponse);
+			response = Envelope.extractInner(superResponse, sessionKey);
 			//If server indicates success, return true
 			if (response.getMessage().equals("OK")) {
 				return true;
@@ -186,11 +187,11 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message = new Envelope("DUSER");
 			message.addObject(username); //Add user name
 			message.addObject(token);  //Add requester's token
-			superE = buildSuper(message);
+			superE = Envelope.buildSuper(message, sessionKey);
 			output.writeObject(superE);
 			
 			superResponse = (Envelope)input.readObject();
-			response = extractInner(superResponse);
+			response = Envelope.extractInner(superResponse, sessionKey);
 	
 			//If server indicates success, return true
 			if (response.getMessage().equals("OK")) {
@@ -214,12 +215,12 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message = new Envelope("CGROUP");
 			message.addObject(groupname); //Add the group name string
 			message.addObject(token); //Add the requester's token
-			superE = buildSuper(message);
+			superE = Envelope.buildSuper(message, sessionKey);
 			output.writeObject(superE); 
 			//System.out.println("Sent: " + message);
 			
 			superResponse = (Envelope)input.readObject();
-			response = extractInner(superResponse);
+			response = Envelope.extractInner(superResponse, sessionKey);
 
 			//If server indicates success, return true
 			if (response.getMessage().equals("OK")) {
@@ -243,11 +244,11 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message = new Envelope("DGROUP");
 			message.addObject(groupname); //Add group name string
 			message.addObject(token); //Add requester's token
-			superE = buildSuper(message);
+			superE = Envelope.buildSuper(message, sessionKey);
 			output.writeObject(superE); 
 			
 			superResponse = (Envelope)input.readObject();
-			response = extractInner(superResponse);
+			response = Envelope.extractInner(superResponse, sessionKey);
 			//If server indicates success, return true
 			if (response.getMessage().equals("OK")) {
 				return true;
@@ -274,11 +275,11 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message = new Envelope("LMEMBERS");
 			message.addObject(group); //Add group name string
 			message.addObject(token); //Add requester's token
-			superE = buildSuper(message);
+			superE = Envelope.buildSuper(message, sessionKey);
 			output.writeObject(superE); 
 			 
 			superResponse = (Envelope)input.readObject();
-			response = extractInner(superResponse);
+			response = Envelope.extractInner(superResponse, sessionKey);
 
 			//If server indicates success, return the member list
 			if (response.getMessage().equals("OK")) { 
@@ -307,11 +308,11 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message.addObject(username); //Add user name string
 			message.addObject(groupname); //Add group name string
 			message.addObject(token); //Add requester's token
-			superE = buildSuper(message);
+			superE = Envelope.buildSuper(message, sessionKey);
 			output.writeObject(superE); 
 			
 			superResponse = (Envelope)input.readObject();
-			response = extractInner(superResponse);
+			response = Envelope.extractInner(superResponse, sessionKey);
 			//If server indicates success, return true
 			if (response.getMessage().equals("OK")) {
 					return true;
@@ -338,11 +339,11 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message.addObject(username); //Add user name string
 			message.addObject(groupname); //Add group name string
 			message.addObject(token); //Add requester's token
-			superE = buildSuper(message);
+			superE = Envelope.buildSuper(message, sessionKey);
 			output.writeObject(superE);
 			
 			superResponse = (Envelope)input.readObject();
-			response = extractInner(superResponse);
+			response = Envelope.extractInner(superResponse, sessionKey);
 			//If server indicates success, return true
 			if (response.getMessage().equals("OK")) {
 				return true;
@@ -406,11 +407,11 @@ public class GroupClient extends Client implements GroupClientInterface {
 	public int shareRSA(KeyPair keyPair) throws Exception {
 		Envelope message = new Envelope("RSAKEY");
 		message.addObject(keyPair.getPublic());
-		Envelope superE = buildSuper(message);
+		Envelope superE = Envelope.buildSuper(message, sessionKey);
 		System.out.println(keyPair.getPublic());
 		output.writeObject(superE);
 		Envelope superResponse = (Envelope)input.readObject();
-		Envelope response = extractInner(superResponse);
+		Envelope response = Envelope.extractInner(superResponse, sessionKey);
 		if (response.getMessage().equals("OK")) {
 			return 0;
 		}
@@ -430,7 +431,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 		}
 		try {
 			Envelope innerResponse = new Envelope("SUCCESS");
-			Envelope response = buildSuper(innerResponse);
+			Envelope response = Envelope.buildSuper(innerResponse, sessionKey);
 			output.writeObject(response);
 		} catch (Exception e) {
 			// Error send success response

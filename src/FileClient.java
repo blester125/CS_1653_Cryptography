@@ -30,33 +30,35 @@ public class FileClient extends Client implements FileClientInterface {
 
 	}
 
-	public Envelope buildSuper(Envelope env){
-		IvParameterSpec ivspec = CipherBox.generateRandomIV();			
-		Envelope superEnv = new Envelope("SUPER");
-		superEnv.addObject(CipherBox.encrypt(env, secretKey, ivspec));
-		superEnv.addObject(ivspec.getIV());
+	//buildSuper and extractInner are now static functions within Envelope
 
-		return superEnv;
-	}
+	// public Envelope buildSuper(Envelope env){
+	// 	IvParameterSpec ivspec = CipherBox.generateRandomIV();			
+	// 	Envelope superEnv = new Envelope("SUPER");
+	// 	superEnv.addObject(CipherBox.encrypt(env, secretKey, ivspec));
+	// 	superEnv.addObject(ivspec.getIV());
+
+	// 	return superEnv;
+	// }
 	
-	public PublicKey getCachedPublicKey() {
-		return this.cachedPublicKey;
-	}
+	// public PublicKey getCachedPublicKey() {
+	// 	return this.cachedPublicKey;
+	// }
 
-	public Envelope extractInner(Envelope superInputEnv){
+	// public Envelope extractInner(Envelope superInputEnv){
 
-		SealedObject innerEnv = (SealedObject)superInputEnv.getObjContents().get(0);
-		IvParameterSpec decIVSpec = new IvParameterSpec((byte[])superInputEnv.getObjContents().get(1));
-		Envelope env = (Envelope)CipherBox.decrypt(innerEnv, secretKey, decIVSpec);
+	// 	SealedObject innerEnv = (SealedObject)superInputEnv.getObjContents().get(0);
+	// 	IvParameterSpec decIVSpec = new IvParameterSpec((byte[])superInputEnv.getObjContents().get(1));
+	// 	Envelope env = (Envelope)CipherBox.decrypt(innerEnv, secretKey, decIVSpec);
 
-		return env;
-	}
+	// 	return env;
+	// }
 
 	public void disconnect()	 {
 		if (isConnected()) {
 			try {
 				Envelope message = new Envelope("DISCONNECT");
-				Envelope superE = buildSuper(message);
+				Envelope superE = Envelope.buildSuper(message, secretKey);
 				output.writeObject(superE);
 				sock.close(); //close the socket
 			}
@@ -87,11 +89,11 @@ public class FileClient extends Client implements FileClientInterface {
 		try {
 
 			//build nested envelope, encrypt, and send
-			Envelope superEnv = buildSuper(env);
+			Envelope superEnv = Envelope.buildSuper(env, secretKey);
 			output.writeObject(superEnv);
 
 			//receive, extract, and decrypt inner envelope
-			env = extractInner((Envelope)input.readObject());
+			env = Envelope.extractInner((Envelope)input.readObject(), secretKey);
 		   
 			if (env.getMessage().compareTo("OK")==0) {
 
@@ -128,19 +130,19 @@ public class FileClient extends Client implements FileClientInterface {
 			env.addObject(token);
 
 			//build nested envelope, encrypt, and send
-			Envelope superEnv = buildSuper(env);
+			Envelope superEnv = Envelope.buildSuper(env, secretKey);
 			output.writeObject(superEnv); 
 				
 			//receive, extract, and decrypt inner envelope
-			env = extractInner((Envelope)input.readObject());
+			env = Envelope.extractInner((Envelope)input.readObject(), secretKey);
 				    
 			while (env.getMessage().compareTo("CHUNK")==0) { 
 				fos.write((byte[])env.getObjContents().get(0), 0, (Integer)env.getObjContents().get(1));
 				System.out.printf(".");
 
 				env = new Envelope("DOWNLOADF"); //Success
-				output.writeObject(buildSuper(env));
-				env = extractInner((Envelope)input.readObject());									
+				output.writeObject(Envelope.buildSuper(env, secretKey));
+				env = Envelope.extractInner((Envelope)input.readObject(), secretKey);									
 			}										
 			fos.close();
 						
@@ -148,7 +150,7 @@ public class FileClient extends Client implements FileClientInterface {
 				fos.close();
 								System.out.printf("\nTransfer successful file %s\n", sourceFile);
 								env = new Envelope("OK"); //Success
-								output.writeObject(buildSuper(env));
+								output.writeObject(Envelope.buildSuper(env, secretKey));
 						}
 						else {
 								System.out.printf("Error reading file %s (%s)\n", sourceFile, env.getMessage());
@@ -184,9 +186,9 @@ public class FileClient extends Client implements FileClientInterface {
 			 //Tell the server to return the member list
 			 message = new Envelope("LFILES");
 			 message.addObject(token); //Add requester's token
-			 output.writeObject(buildSuper(message)); 
+			 output.writeObject(Envelope.buildSuper(message, secretKey)); 
 			 
-			 e = extractInner((Envelope)input.readObject());
+			 e = Envelope.extractInner((Envelope)input.readObject(), secretKey);
 			 
 			 //If server indicates success, return the member list
 			 if(e.getMessage().equals("OK"))
@@ -213,9 +215,9 @@ public class FileClient extends Client implements FileClientInterface {
 			 message = new Envelope("LFILESG");
 			 message.addObject(groupName); // add groupname
 			 message.addObject(token); //Add requester's token
-			 output.writeObject(buildSuper(message)); 
+			 output.writeObject(Envelope.buildSuper(message, secretKey)); 
 			 
-			 e = extractInner((Envelope)input.readObject());
+			 e = Envelope.extractInner((Envelope)input.readObject(), secretKey);
 			 
 			 //If server indicates success, return the member list
 			 if(e.getMessage().equals("OK"))
@@ -250,12 +252,12 @@ public class FileClient extends Client implements FileClientInterface {
 			 message.addObject(destFile);
 			 message.addObject(group);
 			 message.addObject(token); //Add requester's token
-			 output.writeObject(buildSuper(message));
+			 output.writeObject(Envelope.buildSuper(message, secretKey));
 			
 			 
 			 FileInputStream fis = new FileInputStream(sourceFile);
 			 
-			 env = extractInner((Envelope)input.readObject());
+			 env = Envelope.extractInner((Envelope)input.readObject(), secretKey);
 			 
 			 //If server indicates success, return the member list
 			 if(env.getMessage().equals("READY"))
@@ -288,10 +290,10 @@ public class FileClient extends Client implements FileClientInterface {
 					message.addObject(buf);
 					message.addObject(new Integer(n));
 					
-					output.writeObject(buildSuper(message));
+					output.writeObject(Envelope.buildSuper(message, secretKey));
 					
 					
-					env = extractInner((Envelope)input.readObject());
+					env = Envelope.extractInner((Envelope)input.readObject(), secretKey);
 					
 										
 			 }
@@ -302,9 +304,9 @@ public class FileClient extends Client implements FileClientInterface {
 			 { 
 				
 				message = new Envelope("EOF");
-				output.writeObject(buildSuper(message));
+				output.writeObject(Envelope.buildSuper(message, secretKey));
 				
-				env = extractInner((Envelope)input.readObject());
+				env = Envelope.extractInner((Envelope)input.readObject(), secretKey);
 				if(env.getMessage().compareTo("OK")==0) {
 					System.out.printf("\nFile data upload successful\n");
 				}
@@ -533,9 +535,9 @@ public class FileClient extends Client implements FileClientInterface {
 		 	System.out.println("challenge env:" + env);
 
 		 	//Send the challenge (encrypted with the session key) to server
-		 	output.writeObject(buildSuper(env));
+		 	output.writeObject(Envelope.buildSuper(env, secretKey));
 
-		 	response = extractInner((Envelope)input.readObject());
+		 	response = Envelope.extractInner((Envelope)input.readObject(), secretKey);
 
 		 	if(response.getMessage().equals("CH_RESPONSE")){
 
@@ -544,7 +546,7 @@ public class FileClient extends Client implements FileClientInterface {
 		 		if(challengeAnswer.equals(r1)){
 
 		 			Envelope success = new Envelope("AUTH_SUCCESS");
-		 			output.writeObject(buildSuper(success));
+		 			output.writeObject(Envelope.buildSuper(success, secretKey));
 
 		 			return true;
 		 		}

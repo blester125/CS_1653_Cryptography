@@ -21,37 +21,43 @@ public class GroupThread extends Thread
 	private final Socket socket;
 	private GroupServer my_gs;
 	private boolean isSecureConnection;
+	private boolean isAuthenticated;
+	private int sequenceNumber;
 	private KeyPair rsaKeyPair;
 	private SecretKey sessionKey;
-	private String username = null;
+	private String username;
 
 	public GroupThread(Socket _socket, GroupServer _gs)
 	{
 		socket = _socket;
 		my_gs = _gs;
 		isSecureConnection = false;
+		isAuthenticated = false;
 		sessionKey = null;
 		rsaKeyPair = my_gs.keyPair;
+		username = "";
 	}
 
-	public Envelope buildSuper(Envelope env){
+	//buildSuper and extractInner are now static functions within Envelope
 
-		IvParameterSpec ivspec = CipherBox.generateRandomIV();			
-		Envelope superEnv = new Envelope("SUPER");
-		superEnv.addObject(CipherBox.encrypt(env, sessionKey, ivspec));
-		superEnv.addObject(ivspec.getIV());
+	// public Envelope buildSuper(Envelope env){
 
-		return superEnv;
-	}
+	// 	IvParameterSpec ivspec = CipherBox.generateRandomIV();			
+	// 	Envelope superEnv = new Envelope("SUPER");
+	// 	superEnv.addObject(CipherBox.encrypt(env, sessionKey, ivspec));
+	// 	superEnv.addObject(ivspec.getIV());
 
-	public Envelope extractInner(Envelope superInputEnv){
+	// 	return superEnv;
+	// }
 
-		SealedObject innerEnv = (SealedObject)superInputEnv.getObjContents().get(0);
-		IvParameterSpec decIVSpec = new IvParameterSpec((byte[])superInputEnv.getObjContents().get(1));
-		Envelope env = (Envelope)CipherBox.decrypt(innerEnv, sessionKey, decIVSpec);
+	// public Envelope extractInner(Envelope superInputEnv){
 
-		return env;
-	}
+	// 	SealedObject innerEnv = (SealedObject)superInputEnv.getObjContents().get(0);
+	// 	IvParameterSpec decIVSpec = new IvParameterSpec((byte[])superInputEnv.getObjContents().get(1));
+	// 	Envelope env = (Envelope)CipherBox.decrypt(innerEnv, sessionKey, decIVSpec);
+
+	// 	return env;
+	// }
 	
 	public void run()
 	{
@@ -76,7 +82,7 @@ public class GroupThread extends Thread
 				else {
 					try {
 						Envelope superE = (Envelope)input.readObject();
-						message = extractInner(superE);
+						message = Envelope.extractInner(superE, sessionKey);
 					} catch(Exception e) {
 						e.printStackTrace();
 						response = new Envelope("FAIL");
@@ -139,9 +145,10 @@ public class GroupThread extends Thread
 								response.addObject(keyPair.getPublic());
 								output.writeObject(response);
 								Envelope check = (Envelope)input.readObject();
-								Envelope innerCheck = extractInner(check);
+								Envelope innerCheck = Envelope.extractInner(check, sessionKey);
 								if (innerCheck.getMessage().equals("SUCCESS")) {
 									isSecureConnection = true;
+									isAuthenticated = true;
 									username = user;
 								}
 							} catch(Exception e) {
@@ -158,7 +165,7 @@ public class GroupThread extends Thread
 						output.writeObject(response);
 					}
 				}
-				else if(message.getMessage().equals("LOGIN") 
+				/*else if(message.getMessage().equals("LOGIN") 
 							&& isSecureConnection) {
 
 					if (message.getObjContents().size() < 2)
@@ -176,7 +183,7 @@ public class GroupThread extends Thread
 								String user = (String)message.getObjContents().get(0);
 								String password = (String)message.getObjContents().get(1);
 								if (checkUser(user, password)) {
-									username = user;
+									isAuthenticated = true;
 									if (checkFlag(username)) {
 										innerResponse = new Envelope("CHANGEPASSWORD");
 									}
@@ -195,27 +202,25 @@ public class GroupThread extends Thread
 				}
 				else if (message.getMessage().equals("CHANGEPASSWORD") 
 							&& isSecureConnection 
-							&& username != null) {
+							&& isAuthenticated) {
 					if (message.getObjContents().size() < 1) {
 						innerResponse = new Envelope("FAIL");
 					}
 					else {
 						innerResponse = new Envelope("FAIL");
 						if (message.getObjContents().get(0) != null) {
-							// Force "LOGIN" to have been run before "CHANGEPASSWORD"
-							if (username != null) {
-								String password = (String)message.getObjContents().get(0);
-								if (setPassword(username, password)) {
-									innerResponse = new Envelope("OK");
-								}
+							String password = (String)message.getObjContents().get(0);
+							if (setPassword(username, password)) {
+								innerResponse = new Envelope("OK");
 							}
 						}
 					}
-					response = buildSuper(innerResponse);
+					response = Envelope.buildSuper(innerResponse, sessionKey);
 					output.writeObject(response);
-				}
+				}*/
 				else if (message.getMessage().equals("RSAKEY")
-							&& isSecureConnection) {
+							&& isSecureConnection
+							&& isAuthenticated) {
 					if (message.getObjContents().size() < 1) {
 						innerResponse = new Envelope("FAIL");
 					}
@@ -230,12 +235,12 @@ public class GroupThread extends Thread
 							}
 						}
 					}
-					response = buildSuper(innerResponse);
+					response = Envelope.buildSuper(innerResponse, sessionKey);
 					output.writeObject(response);
 				}
 				else if (message.getMessage().equals("GET") 
 							&& isSecureConnection
-							&& username != null) {//Client wants a token
+							&& isAuthenticated) {//Client wants a token
 					String user = (String)message.getObjContents().get(0); //Get the username
 					if (user == null) {
 						innerResponse = new Envelope("FAIL");
@@ -261,12 +266,12 @@ public class GroupThread extends Thread
 						}
 					}
 					System.out.println("SENT from GET: " + innerResponse);
-					response = buildSuper(innerResponse);
+					response = Envelope.buildSuper(innerResponse, sessionKey);
 					output.writeObject(response);
 				}
 				else if (message.getMessage().equals("CUSER") 
 							&& isSecureConnection
-							&& username != null) {
+							&& isAuthenticated) {
 					if (message.getObjContents().size() < 3) {
 						innerResponse = new Envelope("FAIL");
 					}
@@ -277,7 +282,10 @@ public class GroupThread extends Thread
 								if (message.getObjContents().get(2) != null) {
 									String username = (String)message.getObjContents().get(0); //Extract the username
 									String password = (String)message.getObjContents().get(1);
-									UserToken yourToken = (UserToken)message.getObjContents().get(2); //Extract the token	
+									UserToken yourToken = (UserToken)message.getObjContents().get(2); //Extract the token
+									if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
+										innerResponse = new Envelope("FAIL");
+									}	
 									if (createUser(username, password, yourToken)) {
 										innerResponse = new Envelope("OK"); //Success
 									}
@@ -286,12 +294,12 @@ public class GroupThread extends Thread
 						}
 					}
 					System.out.println("SENT from CUSER: " + innerResponse);
-					response = buildSuper(innerResponse);
+					response = Envelope.buildSuper(innerResponse, sessionKey);
 					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("DUSER") 
 						&& isSecureConnection
-						&& username != null) //Client wants to delete a user
+						&& isAuthenticated) //Client wants to delete a user
 				{
 					if (message.getObjContents().size() < 2) {
 						innerResponse = new Envelope("FAIL");
@@ -305,6 +313,11 @@ public class GroupThread extends Thread
 							{
 								String username = (String)message.getObjContents().get(0); //Extract the username
 								UserToken yourToken = (UserToken)message.getObjContents().get(1); //Extract the token
+
+								//check token to ensure expected and actual public keys match
+								if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
+									innerResponse = new Envelope("FAIL");
+								}	
 								
 								if(deleteUser(username, yourToken))
 								{
@@ -314,12 +327,12 @@ public class GroupThread extends Thread
 						}
 					}
 					System.out.println("SENT from DUSER: " + innerResponse);
-					response = buildSuper(innerResponse);
+					response = Envelope.buildSuper(innerResponse, sessionKey);
 					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("CGROUP") 
 						&& isSecureConnection
-						&& username != null) //Client wants to create a group
+						&& isAuthenticated) //Client wants to create a group
 				{	
 					if (message.getObjContents().size() < 2) {
 						innerResponse = new Envelope("FAIL");
@@ -333,6 +346,11 @@ public class GroupThread extends Thread
 							{
 								String groupname = (String)message.getObjContents().get(0); //Extract the groupname
 								UserToken yourToken = (UserToken)message.getObjContents().get(1); //Extract the token
+
+								//check token to ensure expected and actual public keys match
+								if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
+									innerResponse = new Envelope("FAIL");
+								}
 								
 								if(createGroup(groupname, yourToken))
 								{
@@ -343,12 +361,12 @@ public class GroupThread extends Thread
 					}
 					
 					System.out.println("SENT from CGROUP: " + innerResponse);
-					response = buildSuper(innerResponse);
+					response = Envelope.buildSuper(innerResponse, sessionKey);
 					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("DGROUP") 
 						&& isSecureConnection
-						&& username != null) //Client wants to delete a group
+						&& isAuthenticated) //Client wants to delete a group
 				{
 					if (message.getObjContents().size() < 2) {
 						innerResponse = new Envelope("FAIL");
@@ -363,6 +381,11 @@ public class GroupThread extends Thread
 							{
 								String groupname = (String)message.getObjContents().get(0); //Extract the groupname
 								UserToken yourToken = (UserToken)message.getObjContents().get(1); //Extract the token
+
+								//check token to ensure expected and actual public keys match
+								if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
+									innerResponse = new Envelope("FAIL");
+								}
 								
 								if(deleteGroup(groupname, yourToken))
 								{
@@ -372,12 +395,12 @@ public class GroupThread extends Thread
 						}
 					}
 					System.out.println("SENT from DGROUP: " + innerResponse);
-					response = buildSuper(innerResponse);
+					response = Envelope.buildSuper(innerResponse, sessionKey);
 					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("LMEMBERS") 
 						&& isSecureConnection
-						&& username != null) //Client wants a list of members in a group
+						&& isAuthenticated) //Client wants a list of members in a group
 				{
 					// If there isn't enough information in the envelope
 					if (message.getObjContents().size() < 2) 
@@ -397,6 +420,12 @@ public class GroupThread extends Thread
 								String groupName = (String)message.getObjContents().get(0);
 								// Extract Token 
 								UserToken yourToken = (UserToken)message.getObjContents().get(1);
+
+								//check token to ensure expected and actual public keys match
+								if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
+									innerResponse = new Envelope("FAIL");
+								}
+
 								// Get the memeber list for this group
 								List<String> members = listMembers(groupName, yourToken);
 								// If a list was returned
@@ -413,12 +442,12 @@ public class GroupThread extends Thread
 					System.out.println("SENT from LMEMBERS: " + innerResponse);
 					output.flush();
 					output.reset();
-					response = buildSuper(innerResponse);
+					response = Envelope.buildSuper(innerResponse, sessionKey);
 					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("AUSERTOGROUP") 
 						&& isSecureConnection
-						&& username != null) //Client wants to add user to a group
+						&& isAuthenticated) //Client wants to add user to a group
 				{
 					// Is there a userName, groupName, and Token in the Envelope
 					if (message.getObjContents().size() < 3)
@@ -437,6 +466,12 @@ public class GroupThread extends Thread
 									String userName = (String)message.getObjContents().get(0);
 									String groupName = (String)message.getObjContents().get(1);
 									UserToken yourToken = (UserToken)message.getObjContents().get(2);
+
+									//check token to ensure expected and actual public keys match
+									if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
+										innerResponse = new Envelope("FAIL");
+									}
+
 									if (addUserToGroup(userName, groupName, yourToken))
 									{
 										innerResponse = new Envelope("OK");
@@ -446,12 +481,12 @@ public class GroupThread extends Thread
 						}
 					}
 					System.out.println("SENT from AUSERTOGROUP: " + innerResponse);
-					response = buildSuper(innerResponse);
+					response = Envelope.buildSuper(innerResponse, sessionKey);
 					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("RUSERFROMGROUP") 
 						&& isSecureConnection
-						&& username != null) //Client wants to remove user from a group
+						&& isAuthenticated) //Client wants to remove user from a group
 				{
 					// Is there a userName, groupName, and Token in the Envelope
 					if (message.getObjContents().size() < 3)
@@ -470,6 +505,12 @@ public class GroupThread extends Thread
 									String userName = (String)message.getObjContents().get(0);
 									String groupName = (String)message.getObjContents().get(1);
 									UserToken yourToken = (UserToken)message.getObjContents().get(2);
+
+									//check token to ensure expected and actual public keys match
+									if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
+										innerResponse = new Envelope("FAIL");
+									}
+									
 									if (deleteUserFromGroup(userName, groupName, yourToken))
 									{
 										innerResponse = new Envelope("OK");
@@ -479,12 +520,12 @@ public class GroupThread extends Thread
 						}
 					}
 					System.out.println("SENT from RUSERFROMGROUP: " + innerResponse);
-					response = buildSuper(innerResponse);
+					response = Envelope.buildSuper(innerResponse, sessionKey);
 					output.writeObject(response);
 				}
 				else if(message.getMessage().equals("DISCONNECT") 
 						&& isSecureConnection
-						&& username != null) //Client wants to disconnect
+						&& isAuthenticated) //Client wants to disconnect
 				{
 					isSecureConnection = false;
 					username = null;
@@ -496,7 +537,7 @@ public class GroupThread extends Thread
 				{
 					innerResponse = new Envelope("FAIL"); //Server does not understand client request
 					System.out.println("SENT from INVALID MESSAGE: " + innerResponse);
-					response = buildSuper(innerResponse);
+					response = Envelope.buildSuper(innerResponse, sessionKey);
 					output.writeObject(response);
 				}
 			}while(proceed);	
