@@ -463,7 +463,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 	}
 
 	// Login the group server with RSA
-	public int authenticateGroupServerRSA(String username) {
+	public int authenticateGroupServerRSA(String username, String publicPath, String privatePath) {
 		KeyPair keyPair = loadRSA();
 		PublicKey serverKey = loadServerKey();
 		sessionKey = establishSessionKeyRSA(username, keyPair, serverKey);

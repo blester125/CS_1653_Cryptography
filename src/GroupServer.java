@@ -56,7 +56,9 @@ public class GroupServer extends Server {
 		ObjectInputStream userStream;
 		ObjectInputStream groupStream;
 		String username = "";
-		String password = "";
+		String password = "nopassword";
+		String publicKeyPath = "";
+		String privateKeyPath = "";
 
 		//This runs a thread that saves the lists on program exit
 		Runtime runtime = Runtime.getRuntime();
@@ -75,8 +77,13 @@ public class GroupServer extends Server {
 			System.out.println("No users currently exist. Your account will be the administrator.");
 			System.out.println("Enter new username : ");
 			username = console.next();
-			System.out.println("Enter new password: ");
-			password = console.next();
+			System.out.println("Enter public key path: ");
+			publicKeyPath = console.next();
+			System.out.println("Enter private key path: ");
+			privateKeyPath = console.next();
+
+			KeyPair adminKeyPair = loadRSA(publicKeyPath, privateKeyPath);
+
 			//Create a new list, add current user to the ADMIN group. They now own the ADMIN group.
 			userList = new UserList();
 			userList.addUser(username);
@@ -87,6 +94,7 @@ public class GroupServer extends Server {
 			byte[] hashword = Passwords.generatePasswordHash(password, salt);
 			userList.setPassword(username, hashword);
 			userList.setNewPassword(username, false);
+			userList.setPublicKey(username, adminKeyPair.getPublic());
 		}
 		catch(IOException e)
 		{
@@ -208,6 +216,83 @@ public class GroupServer extends Server {
 
 				PKCS8EncodedKeySpec pkcs8keyspec = new PKCS8EncodedKeySpec(privateKey.getEncoded());
 				keyOut = new FileOutputStream("groupserverprivate.key");
+				keyOut.write(pkcs8keyspec.getEncoded());
+				keyOut.close();
+
+				System.out.println("New RSA key pair generated and stored!");
+				return rsaPair;
+			}
+			catch (Exception f){
+				System.out.println("Exception thrown in create new RSA pair.");
+				return null;
+			}
+
+		}
+		catch (IOException e) {
+			System.out.println("Could not read or write from/to key files!");
+			return null;
+		}
+		catch (NoSuchAlgorithmException e){
+			System.out.println("Algorithm does not exist!");
+			return null;
+		}
+		catch (InvalidKeySpecException e){
+			System.out.println("Invalid key specification!");
+			return null;
+		}
+		catch (Exception e){
+			System.out.println("unspecified exception thrown");
+			return null;
+		}
+	}
+
+	public KeyPair loadRSA(String publicKeyPath, String privateKeyPath) {
+		//Attempt to load RSA key pair from file
+		try{
+			KeyPair rsaPair;
+			File fsPublicKey = new File(publicKeyPath);
+			FileInputStream keyIn = new FileInputStream(publicKeyPath);
+			byte[] encPublicKey = new byte[(int) fsPublicKey.length()];
+			keyIn.read(encPublicKey);
+			keyIn.close();
+
+			File fsPrivateKey = new File(privateKeyPath);
+			keyIn = new FileInputStream(privateKeyPath);
+			byte[] encPrivateKey = new byte[(int) fsPrivateKey.length()];
+			keyIn.read(encPrivateKey);
+			keyIn.close();
+
+			KeyFactory kf = KeyFactory.getInstance("RSA", "BC");
+			X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(encPublicKey);
+			PublicKey publicKey = kf.generatePublic(publicKeySpec);
+
+			PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(encPrivateKey);
+			PrivateKey privateKey = kf.generatePrivate(privateKeySpec);
+
+			rsaPair = new KeyPair(publicKey, privateKey);
+
+			System.out.println("Found Admin RSA key pair. Loaded successfully!");
+			return rsaPair;
+		}
+		catch (FileNotFoundException e) {
+			try {
+				System.out.println("Did not find public and/or private RSA keys for administrator. Generating new key pair....");
+			
+				//Generate RSA key pair with KeyPairGenerator, 1024 bits
+				KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA", "BC");
+				keyGen.initialize(RSA_BIT_KEYSIZE);
+				KeyPair rsaPair = keyGen.generateKeyPair();
+				PrivateKey privateKey = rsaPair.getPrivate();
+				PublicKey publicKey = rsaPair.getPublic();
+
+				//Store both keys to file
+				X509EncodedKeySpec x590keyspec = new X509EncodedKeySpec(publicKey.getEncoded());
+				FileOutputStream keyOut = new FileOutputStream("adminpublic.key");
+				keyOut.write(x590keyspec.getEncoded());
+				keyOut.close();
+
+				PKCS8EncodedKeySpec pkcs8keyspec = new PKCS8EncodedKeySpec(privateKey.getEncoded());
+				keyOut = new FileOutputStream("adminprivate.key");
 				keyOut.write(pkcs8keyspec.getEncoded());
 				keyOut.close();
 
