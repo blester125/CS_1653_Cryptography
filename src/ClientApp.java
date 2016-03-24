@@ -31,7 +31,8 @@ public class ClientApp {
 	private JTextField portField;
 	private JTextField fileIpField;
 	private JTextField filePortField;
-	private JPasswordField passwordField;
+	private JTextField publicPathField;
+	private JTextField privatePathField;
 	private String currentUsername;
 	JList loadedGroups;
 	JList loadedUsers;
@@ -104,14 +105,23 @@ public class ClientApp {
 		gbc_lblUsername.gridy = 1;
 		homePage.add(lblUsername, gbc_lblUsername);
 		
-		//Password label
-		JLabel lblPassword = new JLabel("Password");
+		//Public path label
+		JLabel lblPassword = new JLabel("Public Key Path");
 		GridBagConstraints gbc_lblPassword = new GridBagConstraints();
 		gbc_lblPassword.anchor = GridBagConstraints.WEST;
 		gbc_lblPassword.insets = new Insets(0, 0, 5, 5);
 		gbc_lblPassword.gridx = 2;
 		gbc_lblPassword.gridy = 1;
 		homePage.add(lblPassword, gbc_lblPassword);
+
+		//Private path label
+		JLabel lblPrivatePath = new JLabel("Private Key Path");
+		GridBagConstraints gbc_lblPrivatePath = new GridBagConstraints();
+		gbc_lblPrivatePath.anchor = GridBagConstraints.WEST;
+		gbc_lblPrivatePath.insets = new Insets(0, 0, 5, 5);
+		gbc_lblPrivatePath.gridx = 3;
+		gbc_lblPrivatePath.gridy = 1;
+		homePage.add(lblPrivatePath, gbc_lblPrivatePath);
 		
 		//Username text field
 		usernameField = new JTextField();
@@ -124,14 +134,23 @@ public class ClientApp {
 		usernameField.setColumns(10);
 		usernameField.setText("test");
 		
-		//Password text field
-		passwordField = new JPasswordField();
-		GridBagConstraints gbc_passwordField = new GridBagConstraints();
-		gbc_passwordField.fill = GridBagConstraints.HORIZONTAL;
-		gbc_passwordField.insets = new Insets(0, 0, 5, 5);
-		gbc_passwordField.gridx = 2;
-		gbc_passwordField.gridy = 2;
-		homePage.add(passwordField, gbc_passwordField);
+		//Public path text field
+		publicPathField = new JTextField();
+		GridBagConstraints gbc_publicPathField = new GridBagConstraints();
+		gbc_publicPathField.fill = GridBagConstraints.HORIZONTAL;
+		gbc_publicPathField.insets = new Insets(0, 0, 5, 5);
+		gbc_publicPathField.gridx = 2;
+		gbc_publicPathField.gridy = 2;
+		homePage.add(publicPathField, gbc_publicPathField);
+
+		//Private path text field
+		privatePathField = new JTextField();
+		GridBagConstraints gbc_privateFilePath = new GridBagConstraints();
+		gbc_privateFilePath.fill = GridBagConstraints.HORIZONTAL;
+		gbc_privateFilePath.insets = new Insets(0, 0, 5, 5);
+		gbc_privateFilePath.gridx = 3;
+		gbc_privateFilePath.gridy = 2;
+		homePage.add(privatePathField, gbc_privateFilePath);
 		
 		//New User button
 		final JButton btnNewUser = new JButton("New User");
@@ -140,7 +159,7 @@ public class ClientApp {
 		gbc_btnNewUser.fill = GridBagConstraints.HORIZONTAL;
 		gbc_btnNewUser.insets = new Insets(0, 0, 5, 0);
 		gbc_btnNewUser.gridx = 3;
-		gbc_btnNewUser.gridy = 2;
+		gbc_btnNewUser.gridy = 3;
 
 		btnNewUser.addActionListener(new ActionListener() {
 
@@ -156,28 +175,12 @@ public class ClientApp {
 
 		homePage.add(btnNewUser, gbc_btnNewUser);
 
-		// Change Password button 
-		final JButton btnChangePwd = new JButton("Change Pwd");
-		GridBagConstraints gbc_btnChangePwd = new GridBagConstraints();
-		gbc_btnChangePwd.anchor = GridBagConstraints.NORTH;
-		gbc_btnChangePwd.fill = GridBagConstraints.HORIZONTAL;
-		gbc_btnChangePwd.insets = new Insets(0, 0, 5, 0);
-		gbc_btnChangePwd.gridx = 4;
-		gbc_btnChangePwd.gridy = 2;
-		btnChangePwd.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent ard0) {
-				attemptNewPassword();
-			}
-		});
-		homePage.add(btnChangePwd, gbc_btnChangePwd);
-
 		final JButton btnDeleteUser = new JButton("Delete User");
 		GridBagConstraints gbc_btnDeleteUser = new GridBagConstraints();
 		gbc_btnDeleteUser.anchor = GridBagConstraints.NORTH;
 		gbc_btnDeleteUser.fill = GridBagConstraints.HORIZONTAL;
 		gbc_btnDeleteUser.insets = new Insets(0, 0, 5, 5);
-		gbc_btnDeleteUser.gridx = 3;
+		gbc_btnDeleteUser.gridx = 4;
 		gbc_btnDeleteUser.gridy = 3;
 
 		btnDeleteUser.addActionListener(new ActionListener() {
@@ -299,42 +302,10 @@ public class ClientApp {
 
 		homePage.add(btnFileServer, gbc_btnFileServer);
 
-		//Login button
+		//Login/lougout buttons
 		final JButton btnRSASetup = new JButton("RSA Setup");
 		final JButton btnRSA = new JButton("RSA Login");
 		final JButton btnLogout = new JButton("Logout");
-		final JButton btnLogin = new JButton("Login");
-		GridBagConstraints gbc_btnLogin = new GridBagConstraints();
-		gbc_btnLogin.anchor = GridBagConstraints.NORTH;
-		gbc_btnLogin.fill = GridBagConstraints.HORIZONTAL;
-		gbc_btnLogin.insets = new Insets(0, 0, 5, 0);
-		gbc_btnLogin.gridx = 3;
-		gbc_btnLogin.gridy = 5;
-
-		//attempt to connect to server
-		btnLogin.addActionListener(new ActionListener() {
-
-				@Override
-				public void actionPerformed(ActionEvent arg0) {
-
-					attemptLogin(
-						usernameField, 
-						ipField, 
-						portField, 
-						btnLogin, 
-						btnNewUser, 
-						tabbedPane, 
-						btnDeleteUser, 
-						btnFileServer, 
-						btnLogout,
-						btnChangePwd,
-						btnRSA, 
-						btnRSASetup);
-				}
-			}
-		);
-
-		homePage.add(btnLogin, gbc_btnLogin);
 
 		GridBagConstraints gbc_btnLogout = new GridBagConstraints();
 		gbc_btnLogout.anchor = GridBagConstraints.NORTH;
@@ -350,12 +321,10 @@ public class ClientApp {
 				public void actionPerformed(ActionEvent arg0) {
 
 					attemptLogout(
-						btnLogin, 
 						btnNewUser, 
 						tabbedPane, 
 						btnDeleteUser, 
 						btnFileServer,
-						btnChangePwd,
 						btnRSA,
 						btnRSASetup,
 						btnLogout);
@@ -369,7 +338,7 @@ public class ClientApp {
 		gbc_btnRSA.anchor = GridBagConstraints.NORTH;
 		gbc_btnRSA.fill = GridBagConstraints.HORIZONTAL;
 		gbc_btnRSA.insets = new Insets(0, 0, 5, 0);
-		gbc_btnRSA.gridx = 4;
+		gbc_btnRSA.gridx = 3;
 		gbc_btnRSA.gridy = 5;
 
 		btnRSA.addActionListener(new ActionListener() {
@@ -379,13 +348,11 @@ public class ClientApp {
 					usernameField, 
 					ipField, 
 					portField, 
-					btnLogin, 
 					btnNewUser, 
 					tabbedPane, 
 					btnDeleteUser, 
 					btnFileServer, 
 					btnLogout,
-					btnChangePwd,
 					btnRSA,
 					btnRSASetup);
 			}
@@ -398,7 +365,7 @@ public class ClientApp {
 		gbc_btnRSASetup.fill = GridBagConstraints.HORIZONTAL;
 		gbc_btnRSASetup.insets = new Insets(0, 0, 5, 0);
 		gbc_btnRSASetup.gridx = 4;
-		gbc_btnRSASetup.gridy = 6;
+		gbc_btnRSASetup.gridy = 5;
 
 		btnRSASetup.addActionListener(new ActionListener() {
 			@Override
@@ -799,111 +766,24 @@ public class ClientApp {
 		btnDeleteUser.setEnabled(false);
 		btnFileServer.setEnabled(false);
 		btnLogout.setEnabled(false);
-		btnChangePwd.setEnabled(false);
 		btnRSASetup.setEnabled(false);
-	}
-
-	//Attempts to log in to the group server with the given username.
-	//Eventually will need authentication via password as well, but 
-	//this is not required for phase 2.
-	public void attemptLogin(
-					JTextField usernameField, 
-					JTextField ipField, 
-					JTextField portField, 
-					JButton btnLogin, 
-					JButton btnNewUser, 
-					JTabbedPane tabbedPane, 
-					JButton btnDeleteUser, 
-					JButton btnFileServer, 
-					JButton btnLogout, 
-					JButton btnChangePwd, 
-					JButton btnRSA, 
-					JButton btnRSASetup) {
-
-		//Pull information from fields
-		String username = usernameField.getText();
-		String password = String.valueOf(passwordField.getPassword());
-		String ipAddr = ipField.getText();
-		int port = Integer.parseInt(portField.getText());
-
-		//Attempt to connect to group server
-		//If fail, alert of failure
-		if (!RunClient.groupC.connect(ipAddr, port)) {
-			JOptionPane.showMessageDialog(null, "Connection failure. Could not connect to GROUP server at " + ipAddr + ":" + port + ".", "Connection Failure", JOptionPane.OK_CANCEL_OPTION);
-			return;
-		}
-		else {
-			// Establish secure connection with Diffie-Hellman Protocol
-			try {
-				int result = RunClient.groupC.authenticateGroupServer(username, password);
-				if (result == -2) {
-					JOptionPane.showMessageDialog(
-									null, 
-									"Incorrect Password.", 
-									"Login Error", 
-									JOptionPane.OK_CANCEL_OPTION);
-					return;
-				}
-				if (result == -1) {
-					JOptionPane.showMessageDialog(
-									null, 
-									"Could not establish a secure connection.", 
-									"Session Key Failure", 
-									JOptionPane.OK_CANCEL_OPTION);
-					return;
-				}
-				else if (result == 1) {
-					attemptNewPassword();
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-
-
-			//Enable navigation to application resources.
-			usernameField.setEnabled(false);
-			ipField.setEnabled(false);
-			portField.setEnabled(false);
-			passwordField.setEnabled(false);
-
-			btnLogin.setEnabled(false);
-			btnNewUser.setEnabled(true);
-			btnDeleteUser.setEnabled(true);
-			tabbedPane.setEnabledAt(1,true);
-			btnFileServer.setEnabled(true);
-			btnLogout.setEnabled(true);
-			btnChangePwd.setEnabled(true);
-			btnRSA.setEnabled(false);
-			btnRSASetup.setEnabled(true);
-			currentUsername = username;
-
-			//redraw groups page
-			JSplitPane tempgroups = (JSplitPane)tabbedPane.getComponentAt(1);
-			JSplitPane tempgroupsRight = (JSplitPane)tempgroups.getRightComponent();
-			JPanel templeft = (JPanel)tempgroupsRight.getLeftComponent();
-			JPanel tempright = (JPanel)tempgroupsRight.getRightComponent();
-			templeft.removeAll();
-			templeft.updateUI();
-			tempright.removeAll();
-			tempright.updateUI();
-		}
 	}
 
 	public void attemptRSALogin(
 					JTextField usernameField, 
 					JTextField ipField, 
 					JTextField portField, 
-					JButton btnLogin, 
 					JButton btnNewUser, 
 					JTabbedPane tabbedPane, 
 					JButton btnDeleteUser, 
 					JButton btnFileServer, 
 					JButton btnLogout,
-					JButton btnChangePwd,
 					JButton btnRSA,
 					JButton btnRSASetup) {
 
 		String username = usernameField.getText();
+		String publicPath = publicPathField.getText();
+		String privatePath = privatePathField.getText();
 		String ipAddr = ipField.getText();
 		int port = Integer.parseInt(portField.getText());
 
@@ -916,7 +796,7 @@ public class ClientApp {
 		else {
 			// Establish secure connection with Diffie-Hellman Protocol
 			try {
-				int result = RunClient.groupC.authenticateGroupServerRSA(username);
+				int result = RunClient.groupC.authenticateGroupServerRSA(username, publicPath, privatePath);
 				if (result == -2) {
 					// Error sending response
 					JOptionPane.showMessageDialog(
@@ -946,15 +826,12 @@ public class ClientApp {
 		usernameField.setEnabled(false);
 		ipField.setEnabled(false);
 		portField.setEnabled(false);
-		passwordField.setEnabled(false);
-
-		btnLogin.setEnabled(false);
+		publicPathField.setEnabled(false);
 		btnNewUser.setEnabled(true);
 		btnDeleteUser.setEnabled(true);
 		tabbedPane.setEnabledAt(1,true);
 		btnFileServer.setEnabled(true);
 		btnLogout.setEnabled(true);
-		btnChangePwd.setEnabled(true);
 		btnRSA.setEnabled(false);
 		btnRSASetup.setEnabled(true);
 		currentUsername = username;
@@ -1057,12 +934,10 @@ public class ClientApp {
 	}
 
 	public void attemptLogout(
-					JButton btnLogin, 
 					JButton btnNewUser, 
 					JTabbedPane tabbedPane, 
 					JButton btnDeleteUser, 
 					JButton btnFileServer,
-					JButton btnChangePwd,
 					JButton btnRSA,
 					JButton btnRSASetup,
 					JButton btnLogout) {
@@ -1075,15 +950,13 @@ public class ClientApp {
 		usernameField.setEnabled(true);
 		ipField.setEnabled(true);
 		portField.setEnabled(true);
-		passwordField.setEnabled(true);
+		publicPathField.setEnabled(true);
 
 		tabbedPane.setEnabledAt(1, false);
 		tabbedPane.setEnabledAt(2, false);
 		btnNewUser.setEnabled(false);
 		btnDeleteUser.setEnabled(false);
 		btnFileServer.setEnabled(false);
-		btnLogin.setEnabled(true);
-		btnChangePwd.setEnabled(false);
 		btnRSA.setEnabled(true);
 		btnRSASetup.setEnabled(false);
 		btnLogout.setEnabled(false);
@@ -1151,43 +1024,7 @@ public class ClientApp {
 		}
 	}
 
-	public void attemptNewPassword() {
-		JPanel newPasswordDialogue = new JPanel();
-		JPasswordField newPasswordField = new JPasswordField(20);
-		JLabel passwordDialogueLabel;
-		passwordDialogueLabel = new JLabel("Please enter a new password: ");
-		newPasswordDialogue.add(passwordDialogueLabel);
-		newPasswordDialogue.add(newPasswordField);
-		int dialogue = JOptionPane.showOptionDialog(
-										null, 
-										newPasswordDialogue, 
-										"New Password Creation", 
-										JOptionPane.OK_CANCEL_OPTION, 
-										JOptionPane.PLAIN_MESSAGE, 
-										null, 
-										null, 
-										null);
-		String newPassword = String.valueOf(newPasswordField.getPassword());
-		if (dialogue == 0 && newPassword.length() > 0) {
-			if (!RunClient.groupC.newPassword(newPassword)) {
-				JOptionPane.showMessageDialog(
-								null, 
-								"Password Change Failure.", 
-								"Password Change Failure", 
-								JOptionPane.OK_CANCEL_OPTION);
-				return;
-			} else {
-				JOptionPane.showMessageDialog(
-								null, 
-								"Password Change Success.", 
-								"Password Change Success", 
-								JOptionPane.OK_CANCEL_OPTION);
-				return;
-			}
-		}
-	}
-
-
+	
 	//Attempts to delete a user on the group server.
 	//Eventually will need required new password creation, but
 	//this is not required for phase 2.
