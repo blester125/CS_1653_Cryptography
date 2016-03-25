@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
+import java.security.Key;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.SecureRandom;
@@ -116,7 +117,8 @@ public class FileClient extends Client implements FileClientInterface {
 		return true;
 	}
 
-	public boolean download(String sourceFile, String destFile, String group, UserToken token) {
+	public boolean download(String sourceFile, String destFile, String group, UserToken token, 
+			GroupMetadata groupMetadata) {
 		if (sourceFile.charAt(0)=='/') {
 			sourceFile = sourceFile.substring(1);
 		}
@@ -133,14 +135,58 @@ public class FileClient extends Client implements FileClientInterface {
 
 			//build nested envelope, encrypt, and send
 			Envelope superEnv = Envelope.buildSuper(env, secretKey);
-			output.writeObject(superEnv); 
+			output.writeObject(superEnv);
 				
 			//receive, extract, and decrypt inner envelope
 			env = Envelope.extractInner((Envelope)input.readObject(), secretKey);
-				    
-			while (env.getMessage().compareTo("CHUNK")==0) { 
-				fos.write((byte[])env.getObjContents().get(0), 0, (Integer)env.getObjContents().get(1));
-				System.out.printf(".");
+			Cipher AESCipherDecrypt = null ;
+			IvParameterSpec iv = null;
+			Key key = null;
+			if(env.getObjContents().size() == 5) {
+				if(env.getObjContents().get(0) == null) {
+					System.err.println("Error: null text");
+				}
+				else if(env.getObjContents().get(1) == null) {
+					System.err.println("Error: null length");
+				}
+				else if(env.getObjContents().get(2) == null) {
+					System.err.println("Error: null key index");
+				}
+				else if(env.getObjContents().get(3) == null) {
+					System.err.println("Error: null key version");
+				}
+				else if(env.getObjContents().get(4) == null) {
+					System.err.println("Error: null IV");
+				}
+				else {
+					int keyIndex = (Integer)env.getObjContents().get(2);
+					int keyVersion = (Integer)env.getObjContents().get(3);
+					iv = (IvParameterSpec)env.getObjContents().get(4);
+					try {
+						key = groupMetadata.calculateKey(keyIndex, keyVersion);
+						AESCipherDecrypt = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");
+						AESCipherDecrypt.init(Cipher.DECRYPT_MODE, key, iv);
+					} catch (Exception e) {
+						e.printStackTrace();
+						fos.close();
+						return false;
+					}
+				}
+			}
+			else {
+				System.err.println("Error: invalid number of object contents");
+			}
+			while (env.getMessage().compareTo("CHUNK")==0) {
+				
+				try {
+					byte[] decryptedText = AESCipherDecrypt.doFinal((byte[])env.getObjContents().get(0));
+					fos.write(decryptedText, 0, (Integer)env.getObjContents().get(1));
+					System.out.printf(".");
+				} catch (Exception e) {
+					e.printStackTrace();
+					fos.close();
+					return false;
+				}
 
 				env = new Envelope("DOWNLOADF"); //Success
 				output.writeObject(Envelope.buildSuper(env, secretKey));

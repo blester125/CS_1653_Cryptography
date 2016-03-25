@@ -51,11 +51,14 @@ public interface FileClientInterface
      * @param destFile   The filename to use on the server
      * @param group      The group to share this file with
      * @param token      The token of the user uploading the file
+     * @param groupMetadata	The meta-data that includes the key index and key version
+     * 						to be used in encrypting the file
      *
      * @return true on success, false on failure
      *
      */
-    public boolean upload(final String sourceFile, final String destFile, final String group, final UserToken token);
+    public boolean upload(final String sourceFile, final String destFile, final String group, final UserToken token,
+    		GroupMetadata groupMetadata);
 
 
     /**

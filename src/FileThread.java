@@ -401,7 +401,7 @@ public class FileThread extends Thread
 								else 
 								{
 									FileInputStream fis = new FileInputStream(f);
-
+									boolean sentMetadata = false;
 									do {
 										byte[] buf = new byte[4096];
 										if (e.getMessage().compareTo("DOWNLOADF")!=0) 
@@ -423,6 +423,13 @@ public class FileThread extends Thread
 
 										response.addObject(buf);
 										response.addObject(new Integer(n));
+										// send meta-data along with the first chunk of the file
+										if(!sentMetadata) {
+											response.addObject(new Integer(sf.getKeyIndex()));
+											response.addObject(new Integer(sf.getKeyVersion());
+											response.addObject(sf.getIvParameterSpec());
+											sentMetadata = true;
+										}
 
 										output.writeObject(Envelope.buildSuper(response, sessionKey));
 										System.out.println("SENT from DOWNLOADF: " + response);

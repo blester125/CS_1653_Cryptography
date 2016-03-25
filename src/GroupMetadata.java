@@ -49,4 +49,20 @@ public class GroupMetadata implements java.io.Serializable {
 	    public ArrayList<SecretKey> getOldKeys() {
 	    	return oldKeys;
 	    }
+	    
+	    /**
+	     * calculates the correct key from the given meta-data
+	     * @param _index
+	     * @param _version
+	     * @return	the key
+	     */
+	    public SecretKey calculateKey(int _index, int _version) {
+	    	// check if using newest root key
+	    	if(_index >= oldKeys.size()) {
+	    		return KeyBox.evolveKey(currentKey, _version - currentKeyVer);
+	    	}
+	    	else {
+	    		return KeyBox.evolveKey(oldKeys.get(_index), _version);
+	    	}
+	    }
   }
