@@ -59,9 +59,9 @@ public class Envelope implements java.io.Serializable {
 		IvParameterSpec ivSpec = CipherBox.generateRandomIV();
 		Envelope superEnv = new Envelope("SUPER");
 		SealedObject sealedEnv = CipherBox.encrypt(env, key, ivSpec);
-		//byte[] HMAC = Hasher.generateHMAC(key, sealedEnv);
-		byte[] HMAC = Hasher.generateHMAC(key, env);
-		System.out.println(new String(HMAC));
+		byte[] HMAC = Hasher.generateHMAC(key, sealedEnv);
+		//byte[] HMAC = Hasher.generateHMAC(key, env);
+		//System.out.println(new String(HMAC));
 		superEnv.addObject(sealedEnv);
 		superEnv.addObject(ivSpec.getIV());
 		superEnv.addObject(HMAC);
@@ -77,14 +77,14 @@ public class Envelope implements java.io.Serializable {
 							SealedObject sealedEnv = (SealedObject)env.getObjContents().get(0);
 							IvParameterSpec ivSpec = new IvParameterSpec((byte[])env.getObjContents().get(1));
 							byte[] HMAC = (byte[])env.getObjContents().get(2);
-							//if (Hasher.verifiyHMAC(HMAC, key, sealedEnv)) {
-							//	return (Envelope)CipherBox.decrypt(sealedEnv, key, ivSpec);
-							//}
-							Envelope contents = (Envelope)CipherBox.decrypt(sealedEnv, key, ivSpec);
-							System.out.println(contents);
-							if (Hasher.verifiyHMAC(HMAC, key, contents)) {
-								return contents;
+							if (Hasher.verifiyHMAC(HMAC, key, sealedEnv)) {
+								return (Envelope)CipherBox.decrypt(sealedEnv, key, ivSpec);
 							}
+							//Envelope contents = (Envelope)CipherBox.decrypt(sealedEnv, key, ivSpec);
+							//System.out.println(contents);
+							//if (Hasher.verifiyHMAC(HMAC, key, contents)) {
+							//	return contents;
+							//}
 						}
 					}
 				}
