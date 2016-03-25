@@ -95,10 +95,16 @@ public class Envelope implements java.io.Serializable {
 		IvParameterSpec ivSpec = CipherBox.generateRandomIV();
 		Envelope superEnv = new Envelope("SUPER");
 		SealedObject sealedEnv = CipherBox.encrypt(env, key, ivSpec);
+		SealedObject sealTwo = CipherBox.encrypt(env, key, ivSpec);
 
 		byte[] barr = convertToBytes(sealedEnv);
+		byte[] barr2 = convertToBytes(sealTwo);
 
 		System.out.println(new String(barr));
+		System.out.println("---------------------------");
+		System.out.println(new String(barr2));
+		System.out.println("---------------------------");
+		System.out.println(new String(barr).equals(new String(barr2)));
 
 	}
 
