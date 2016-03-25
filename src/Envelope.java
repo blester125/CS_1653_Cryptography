@@ -1,11 +1,20 @@
 import java.util.ArrayList;
 
+import java.io.*;
+
+import java.security.MessageDigest;
+import java.security.Security;
+import javax.crypto.Mac;
+
 import javax.crypto.KeyAgreement;
 import javax.crypto.SealedObject;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.KeyGenerator;
 
 import java.security.Key;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class Envelope implements java.io.Serializable {
 	
@@ -45,7 +54,7 @@ public class Envelope implements java.io.Serializable {
 		IvParameterSpec ivSpec = CipherBox.generateRandomIV();
 		Envelope superEnv = new Envelope("SUPER");
 		SealedObject sealedEnv = CipherBox.encrypt(env, key, ivSpec);
-		String HMAC = Hasher.generateHMAC(key, sealedEnv);
+		String HMAC = new String(Hasher.generateHMAC(key, sealedEnv));
 		superEnv.addObject(sealedEnv);
 		superEnv.addObject(ivSpec);
 		superEnv.addObject(HMAC);
@@ -60,7 +69,7 @@ public class Envelope implements java.io.Serializable {
 						if (env.getObjContents().get(2) != null) {
 							SealedObject sealedEnv = (SealedObject)env.getObjContents().get(0);
 							IvParameterSpec ivSpec = new IvParameterSpec((byte[])env.getObjContents().get(1));
-							String HMAC = (String)env.getObjContents().get(2);
+							byte[] HMAC = (byte[])env.getObjContents().get(2);
 							if (Hasher.verifyHMAC(HMAC, key, sealedEnv)) {
 								return (Envelope)CipherBox.decrypt(sealedEnv, key, ivSpec);
 							}
@@ -70,5 +79,34 @@ public class Envelope implements java.io.Serializable {
 			}
 		}
 		return null;
+	}
+
+	public static void main(String args[]) throws Exception {
+		Security.addProvider(new BouncyCastleProvider());
+
+		Envelope env = new Envelope("Test");
+		String testString = "TEST STRING";
+		env.addObject(testString);
+
+		KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+		keyGen.init(128);
+		SecretKey key = keyGen.generateKey();
+
+		IvParameterSpec ivSpec = CipherBox.generateRandomIV();
+		Envelope superEnv = new Envelope("SUPER");
+		SealedObject sealedEnv = CipherBox.encrypt(env, key, ivSpec);
+
+		byte[] barr = convertToBytes(sealedEnv);
+
+		System.out.println(new String(barr));
+
+	}
+
+	private static byte[] convertToBytes(Object object) throws IOException {
+	    try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
+	         ObjectOutput out = new ObjectOutputStream(bos)) {
+	        out.writeObject(object);
+	        return bos.toByteArray();
+    	} 
 	}
 }
