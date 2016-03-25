@@ -508,6 +508,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			output.writeObject(message);
 			// Recive Message 2
 			Envelope response = (Envelope)input.readObject();
+			System.out.println(response);
 			if (response != null) {
 				if (response.getMessage().equals("RSALOGINOK")) {
 					if (response.getObjContents().size() == 2) {
@@ -516,8 +517,8 @@ public class GroupClient extends Client implements GroupClientInterface {
 								SealedObject recvSealedHash = (SealedObject)response.getObjContents().get(0);
 								byte[] recvHash = (byte[])CipherBox.decrypt(recvSealedHash, serverKey);
 								PublicKey DHServerKey = (PublicKey)response.getObjContents().get(1);
-								byte[] madeHash = Hasher.hash(DHServerKey);
-								if (Hasher.verifiyHash(recvHash, madeHash)) {
+								if (Hasher.verifiyHash(recvHash, DHServerKey)) {
+									System.out.println("MATCHING HASHES");
 									SecretKey sessionKey = DiffieHellman.generateSecretKey(DHServerKey, keyAgreement);
 									// Send Message 3
 									Envelope innerResponse = new Envelope("SUCCESS");
@@ -528,10 +529,13 @@ public class GroupClient extends Client implements GroupClientInterface {
 									SecureRandom rand = new SecureRandom();
 									sequenceNumber = rand.nextInt(101);
 									innerResponse.addObject(sequenceNumber);
+									System.out.println(innerResponse);
 									response = Envelope.buildSuper(innerResponse, sessionKey);
+									System.out.println(response);
 									output.writeObject(response);
 									// Recive Message 4
 									response = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+									System.out.println(response);
 									if (response != null) {
 										if (response.getMessage().equals("SUCESS")) {
 											if (response.getObjContents().size() == 2) {
@@ -541,8 +545,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 														Integer seqNum = (Integer)response.getObjContents().get(1);
 														String keyPlusWord = CipherBox.getKeyAsString(sessionKey);
 														keyPlusWord = "groupserver";
-														madeHash = Hasher.hash(keyPlusWord);
-														if (Hasher.verifiyHash(recvHash, madeHash)) {
+														if (Hasher.verifiyHash(recvHash, keyPlusWord)) {
 															if (seqNum == sequenceNumber + 1) {
 																sequenceNumber += 2;
 																return sessionKey;

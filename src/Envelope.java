@@ -50,13 +50,29 @@ public class Envelope implements java.io.Serializable {
 		return "Envelope [msg=" + msg + ", objContents=" + objContents + "]";
 	}
 
+	/*
+		Big Error with Hashes in general. most hashes use some sort of toString()
+		in the hash making process which causes a problem. for example the tostrings
+		of the same envelop on different computers is different
+		ie:
+			Envelope [msg=SUCCESS, objContents=[[B@79c04b2a, 95]]
+		vs.
+			Envelope [msg=SUCCESS, objContents=[[B@24ebd76a, 95]]
+
+		I beleive that there have been a few times that we are hasing the address
+		of objects rather than the objects themselves. A lost of things have this 
+		probelm notable sealedeObjects that we can't make HMAC's out of because they
+		cannot be converted to byte arrays
+	*/ 
 	public static Envelope buildSuper(Envelope env, SecretKey key) {
 		IvParameterSpec ivSpec = CipherBox.generateRandomIV();
 		Envelope superEnv = new Envelope("SUPER");
 		SealedObject sealedEnv = CipherBox.encrypt(env, key, ivSpec);
 		byte[] HMAC = Hasher.generateHMAC(key, sealedEnv);
+		//byte[] HMAC = Hasher.generateHMAC(key, env);
+		//System.out.println(new String(HMAC));
 		superEnv.addObject(sealedEnv);
-		superEnv.addObject(ivSpec);
+		superEnv.addObject(ivSpec.getIV());
 		superEnv.addObject(HMAC);
 		return superEnv;
 	}
@@ -73,6 +89,11 @@ public class Envelope implements java.io.Serializable {
 							if (Hasher.verifyHMAC(HMAC, key, sealedEnv)) {
 								return (Envelope)CipherBox.decrypt(sealedEnv, key, ivSpec);
 							}
+							//Envelope contents = (Envelope)CipherBox.decrypt(sealedEnv, key, ivSpec);
+							//System.out.println(contents);
+							//if (Hasher.verifiyHMAC(HMAC, key, contents)) {
+							//	return contents;
+							//}
 						}
 					}
 				}
