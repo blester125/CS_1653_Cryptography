@@ -1,11 +1,20 @@
 import java.util.ArrayList;
 
+import java.io.*;
+
+import java.security.MessageDigest;
+import java.security.Security;
+import javax.crypto.Mac;
+
 import javax.crypto.KeyAgreement;
 import javax.crypto.SealedObject;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.KeyGenerator;
 
 import java.security.Key;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class Envelope implements java.io.Serializable {
 	
@@ -61,7 +70,7 @@ public class Envelope implements java.io.Serializable {
 							SealedObject sealedEnv = (SealedObject)env.getObjContents().get(0);
 							IvParameterSpec ivSpec = new IvParameterSpec((byte[])env.getObjContents().get(1));
 							byte[] HMAC = (byte[])env.getObjContents().get(2);
-							if (Hasher.verifiyHMAC(HMAC, key, sealedEnv)) {
+							if (Hasher.verifyHMAC(HMAC, key, sealedEnv)) {
 								return (Envelope)CipherBox.decrypt(sealedEnv, key, ivSpec);
 							}
 						}
@@ -70,5 +79,40 @@ public class Envelope implements java.io.Serializable {
 			}
 		}
 		return null;
+	}
+
+	public static void main(String args[]) throws Exception {
+		Security.addProvider(new BouncyCastleProvider());
+
+		Envelope env = new Envelope("Test");
+		String testString = "TEST STRING";
+		env.addObject(testString);
+
+		KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+		keyGen.init(128);
+		SecretKey key = keyGen.generateKey();
+
+		IvParameterSpec ivSpec = CipherBox.generateRandomIV();
+		Envelope superEnv = new Envelope("SUPER");
+		SealedObject sealedEnv = CipherBox.encrypt(env, key, ivSpec);
+		SealedObject sealTwo = CipherBox.encrypt(env, key, ivSpec);
+
+		byte[] barr = convertToBytes(sealedEnv);
+		byte[] barr2 = convertToBytes(sealTwo);
+
+		System.out.println(new String(barr));
+		System.out.println("---------------------------");
+		System.out.println(new String(barr2));
+		System.out.println("---------------------------");
+		System.out.println(new String(barr).equals(new String(barr2)));
+
+	}
+
+	private static byte[] convertToBytes(Object object) throws IOException {
+	    try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
+	         ObjectOutput out = new ObjectOutputStream(bos)) {
+	        out.writeObject(object);
+	        return bos.toByteArray();
+    	} 
 	}
 }

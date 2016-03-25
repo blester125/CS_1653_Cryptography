@@ -51,6 +51,8 @@ public interface FileClientInterface
      * @param destFile   The filename to use on the server
      * @param group      The group to share this file with
      * @param token      The token of the user uploading the file
+     * @param groupMetadata	The meta-data that includes the key index and key version
+     * 						to be used in encrypting the file
      *
      * @return true on success, false on failure
      *
@@ -61,8 +63,6 @@ public interface FileClientInterface
                         final String group, 
                         final UserToken token, 
                         final GroupMetadata groupMetadata);
-
-
     /**
      * Downloads a file from the server.  The user must be a member of
      * the group with which this file is shared.
@@ -70,6 +70,8 @@ public interface FileClientInterface
      * @param sourceFile The filename used on the server
      * @param destFile   The filename to use locally
      * @param token      The token of the user uploading the file
+     * @param groupMetadata	The meta-data for the group, which allows the client to calculate
+     * 						the key for file decryption
      *
      * @return true on success, false on failure
      *
@@ -79,7 +81,6 @@ public interface FileClientInterface
                         final String destFile, 
                         final String group, 
                         final UserToken token);
-
 
     /**
      * Deletes a file from the server.  The user must be a member of

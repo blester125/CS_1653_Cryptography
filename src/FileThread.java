@@ -314,7 +314,7 @@ public class FileThread extends Thread
 
 									e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
 									while (e.getMessage().compareTo("CHUNK")==0) {
-										fos.write((byte[])e.getObjContents().get(0), 0, (Integer)e.getObjContents().get(1));
+										fos.write(((byte[])e.getObjContents().get(0)), 0, (Integer)e.getObjContents().get(1));
 										response = new Envelope("READY"); //Success
 										output.writeObject(Envelope.buildSuper(response, sessionKey));
 										System.out.println("SENT from UPLOADF - READYCHUNK: " + response);
@@ -322,9 +322,27 @@ public class FileThread extends Thread
 									}
 
 									if(e.getMessage().compareTo("EOF")==0) {
-										System.out.printf("Transfer successful file %s\n", remotePath);
-										FileServer.fileList.addFile(yourToken.getSubject(), group, remotePath);
-										response = new Envelope("OK"); //Success
+										if(e.getObjContents() != null && e.getObjContents().size() == 3)
+										{
+											if(e.getObjContents().get(0) == null){
+												System.err.println("Error: null key index field");
+											}
+											else if(e.getObjContents().get(1) == null){
+												System.err.println("Error: null key version field");
+											}
+											else if(e.getObjContents().get(2) == null){
+												System.err.println("Error: null IV field");
+											}
+											else {
+												int keyIndex = ((Integer)e.getObjContents().get(0)).intValue();
+												int keyVersion = ((Integer)e.getObjContents().get(1)).intValue();
+												IvParameterSpec iv = (IvParameterSpec)e.getObjContents().get(2);
+												System.out.printf("Transfer successful file %s\n", remotePath);
+												FileServer.fileList.addFile(yourToken.getSubject(), group, 
+														remotePath, keyIndex, keyVersion, iv);
+												response = new Envelope("OK"); //Success
+											}
+										}
 									}
 									else {
 										System.out.printf("Error reading file %s from client\n", remotePath);
@@ -383,7 +401,7 @@ public class FileThread extends Thread
 								else 
 								{
 									FileInputStream fis = new FileInputStream(f);
-
+									boolean sentMetadata = false;
 									do {
 										byte[] buf = new byte[4096];
 										if (e.getMessage().compareTo("DOWNLOADF")!=0) 
@@ -405,6 +423,13 @@ public class FileThread extends Thread
 
 										response.addObject(buf);
 										response.addObject(new Integer(n));
+										// send meta-data along with the first chunk of the file
+										if(!sentMetadata) {
+											response.addObject(new Integer(sf.getKeyIndex()));
+											response.addObject(new Integer(sf.getKeyVersion());
+											response.addObject(sf.getIvParameterSpec());
+											sentMetadata = true;
+										}
 
 										output.writeObject(Envelope.buildSuper(response, sessionKey));
 										System.out.println("SENT from DOWNLOADF: " + response);

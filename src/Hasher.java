@@ -37,12 +37,12 @@ public class Hasher {
 		}	
 	}
 
-	public static boolean verifiyHash(byte[] revHash, Object obj) {
+	public static boolean verifyHash(byte[] revHash, Object obj) {
 		byte[] madeHash = hash(obj);
 		return MessageDigest.isEqual(revHash, madeHash);
 	}
 
-	public static boolean verifiyHMAC(byte[] revHMAC, Key k, Object obj) {
+	public static boolean verifyHMAC(byte[] revHMAC, Key k, Object obj) {
 		byte[] madeHMAC = generateHMAC(k, obj);
 		return MessageDigest.isEqual(revHMAC, madeHMAC);
 	}
