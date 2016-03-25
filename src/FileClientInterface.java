@@ -68,11 +68,14 @@ public interface FileClientInterface
      * @param sourceFile The filename used on the server
      * @param destFile   The filename to use locally
      * @param token      The token of the user uploading the file
+     * @param groupMetadata	The meta-data for the group, which allows the client to calculate
+     * 						the key for file decryption
      *
      * @return true on success, false on failure
      *
      */
-    public boolean download(final String sourceFile, final String destFile, final String group, final UserToken token);
+    public boolean download(final String sourceFile, final String destFile, final String group, final UserToken token,
+    		GroupMetadata groupMetadata);
 
 
     /**

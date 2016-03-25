@@ -1595,7 +1595,20 @@ public class ClientApp {
 		String destFile = chooseFileField.getText();
 
 		UserToken currToken = RunClient.groupC.getToken(currentUsername);
+		
+		ArrayList<GroupMetadata> groupsMetadata = RunClient.groupC.getGroupsMetadata(currToken);
+		GroupMetadata currGroupMetadata = null;
+		for(GroupMetadata groupMetadata : groupsMetadata) {
+			if(groupMetadata.getGroupname().equals(currGroup)) {
+				currGroupMetadata = groupMetadata;
+			}
+		}
 
+		if(currGroupMetadata == null) {
+			JOptionPane.showMessageDialog(null, "Fatal meta-data error.", "Meta-data Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+		
 		if(currToken == null){
 			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
 			return;
@@ -1603,7 +1616,7 @@ public class ClientApp {
 
 		if(currFile.length() > 0){
 
-			if(!RunClient.fileC.download(currFile, destFile, currGroup, currToken)){
+			if(!RunClient.fileC.download(currFile, destFile, currGroup, currToken, currGroupMetadata)){
 				JOptionPane.showMessageDialog(null, "The File could not be downloaded.", "File Download Failure", JOptionPane.OK_CANCEL_OPTION);
 				return;
 			}
