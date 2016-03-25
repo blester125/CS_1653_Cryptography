@@ -142,6 +142,7 @@ public class ClientApp {
 		gbc_publicPathField.gridx = 2;
 		gbc_publicPathField.gridy = 2;
 		homePage.add(publicPathField, gbc_publicPathField);
+		publicPathField.setText("adminpublic.key");
 
 		//Private path text field
 		privatePathField = new JTextField();
@@ -151,7 +152,8 @@ public class ClientApp {
 		gbc_privateFilePath.gridx = 3;
 		gbc_privateFilePath.gridy = 2;
 		homePage.add(privatePathField, gbc_privateFilePath);
-		
+		privatePathField.setText("adminprivate.key");
+
 		//New User button
 		final JButton btnNewUser = new JButton("New User");
 		GridBagConstraints gbc_btnNewUser = new GridBagConstraints();

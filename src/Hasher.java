@@ -8,6 +8,9 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
 import java.security.Key;
+import java.security.PublicKey;
+import java.security.KeyPair;
+import java.security.*;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -42,22 +45,19 @@ public class Hasher {
 		return MessageDigest.isEqual(revHash, madeHash);
 	}
 
-	public static boolean verifiyHMAC(byte[] revHMAC, Key k, Object obj) {
+	public static boolean verifiyHMAC(byte[] recvHMAC, Key k, Object obj) {
 		byte[] madeHMAC = generateHMAC(k, obj);
-		return MessageDigest.isEqual(revHMAC, madeHMAC);
+		System.out.println("recvd: " + recvHMAC);
+		System.out.println("maded: " + madeHMAC);
+		return MessageDigest.isEqual(recvHMAC, madeHMAC);
 	}
 
 	public static void main(String args[]) throws Exception {
 		Security.addProvider(new BouncyCastleProvider());
-		Envelope test = new Envelope("Test");
-		String testString = "TEST STRING";
-		test.addObject(testString);
-		Envelope test2 = new Envelope("Test");
-		String testString2 = "TEST STRING";
-		test2.addObject(testString2);
-		String hash1 = new String(hash(test));
-		String hash2 = new String(hash(test2));
-		System.out.println(hash1 + "\n\n");
-		System.out.println(hash2);
+		KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA", "BC");
+		keyGen.initialize(2048);
+		KeyPair keyPair = keyGen.generateKeyPair();
+		System.out.println(keyPair.getPublic().toString());
+		System.out.println(keyPair.getPublic().getEncoded());
 	}
 }
