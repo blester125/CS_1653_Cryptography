@@ -14,6 +14,7 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
 import javax.crypto.SealedObject;
 import javax.crypto.SecretKey;
@@ -274,7 +275,10 @@ public class FileClient extends Client implements FileClientInterface {
 				 return false;
 			 }
 			 
-		 	
+		 	IvParameterSpec iv = CipherBox.generateRandomIV();
+		 	SecretKey key = groupMetadata.getCurrentKey();
+		 	int keyIndex = groupMetadata.getCurrentKeyIndex();
+		 	int keyVersion = groupMetadata.getCurrentKeyVer();
 			 do {
 				 byte[] buf = new byte[4096];
 				 	if (env.getMessage().compareTo("READY")!=0) {
@@ -291,8 +295,11 @@ public class FileClient extends Client implements FileClientInterface {
 						fis.close();
 						return false;
 					}
-					
-					message.addObject(buf);
+					// encrypt to byte[] with key and IV
+					Cipher AESCipherEncrypt = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");
+					AESCipherEncrypt.init(Cipher.ENCRYPT_MODE, key, iv);
+					byte[] encryptedText = AESCipherEncrypt.doFinal(buf);
+					message.addObject(encryptedText);
 					message.addObject(new Integer(n));
 					
 					output.writeObject(Envelope.buildSuper(message, secretKey));
@@ -304,11 +311,13 @@ public class FileClient extends Client implements FileClientInterface {
 			 }
 			 while (fis.available()>0);		 
 			 fis.close();
-			 //If server indicates success, return the member list
 			 if(env.getMessage().compareTo("READY")==0)
 			 { 
-				
 				message = new Envelope("EOF");
+				// send the key index, key version, and IV used to encrypt the file
+				message.addObject(new Integer(keyIndex));
+				message.addObject(new Integer(keyVersion));
+				message.addObject(iv);
 				output.writeObject(Envelope.buildSuper(message, secretKey));
 				
 				env = Envelope.extractInner((Envelope)input.readObject(), secretKey);
@@ -320,14 +329,11 @@ public class FileClient extends Client implements FileClientInterface {
 					 System.out.printf("\nUpload failed: %s\n", env.getMessage());
 					 return false;
 				 }
-				
 			}
 			 else {
-				
 				 System.out.printf("Upload failed: %s\n", env.getMessage());
 				 return false;
 			 }
-			 
 		 }catch(Exception e1)
 			{
 				System.err.println("Error: " + e1.getMessage());

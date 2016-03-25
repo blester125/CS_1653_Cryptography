@@ -49,7 +49,8 @@ import javax.crypto.spec.SecretKeySpec;
      * @return	GroupMetadata
      */
     public synchronized GroupMetadata getGroupMetadata(String groupname) {
-    	return new GroupMetadata(groupname, groups.get(groupname).getCurrentKey(), groups.get(groupname).getCurrentKeyVer(), 
+    	return new GroupMetadata(groupname, groups.get(groupname).getCurrentKey(), 
+    			groups.get(groupname).getCurrentKeyIndex(), groups.get(groupname).getCurrentKeyVer(),
     			groups.get(groupname).getOldKeys());
     }
 
@@ -58,18 +59,20 @@ import javax.crypto.spec.SecretKeySpec;
     private ArrayList<String> users;
     private String owner;
     private SecretKey currentRootKey;
-    private SecretKey currentKey;
     private int currentKeyVer;
-    private ArrayList<Key> oldKeys;
+    private SecretKey currentKey;
+    private int currentKeyIndex;
+    private ArrayList<SecretKey> oldKeys;
     private static final int maxKeyVersions = 99;
 
     public Group(String creator) {
       users = new ArrayList<String>();
       this.owner = creator;
+      this.oldKeys = new ArrayList<SecretKey>();
       this.currentRootKey = KeyBox.generateKey();
+      this.currentKeyIndex = 0;
       this.currentKeyVer = maxKeyVersions;
-      this.currentKey = KeyBox.evolveKey(currentKey, currentKeyVer);
-      this.oldKeys = new ArrayList<Key>();
+      this.currentKey = KeyBox.evolveKey(currentRootKey, currentKeyVer);
     }
 
     public ArrayList<String> getUsers() {
@@ -80,15 +83,19 @@ import javax.crypto.spec.SecretKeySpec;
       return owner;
     }
     
-    public Key getCurrentKey() {
+    public SecretKey getCurrentKey() {
     	return currentKey;
     }
-
+    
+    public int getCurrentKeyIndex() {
+    	return currentKeyIndex;
+    }
+    
     public int getCurrentKeyVer() {
     	return currentKeyVer;
     }
     
-    public ArrayList<Key> getOldKeys() {
+    public ArrayList<SecretKey> getOldKeys() {
     	return oldKeys;
     }
     
@@ -107,9 +114,10 @@ import javax.crypto.spec.SecretKeySpec;
     public void evolveKey() {
     	// need to generate a new key
     	if(currentKeyVer == 0) {
-    		oldKeys.add(currentKey);
-    		currentRootKey = KeyBox.generateKey();
+    		oldKeys.add(currentRootKey);
     		currentKeyVer = maxKeyVersions;
+    		currentRootKey = KeyBox.generateKey();
+    		currentKeyIndex = oldKeys.size();
     		currentKey = KeyBox.evolveKey(currentRootKey, currentKeyVer);
     	}
     	// decrement key hashes by one

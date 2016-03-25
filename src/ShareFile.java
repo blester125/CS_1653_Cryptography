@@ -9,7 +9,7 @@ public class ShareFile implements java.io.Serializable, Comparable<ShareFile> {
 	private String group;
 	private String path;
 	private String owner;
-	private int key;
+	private int keyIndex;
 	private int keyVersion;
 	private IvParameterSpec iv;
 	
@@ -17,14 +17,15 @@ public class ShareFile implements java.io.Serializable, Comparable<ShareFile> {
 						String _owner, 
 						String _group, 
 						String _path, 
-						int _key,
-						int _keyVersion) {
+						int _keyIndex,
+						int _keyVersion,
+						IvParameterSpec _iv) {
 		group = _group;
 		owner = _owner;
 		path = _path;
-		key = _key;
+		keyIndex = _keyIndex;
 		keyVersion = _keyVersion;
-		iv = CipherBox.generateRandomIV();
+		iv = _iv;
 	}
 	
 	public String getPath()
@@ -41,8 +42,8 @@ public class ShareFile implements java.io.Serializable, Comparable<ShareFile> {
 		return group;
 	}
 
-	public int getKey() {
-		return key;
+	public int getKeyIndex() {
+		return keyIndex;
 	}
 
 	public int getKeyVersion() {
