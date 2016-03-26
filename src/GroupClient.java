@@ -476,14 +476,6 @@ public class GroupClient extends Client implements GroupClientInterface {
 			// Error creating the sharedKey
 			return -1;
 		}
-		try {
-			Envelope innerResponse = new Envelope("SUCCESS");
-			Envelope response = Envelope.buildSuper(innerResponse, sessionKey);
-			output.writeObject(response);
-		} catch (Exception e) {
-			// Error sending success response
-			return -2;
-		}
 		return 0;
 	}
 
