@@ -31,6 +31,7 @@ public class FileThread extends Thread
 	private KeyPair rsaPair;
 	// Group Server Public Key
 	public PublicKey serverPublicKey = null;
+	private String groupServerPath = "groupserverpublic.key";
 
 	public FileThread (Socket _socket, KeyPair _rsaPair) {
 		socket = _socket;
@@ -560,7 +561,7 @@ public class FileThread extends Thread
 		}
 
 		//get group server public key
-		serverPublicKey = loadServerKey();
+		serverPublicKey = RSA.loadServerKey(groupServerPath);
 		SealedObject recvSignedHash = token.getSignedHash();
 		byte[] recvHash = (byte[])CipherBox.decrypt(recvSignedHash, serverPublicKey);
 		byte[] hashToken = Hasher.hash(token);
@@ -568,28 +569,6 @@ public class FileThread extends Thread
 			return false;
 		}
 		return true;
-	}
-
-	// Load the groupserver public key
-	public PublicKey loadServerKey() {
-		if (serverPublicKey == null) {
-			try {
-				File fsPublicKey = new File("groupserverpublic.key");
-				FileInputStream keyIn = new FileInputStream("groupserverpublic.key");
-				byte[] encPublicKey = new byte[(int) fsPublicKey.length()];
-				keyIn.read(encPublicKey);
-				keyIn.close();
-				KeyFactory kf = KeyFactory.getInstance("RSA", "BC");
-				X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(encPublicKey);
-				PublicKey publicKey = kf.generatePublic(publicKeySpec);
-				System.out.println("Loaded in the server public key");
-				return publicKey;
-			} catch (Exception e) {
-				System.out.println("You need the servers Public Key.");
-				return null;
-			}
-		}
-		return serverPublicKey;
 	}
 	
 	/**

@@ -799,7 +799,7 @@ public class ClientApp {
 			// Establish secure connection with Diffie-Hellman Protocol
 			try {
 				int result = RunClient.groupC.authenticateGroupServerRSA(username, publicPath, privatePath);
-				if (result == -2) {
+				/*if (result == -2) {
 					// Error sending response
 					JOptionPane.showMessageDialog(
 									null, 
@@ -808,7 +808,8 @@ public class ClientApp {
 									JOptionPane.OK_CANCEL_OPTION);
 					return;
 				} 
-				else if (result == -1) {
+				else*/ 
+				if (result == -1) {
 					// Error getting session key
 					JOptionPane.showMessageDialog(
 									null, 

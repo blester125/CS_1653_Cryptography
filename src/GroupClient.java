@@ -27,9 +27,10 @@ import javax.crypto.spec.IvParameterSpec;
 public class GroupClient extends Client implements GroupClientInterface {
 	private SecretKey sessionKey;
 	private int sequenceNumber;
+	private String groupServerKeyPath = "groupserverpublic.key";
 
 	static final int RSA_BIT_KEYSIZE = 2048;
-	
+		
 	public GroupClient() {
 		
 	}
@@ -444,7 +445,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 	}
 
 	public int setUpRSA() throws Exception {
-		KeyPair keyPair = loadRSA("","");
+		KeyPair keyPair = RSA.loadRSA("","");
 		return shareRSA(keyPair);
 	}
 
@@ -469,8 +470,8 @@ public class GroupClient extends Client implements GroupClientInterface {
 					String username, 
 					String publicKeyPath, 
 					String privateKeyPath) {
-		KeyPair keyPair = loadRSA(publicKeyPath, privateKeyPath);
-		PublicKey serverKey = loadServerKey();
+		KeyPair keyPair = RSA.loadRSA(publicKeyPath, privateKeyPath);
+		PublicKey serverKey = RSA.loadServerKey(groupServerKeyPath);
 		sessionKey = establishSessionKeyRSA(username, keyPair, serverKey);
 		if (sessionKey == null) {
 			// Error creating the sharedKey
@@ -569,100 +570,4 @@ public class GroupClient extends Client implements GroupClientInterface {
 		}
 	}
 
-	// Load the groupserver public key
-	public PublicKey loadServerKey() {
-		try {
-			File fsPublicKey = new File("groupserverpublic.key");
-			FileInputStream keyIn = new FileInputStream("groupserverpublic.key");
-			byte[] encPublicKey = new byte[(int) fsPublicKey.length()];
-			keyIn.read(encPublicKey);
-			keyIn.close();
-			KeyFactory kf = KeyFactory.getInstance("RSA", "BC");
-			X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(encPublicKey);
-			PublicKey publicKey = kf.generatePublic(publicKeySpec);
-			System.out.println("Loaded in the server public key");
-			return publicKey;
-		} catch (Exception e) {
-			System.out.println("You need the servers Public Key.");
-			return null;
-		}
-	}
-
-	// Loads my RSA keys
-	public KeyPair loadRSA(String publicKeyPath, String privateKeyPath) {
-		//Attempt to load RSA key pair from file
-		try{
-			KeyPair rsaPair;
-			File fsPublicKey = new File(publicKeyPath);
-			FileInputStream keyIn = new FileInputStream(publicKeyPath);
-			byte[] encPublicKey = new byte[(int) fsPublicKey.length()];
-			keyIn.read(encPublicKey);
-			keyIn.close();
-
-			File fsPrivateKey = new File(privateKeyPath);
-			keyIn = new FileInputStream(privateKeyPath);
-			byte[] encPrivateKey = new byte[(int) fsPrivateKey.length()];
-			keyIn.read(encPrivateKey);
-			keyIn.close();
-
-			KeyFactory kf = KeyFactory.getInstance("RSA", "BC");
-			X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(encPublicKey);
-			PublicKey publicKey = kf.generatePublic(publicKeySpec);
-
-			PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(encPrivateKey);
-			PrivateKey privateKey = kf.generatePrivate(privateKeySpec);
-
-			rsaPair = new KeyPair(publicKey, privateKey);
-
-			System.out.println("Found RSA key pair. Loaded successfully!");
-			return rsaPair;
-		}
-		catch (FileNotFoundException e) {
-			try {
-				System.out.println("Did not find public and/or private RSA keys. Generating new key pair....");
-			
-				//Generate RSA key pair with KeyPairGenerator, 1024 bits
-				KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA", "BC");
-				keyGen.initialize(RSA_BIT_KEYSIZE);
-				KeyPair rsaPair = keyGen.generateKeyPair();
-				PrivateKey privateKey = rsaPair.getPrivate();
-				PublicKey publicKey = rsaPair.getPublic();
-
-				//Store both keys to file
-				X509EncodedKeySpec x590keyspec = new X509EncodedKeySpec(publicKey.getEncoded());
-				FileOutputStream keyOut = new FileOutputStream("userpublic.key");
-				keyOut.write(x590keyspec.getEncoded());
-				keyOut.close();
-
-				PKCS8EncodedKeySpec pkcs8keyspec = new PKCS8EncodedKeySpec(privateKey.getEncoded());
-				keyOut = new FileOutputStream("userprivate.key");
-				keyOut.write(pkcs8keyspec.getEncoded());
-				keyOut.close();
-
-				System.out.println("New RSA key pair generated and stored!");
-				return rsaPair;
-			}
-			catch (Exception f){
-				System.out.println("Exception thrown in create new RSA pair.");
-				return null;
-			}
-
-		}
-		catch (IOException e) {
-			System.out.println("Could not read or write from/to key files!");
-			return null;
-		}
-		catch (NoSuchAlgorithmException e){
-			System.out.println("Algorithm does not exist!");
-			return null;
-		}
-		catch (InvalidKeySpecException e){
-			System.out.println("Invalid key specification!");
-			return null;
-		}
-		catch (Exception e){
-			System.out.println("unspecified exception thrown");
-			return null;
-		}
-	}
 }
