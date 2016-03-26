@@ -426,7 +426,7 @@ public class FileThread extends Thread
 										// send meta-data along with the first chunk of the file
 										if(!sentMetadata) {
 											response.addObject(new Integer(sf.getKeyIndex()));
-											response.addObject(new Integer(sf.getKeyVersion());
+											response.addObject(new Integer(sf.getKeyVersion()));
 											response.addObject(sf.getIvParameterSpec());
 											sentMetadata = true;
 										}

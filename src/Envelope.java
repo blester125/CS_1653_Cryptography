@@ -50,27 +50,11 @@ public class Envelope implements java.io.Serializable {
 		return "Envelope [msg=" + msg + ", objContents=" + objContents + "]";
 	}
 
-	/*
-		Big Error with Hashes in general. most hashes use some sort of toString()
-		in the hash making process which causes a problem. for example the tostrings
-		of the same envelop on different computers is different
-		ie:
-			Envelope [msg=SUCCESS, objContents=[[B@79c04b2a, 95]]
-		vs.
-			Envelope [msg=SUCCESS, objContents=[[B@24ebd76a, 95]]
-
-		I beleive that there have been a few times that we are hasing the address
-		of objects rather than the objects themselves. A lost of things have this 
-		probelm notable sealedeObjects that we can't make HMAC's out of because they
-		cannot be converted to byte arrays
-	*/ 
 	public static Envelope buildSuper(Envelope env, SecretKey key) {
 		IvParameterSpec ivSpec = CipherBox.generateRandomIV();
 		Envelope superEnv = new Envelope("SUPER");
 		SealedObject sealedEnv = CipherBox.encrypt(env, key, ivSpec);
-		byte[] HMAC = Hasher.generateHMAC(key, sealedEnv);
-		//byte[] HMAC = Hasher.generateHMAC(key, env);
-		//System.out.println(new String(HMAC));
+		byte[] HMAC = generateIntegrityCheck(key, sealedEnv, ivSpec);
 		superEnv.addObject(sealedEnv);
 		superEnv.addObject(ivSpec.getIV());
 		superEnv.addObject(HMAC);
@@ -86,20 +70,49 @@ public class Envelope implements java.io.Serializable {
 							SealedObject sealedEnv = (SealedObject)env.getObjContents().get(0);
 							IvParameterSpec ivSpec = new IvParameterSpec((byte[])env.getObjContents().get(1));
 							byte[] HMAC = (byte[])env.getObjContents().get(2);
-							if (Hasher.verifyHMAC(HMAC, key, sealedEnv)) {
+							if (checkIntegrity(key, sealedEnv, ivSpec, HMAC)) {
 								return (Envelope)CipherBox.decrypt(sealedEnv, key, ivSpec);
 							}
-							//Envelope contents = (Envelope)CipherBox.decrypt(sealedEnv, key, ivSpec);
-							//System.out.println(contents);
-							//if (Hasher.verifiyHMAC(HMAC, key, contents)) {
-							//	return contents;
-							//}
 						}
 					}
 				}
 			}
 		}
 		return null;
+	}
+
+	private static byte[] generateIntegrityCheck(
+								Key k, 
+								SealedObject so, 
+								IvParameterSpec iv) {
+		byte[] so_ba = Hasher.convertToByteArray(so);
+		byte[] iv_ba = iv.getIV();
+		byte[] concat = concatenateArrays(so_ba, iv_ba);
+		return Hasher.generateHMAC(k, concat);
+	}
+
+	private static boolean checkIntegrity(
+								Key k, 
+								SealedObject so, 
+								IvParameterSpec iv, 
+								byte[] recvHMAC) {
+		byte[] madeHMAC = generateIntegrityCheck(k, so, iv);
+		System.out.println("Integrity Check on the SUPER envelope");
+		System.out.println(new String(recvHMAC));
+		System.out.println(new String(madeHMAC));
+		System.out.println("-------------------------------------");
+		return Hasher.verifyHMAC(recvHMAC, madeHMAC);
+	}
+
+	private static byte[] concatenateArrays(byte[] arr1, byte[] arr2) {
+		byte[] arr3 = new byte[arr1.length + arr2.length];
+		for (int i = 0; i < arr1.length; i++) {
+			arr3[i] = arr1[i];
+		}
+		for (int i = 0; i < arr2.length; i++) {
+			arr3[i + arr1.length] = arr2[i];
+		}
+		return arr3;
 	}
 
 	public static void main(String args[]) throws Exception {
@@ -118,8 +131,8 @@ public class Envelope implements java.io.Serializable {
 		SealedObject sealedEnv = CipherBox.encrypt(env, key, ivSpec);
 		SealedObject sealTwo = CipherBox.encrypt(env, key, ivSpec);
 
-		byte[] barr = convertToBytes(sealedEnv);
-		byte[] barr2 = convertToBytes(sealTwo);
+		byte[] barr = Hasher.convertToByteArray(sealedEnv);
+		byte[] barr2 = Hasher.convertToByteArray(sealTwo);
 
 		System.out.println(new String(barr));
 		System.out.println("---------------------------");
@@ -127,13 +140,5 @@ public class Envelope implements java.io.Serializable {
 		System.out.println("---------------------------");
 		System.out.println(new String(barr).equals(new String(barr2)));
 
-	}
-
-	private static byte[] convertToBytes(Object object) throws IOException {
-	    try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
-	         ObjectOutput out = new ObjectOutputStream(bos)) {
-	        out.writeObject(object);
-	        return bos.toByteArray();
-    	} 
 	}
 }

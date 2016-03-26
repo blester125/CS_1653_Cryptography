@@ -77,10 +77,11 @@ public interface FileClientInterface
      *
      */
     public boolean download(
-                        final String sourceFile, 
-                        final String destFile, 
-                        final String group, 
-                        final UserToken token);
+                        String sourceFile, 
+                        String destFile, 
+                        String group, 
+                        UserToken token, 
+                        GroupMetadata groupMetadata);
 
     /**
      * Deletes a file from the server.  The user must be a member of

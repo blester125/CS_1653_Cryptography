@@ -131,6 +131,7 @@ public class GroupThread extends Thread
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
 								if (message.getObjContents().get(2) != null) {
+									System.out.println("RECIVED FIRST MESSAGE");
 									System.out.println(message);
 									String user = (String)message.getObjContents().get(0);
 									SealedObject sealedHash = (SealedObject)message.getObjContents().get(1);
@@ -143,7 +144,7 @@ public class GroupThread extends Thread
 										System.out.println(new String(recvHash));
 										byte[] madeHash = Hasher.hash(recvdKey);
 										System.out.println(new String(madeHash));
-										if (Hasher.verifiyHash(recvHash, recvdKey)) {
+										if (Hasher.verifyHash(recvHash, recvdKey)) {
 											System.out.println("MATCHING HASHES");
 											KeyPair keyPair = null;
 											KeyAgreement keyAgreement = null;
@@ -159,12 +160,15 @@ public class GroupThread extends Thread
 												sealedKey = CipherBox.encrypt(hashedPublicKey, my_gs.keyPair.getPrivate());
 												response.addObject(sealedKey);
 												response.addObject(keyPair.getPublic());
+												System.out.println("SENDING SECOND MESSAGE");
 												System.out.println(response);
 												output.writeObject(response);
 												// Get third message
 												Envelope check = (Envelope)input.readObject();
+												System.out.println("RECIVED THRID MESSAGE: SUPER ENVELOPE");
 												System.out.println(check);
 												Envelope innerCheck = Envelope.extractInner(check, sessionKey);
+												System.out.println("RECIVED THRID MESSAGE: INNER ENV");
 												System.out.println(innerCheck);
 												response = new Envelope("FAIL");
 												if (innerCheck != null) {
@@ -174,8 +178,8 @@ public class GroupThread extends Thread
 																if (innerCheck.getObjContents().get(1) != null) {
 																	byte[] recvHashWord = (byte[])innerCheck.getObjContents().get(0);
 																	String keyPlusWord = CipherBox.getKeyAsString(sessionKey);
-																	keyPlusWord = keyPlusWord + username;
-																	if (Hasher.verifiyHash(recvHashWord, keyPlusWord)) {
+																	keyPlusWord = keyPlusWord + user;
+																	if (Hasher.verifyHash(recvHashWord, keyPlusWord)) {
 																		isSecureConnection = true;
 																		isAuthenticated = true;
 																		username = user;
@@ -184,11 +188,14 @@ public class GroupThread extends Thread
 																		innerResponse = new Envelope("SUCCESS");
 																		keyPlusWord = CipherBox.getKeyAsString(sessionKey);
 																		keyPlusWord = keyPlusWord + "groupserver";
+																		System.out.println(keyPlusWord);
 																		byte[] hashResponse = Hasher.hash(keyPlusWord);
 																		innerResponse.addObject(hashResponse);
 																		innerResponse.addObject(sequenceNumber + 1);
+																		System.out.println("SENDING FOURTH MESSAGE");
 																		System.out.println(innerResponse);
 																		response = Envelope.buildSuper(innerResponse, sessionKey);
+																		System.out.println("SECURE AND AUTHENTICATED CONNECTION ESTABLISHED.");
 																	}
 																}
 															}

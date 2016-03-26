@@ -12,6 +12,8 @@ import java.security.PublicKey;
 import java.security.KeyPair;
 import java.security.*;
 
+import java.io.*;
+
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import sun.misc.BASE64Encoder;
@@ -28,11 +30,11 @@ public class Hasher {
 		}
 	}
 
-	public static byte[] generateHMAC(Key k, Object obj) {
+	public static byte[] generateHMAC(Key k, byte[] obj) {
 		try {		
 			Mac mac = Mac.getInstance("HmacSHA256", "BC");
 			mac.init(k);
-			byte[] raw = mac.doFinal(obj.toString().getBytes("UTF-8"));
+			byte[] raw = mac.doFinal(obj);
 			return raw;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -40,16 +42,26 @@ public class Hasher {
 		}	
 	}
 
-	public static boolean verifyHash(byte[] revHash, Object obj) {
+	public static boolean verifyHash(byte[] recvHash, Object obj) {
 		byte[] madeHash = hash(obj);
-		return MessageDigest.isEqual(revHash, madeHash);
+		return MessageDigest.isEqual(recvHash, madeHash);
 	}
 
-	public static boolean verifyHMAC(byte[] revHMAC, Key k, Object obj) {
-		byte[] madeHMAC = generateHMAC(k, obj);
-		System.out.println("recvd: " + recvHMAC);
-		System.out.println("maded: " + madeHMAC);
+	public static boolean verifyHMAC(byte[] recvHMAC, byte[] madeHMAC) {
 		return MessageDigest.isEqual(recvHMAC, madeHMAC);
+	}
+
+	public static byte[] convertToByteArray(Object object) {
+		try 
+			(ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			ObjectOutput out = new ObjectOutputStream(bos)) 
+		{
+			out.writeObject(object);
+			return bos.toByteArray();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 
 	public static void main(String args[]) throws Exception {

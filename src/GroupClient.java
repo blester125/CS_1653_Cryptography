@@ -505,9 +505,12 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message.addObject(username);
 			message.addObject(sealedKey);
 			message.addObject(DHKeyPair.getPublic());
+			System.out.println("SENDING FIRST MESSAGE");
+			System.out.println(message);
 			output.writeObject(message);
 			// Recive Message 2
 			Envelope response = (Envelope)input.readObject();
+			System.out.println("RECVD SEND MESSAGE");
 			System.out.println(response);
 			if (response != null) {
 				if (response.getMessage().equals("RSALOGINOK")) {
@@ -517,7 +520,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 								SealedObject recvSealedHash = (SealedObject)response.getObjContents().get(0);
 								byte[] recvHash = (byte[])CipherBox.decrypt(recvSealedHash, serverKey);
 								PublicKey DHServerKey = (PublicKey)response.getObjContents().get(1);
-								if (Hasher.verifiyHash(recvHash, DHServerKey)) {
+								if (Hasher.verifyHash(recvHash, DHServerKey)) {
 									System.out.println("MATCHING HASHES");
 									SecretKey sessionKey = DiffieHellman.generateSecretKey(DHServerKey, keyAgreement);
 									// Send Message 3
@@ -529,25 +532,30 @@ public class GroupClient extends Client implements GroupClientInterface {
 									SecureRandom rand = new SecureRandom();
 									sequenceNumber = rand.nextInt(101);
 									innerResponse.addObject(sequenceNumber);
+									System.out.println("SENDING THIRD MESSAGE");
 									System.out.println(innerResponse);
 									response = Envelope.buildSuper(innerResponse, sessionKey);
+									System.out.println("SUPER ENV FOR THIRD MESSAGE");
 									System.out.println(response);
 									output.writeObject(response);
 									// Recive Message 4
 									response = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+									System.out.println("RECVD FOURTH MESSAGE");
 									System.out.println(response);
 									if (response != null) {
-										if (response.getMessage().equals("SUCESS")) {
+										if (response.getMessage().equals("SUCCESS")) {
 											if (response.getObjContents().size() == 2) {
 												if (response.getObjContents().get(0) != null) {
 													if (response.getObjContents().get(1) != null) {
 														recvHash = (byte[])response.getObjContents().get(0);
 														Integer seqNum = (Integer)response.getObjContents().get(1);
 														String keyPlusWord = CipherBox.getKeyAsString(sessionKey);
-														keyPlusWord = "groupserver";
-														if (Hasher.verifiyHash(recvHash, keyPlusWord)) {
+														keyPlusWord = keyPlusWord + "groupserver";
+														System.out.println(keyPlusWord);
+														if (Hasher.verifyHash(recvHash, keyPlusWord)) {
 															if (seqNum == sequenceNumber + 1) {
 																sequenceNumber += 2;
+																System.out.println("SECURE AND AUTH'D CONNECTION ESTABLISHED");
 																return sessionKey;
 															}
 														}
