@@ -303,13 +303,6 @@ public class GroupThread extends Thread
 								innerResponse = new Envelope("OK");
 								innerResponse.addObject(yourToken);
 								// If Token didn't fail the user exists no need to check here
-								ArrayList<String> groups = my_gs.userList.getUserGroups(user);
-								ArrayList<GroupMetadata> data = new ArrayList<GroupMetadata>();
-								for (String group : groups) {
-									// The group names are from the UserList so don't need to check if they are there
-									data.add(my_gs.groupList.getGroupMetadata(group));
-								}
-								innerResponse.addObject(data);
 							}
 						}
 					}
@@ -321,9 +314,8 @@ public class GroupThread extends Thread
 				// should only be called on file upload/download after get token
 				else if (message.getMessage().equals("GET-GMETADATA") 
 						&& isSecureConnection
-						&& isAuthenticated) {//Client wants a token
-					String user = (String)message.getObjContents().get(0); //Get the username
-					if (user == null) {
+						&& isAuthenticated) {//Client wants meta-data for their groups
+					if(message.getObjContents().size() != 1) {
 						innerResponse = new Envelope("FAIL");
 					}
 					else {

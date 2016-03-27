@@ -1505,6 +1505,7 @@ public class ClientApp {
 		for(GroupMetadata group : userGroupsMetadata) {
 			if(group.getGroupname().equals(currGroup)) {
 				currGroupMetadata = group;
+				break;
 			}
 		}
 		if(currGroupMetadata == null){

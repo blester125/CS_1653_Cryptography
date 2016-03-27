@@ -160,6 +160,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 	 * @param	user's token
 	 * @return	group metadata for each group
 	 */
+	@SuppressWarnings("unchecked")
 	public ArrayList<GroupMetadata> getGroupsMetadata(UserToken	token) {
 		try {
 			ArrayList<GroupMetadata> groupsmd = null;

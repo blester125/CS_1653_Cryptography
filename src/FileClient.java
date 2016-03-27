@@ -139,7 +139,6 @@ public class FileClient extends Client implements FileClientInterface {
 					
 				//receive, extract, and decrypt inner envelope
 				env = Envelope.extractInner((Envelope)input.readObject(), secretKey);
-				Cipher AESCipherDecrypt = null ;
 				IvParameterSpec iv = null;
 				Key key = null;
 				// process meta-data for file and initialize decryption
@@ -165,8 +164,6 @@ public class FileClient extends Client implements FileClientInterface {
 						iv = (IvParameterSpec)env.getObjContents().get(4);
 						try {
 							key = groupMetadata.calculateKey(keyIndex, keyVersion);
-							AESCipherDecrypt = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");
-							AESCipherDecrypt.init(Cipher.DECRYPT_MODE, key, iv);
 						} catch (Exception e) {
 							e.printStackTrace();
 							fos.close();
@@ -180,7 +177,7 @@ public class FileClient extends Client implements FileClientInterface {
 				while (env.getMessage().compareTo("CHUNK")==0) {
 					
 					try {
-						byte[] decryptedText = AESCipherDecrypt.doFinal((byte[])env.getObjContents().get(0));
+						byte[] decryptedText = Hasher.convertToByteArray(((SealedObject)env.getObjContents().get(0)));
 						fos.write(decryptedText, 0, (Integer)env.getObjContents().get(1));
 						System.out.printf(".");
 					} catch (Exception e) {
@@ -337,11 +334,8 @@ public class FileClient extends Client implements FileClientInterface {
 						fis.close();
 						return false;
 					}
-					// encrypt to byte[] with key and IV
-					Cipher AESCipherEncrypt = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");
-					AESCipherEncrypt.init(Cipher.ENCRYPT_MODE, key, iv);
-					byte[] encryptedText = AESCipherEncrypt.doFinal(buf);
-					message.addObject(encryptedText);
+					// encrypt with key and IV
+					message.addObject(CipherBox.encrypt(buf, key, iv));
 					message.addObject(new Integer(n));
 					
 					output.writeObject(Envelope.buildSuper(message, secretKey));
@@ -616,11 +610,16 @@ public class FileClient extends Client implements FileClientInterface {
 
 	public void generateFingerprints(){
 
-		cachedKeyFingerprint = javax.xml.bind.DatatypeConverter.printHexBinary(Hasher.hash(cachedPublicKey));
+		if(cachedPublicKey != null) {
+			cachedKeyFingerprint = javax.xml.bind.DatatypeConverter.printHexBinary(Hasher.hash(cachedPublicKey));
+		}
+		else {
+			cachedKeyFingerprint = null;
+		}
 		serverKeyFingerprint = javax.xml.bind.DatatypeConverter.printHexBinary(Hasher.hash(serverPublicKey));
 
 	}
-
+	/*
 	public int authenticateFileServerRSA(
 					String publicKeyPath, 
 					String privateKeyPath) {
@@ -632,6 +631,6 @@ public class FileClient extends Client implements FileClientInterface {
 			return -1;
 		}
 		return 0;
-	}
+	}*/
 }
 

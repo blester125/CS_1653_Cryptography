@@ -315,7 +315,8 @@ public class FileThread extends Thread
 
 									e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
 									while (e.getMessage().compareTo("CHUNK")==0) {
-										fos.write(((byte[])e.getObjContents().get(0)), 0, (Integer)e.getObjContents().get(1));
+										fos.write(Hasher.convertToByteArray(((SealedObject)e.getObjContents().get(0))), 
+												0, (Integer)e.getObjContents().get(1));
 										response = new Envelope("READY"); //Success
 										output.writeObject(Envelope.buildSuper(response, sessionKey));
 										System.out.println("SENT from UPLOADF - READYCHUNK: " + response);
