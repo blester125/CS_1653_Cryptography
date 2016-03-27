@@ -122,4 +122,8 @@ public class RSA {
 			return null;
 		}
 	}
+
+	public static String generateFingerprints(PublicKey key) {
+		return javax.xml.bind.DatatypeConverter.printHexBinary(Hasher.hash(key));
+	}
 }

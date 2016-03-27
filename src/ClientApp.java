@@ -350,6 +350,8 @@ public class ClientApp {
 					usernameField, 
 					ipField, 
 					portField, 
+					publicPathField,
+					privatePathField,
 					btnNewUser, 
 					tabbedPane, 
 					btnDeleteUser, 
@@ -774,7 +776,9 @@ public class ClientApp {
 	public void attemptRSALogin(
 					JTextField usernameField, 
 					JTextField ipField, 
-					JTextField portField, 
+					JTextField portField,
+					JTextField publicPathField,
+					JTextField privatePathField,
 					JButton btnNewUser, 
 					JTabbedPane tabbedPane, 
 					JButton btnDeleteUser, 
@@ -876,9 +880,9 @@ public class ClientApp {
 			return;
 		}
 		// Authenticate file server
-		if(!RunClient.fileC.authenticateServer()) {	
+		if(true/*RunClient.fileC.authenticateServer()*/) {	
 
-			RunClient.fileC.generateFingerprints();	
+			//RunClient.fileC.generateFingerprints();	
 
 			//Construct a dialogue box to capture user input and do so.
 			JPanel alertServerDialog = new JPanel();
@@ -907,7 +911,7 @@ public class ClientApp {
 
 			if(dialogue == 0){
 
-				RunClient.fileC.addServerToRegistry();
+				//RunClient.fileC.addServerToRegistry();
 			}
 			else {
 				JOptionPane.showMessageDialog(null, "Connection aborted. Please alert your system administrator of suspicious file servers.", "Connection Aborted", JOptionPane.OK_CANCEL_OPTION);

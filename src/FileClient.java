@@ -22,12 +22,13 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
 public class FileClient extends Client implements FileClientInterface {
-	private SecretKey secretKey;
+	private SecretKey sessionKey;
 	public PublicKey cachedPublicKey;
 	private String fileserverRegistry = "FileServerRegistry.bin";
 	public PublicKey serverPublicKey = null;
 	public String cachedKeyFingerprint;
 	public String serverKeyFingerprint;
+	public int sequenceNumber;
 	
 	public FileClient() {
 
@@ -61,7 +62,7 @@ public class FileClient extends Client implements FileClientInterface {
 		if (isConnected()) {
 			try {
 				Envelope message = new Envelope("DISCONNECT");
-				Envelope superE = Envelope.buildSuper(message, secretKey);
+				Envelope superE = Envelope.buildSuper(message, sessionKey);
 				output.writeObject(superE);
 				sock.close(); //close the socket
 			}
@@ -92,11 +93,11 @@ public class FileClient extends Client implements FileClientInterface {
 		try {
 
 			//build nested envelope, encrypt, and send
-			Envelope superEnv = Envelope.buildSuper(env, secretKey);
+			Envelope superEnv = Envelope.buildSuper(env, sessionKey);
 			output.writeObject(superEnv);
 
 			//receive, extract, and decrypt inner envelope
-			env = Envelope.extractInner((Envelope)input.readObject(), secretKey);
+			env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
 		   
 			if (env.getMessage().compareTo("OK")==0) {
 
@@ -134,11 +135,11 @@ public class FileClient extends Client implements FileClientInterface {
 			env.addObject(token);
 
 			//build nested envelope, encrypt, and send
-			Envelope superEnv = Envelope.buildSuper(env, secretKey);
+			Envelope superEnv = Envelope.buildSuper(env, sessionKey);
 			output.writeObject(superEnv);
 				
 			//receive, extract, and decrypt inner envelope
-			env = Envelope.extractInner((Envelope)input.readObject(), secretKey);
+			env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
 			Cipher AESCipherDecrypt = null ;
 			IvParameterSpec iv = null;
 			Key key = null;
@@ -189,8 +190,8 @@ public class FileClient extends Client implements FileClientInterface {
 				}
 
 				env = new Envelope("DOWNLOADF"); //Success
-				output.writeObject(Envelope.buildSuper(env, secretKey));
-				env = Envelope.extractInner((Envelope)input.readObject(), secretKey);									
+				output.writeObject(Envelope.buildSuper(env, sessionKey));
+				env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);									
 			}										
 			fos.close();
 						
@@ -198,7 +199,7 @@ public class FileClient extends Client implements FileClientInterface {
 				fos.close();
 								System.out.printf("\nTransfer successful file %s\n", sourceFile);
 								env = new Envelope("OK"); //Success
-								output.writeObject(Envelope.buildSuper(env, secretKey));
+								output.writeObject(Envelope.buildSuper(env, sessionKey));
 						}
 						else {
 								System.out.printf("Error reading file %s (%s)\n", sourceFile, env.getMessage());
@@ -234,9 +235,9 @@ public class FileClient extends Client implements FileClientInterface {
 			 //Tell the server to return the member list
 			 message = new Envelope("LFILES");
 			 message.addObject(token); //Add requester's token
-			 output.writeObject(Envelope.buildSuper(message, secretKey)); 
+			 output.writeObject(Envelope.buildSuper(message, sessionKey)); 
 			 
-			 e = Envelope.extractInner((Envelope)input.readObject(), secretKey);
+			 e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
 			 
 			 //If server indicates success, return the member list
 			 if(e.getMessage().equals("OK"))
@@ -263,9 +264,9 @@ public class FileClient extends Client implements FileClientInterface {
 			 message = new Envelope("LFILESG");
 			 message.addObject(groupName); // add groupname
 			 message.addObject(token); //Add requester's token
-			 output.writeObject(Envelope.buildSuper(message, secretKey)); 
+			 output.writeObject(Envelope.buildSuper(message, sessionKey)); 
 			 
-			 e = Envelope.extractInner((Envelope)input.readObject(), secretKey);
+			 e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
 			 
 			 //If server indicates success, return the member list
 			 if(e.getMessage().equals("OK"))
@@ -301,12 +302,12 @@ public class FileClient extends Client implements FileClientInterface {
 			 message.addObject(group);
 			 message.addObject(token); //Add requester's token
 			 message.addObject(groupMetadata);
-			 output.writeObject(Envelope.buildSuper(message, secretKey));
+			 output.writeObject(Envelope.buildSuper(message, sessionKey));
 			
 			 
 			 FileInputStream fis = new FileInputStream(sourceFile);
 			 
-			 env = Envelope.extractInner((Envelope)input.readObject(), secretKey);
+			 env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
 			 
 			 //If server indicates success, return the member list
 			 if(env.getMessage().equals("READY"))
@@ -348,10 +349,10 @@ public class FileClient extends Client implements FileClientInterface {
 					message.addObject(encryptedText);
 					message.addObject(new Integer(n));
 					
-					output.writeObject(Envelope.buildSuper(message, secretKey));
+					output.writeObject(Envelope.buildSuper(message, sessionKey));
 					
 					
-					env = Envelope.extractInner((Envelope)input.readObject(), secretKey);
+					env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
 					
 										
 			 }
@@ -364,9 +365,9 @@ public class FileClient extends Client implements FileClientInterface {
 				message.addObject(new Integer(keyIndex));
 				message.addObject(new Integer(keyVersion));
 				message.addObject(iv);
-				output.writeObject(Envelope.buildSuper(message, secretKey));
+				output.writeObject(Envelope.buildSuper(message, sessionKey));
 				
-				env = Envelope.extractInner((Envelope)input.readObject(), secretKey);
+				env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
 				if(env.getMessage().compareTo("OK")==0) {
 					System.out.printf("\nFile data upload successful\n");
 				}
@@ -397,126 +398,12 @@ public class FileClient extends Client implements FileClientInterface {
 		// send the user's public symmetric key value to the file server
 		// and establish a shared secret symmetric key upon receiving the file server's
 		// public value
-		establishSessionKey();
+		//establishSessionKey();
 		// authenticates the server by checking the server's public key
 		// against the cached registry of hostname:ip to public keys
-		authenticateServer();
+		//authenticateServer();
 		
 		return false;
-	}
-
-	/**
-	  * using the server's public key retrieved from establishSessionKey,
-	  * the client verifies that the file server's hostname:port match
-	  * the given public key for the file server the client has cached
-	  * @return	true if the public key is cached and matches the host:port
-	  * for the file server, false otherwise 
-	  */
-	public boolean authenticateServer() {
-		// check the client's file server registry for the hostname:ip
-		// pairing with the corresponding public key
-		ServerRegistry fsReg;
-
-		//attempt to load serverregistry from file
-		try{
-
-			File registryFile = new File(fileserverRegistry);
-			FileInputStream fis = new FileInputStream(fileserverRegistry);
-			ObjectInputStream ois = new ObjectInputStream(fis);
-
-			fsReg = (ServerRegistry)ois.readObject();
-
-			ois.close();
-			fis.close();
-
-		}
-		catch (FileNotFoundException e){
-			//If file not found, make new fileserverRegistry file
-			try {
-				FileOutputStream fout = new FileOutputStream(fileserverRegistry);
-				ObjectOutputStream oout = new ObjectOutputStream(fout);
-
-				fsReg = new ServerRegistry();
-
-				oout.writeObject(fsReg);
-
-				oout.close();
-				fout.close();
-			} 
-			catch (Exception e1) {
-
-				e.printStackTrace();
-				return false;
-			}
-
-		}
-		catch (Exception e){
-
-			e.printStackTrace();
-			return false;
-		}
-
-		//retrieve cached EXPECTED public key
-		cachedPublicKey = fsReg.getServerPublicKey(new ServerInfo(this.sock.getInetAddress().getHostName(), Integer.toString(this.sock.getPort())));
-
-		//compare with current key
-		if(cachedPublicKey != null && cachedPublicKey.equals(serverPublicKey)){
-			return true;
-		}
-
-		
-		return false;
-	}
-	
-	/**
-	 * add the server to the user's registry cache
-	 * @return success/failure
-	 */
-	public boolean addServerToRegistry() {
-		// retrieve the registry
-
-		ServerRegistry fsReg;
-
-		//attempt to load serverregistry from file
-		try{
-
-			File registryFile = new File(fileserverRegistry);
-			FileInputStream fis = new FileInputStream(fileserverRegistry);
-			ObjectInputStream ois = new ObjectInputStream(fis);
-
-			fsReg = (ServerRegistry)ois.readObject();
-
-			ois.close();
-			fis.close();
-
-		}
-		catch (Exception e){
-
-			e.printStackTrace();
-			return false;
-		}
-
-
-		//Add server to registry
-		fsReg.insertServerInfo(new ServerInfo(this.sock.getInetAddress().getHostName(), Integer.toString(this.sock.getPort())), this.serverPublicKey);
-
-		//Write out to file
-		try {
-			FileOutputStream fout = new FileOutputStream(fileserverRegistry);
-			ObjectOutputStream oout = new ObjectOutputStream(fout);
-
-			oout.writeObject(fsReg);
-
-			oout.close();
-			fout.close();
-		} 
-		catch (Exception e1) {
-
-				e1.printStackTrace();
-				return false;
-		}
-
-		return true;
 	}
 
 	/**
@@ -553,12 +440,12 @@ public class FileClient extends Client implements FileClientInterface {
 				PublicKey fileServerPK = (PublicKey)response.getObjContents().get(0);
 
 				// generate the shared secret key
-				secretKey = DiffieHellman.generateSecretKey(fileServerPK, keyAgreement);
+				sessionKey = DiffieHellman.generateSecretKey(fileServerPK, keyAgreement);
 
 				// get the server public key
 				serverPublicKey = (PublicKey)response.getObjContents().get(1);
 	
-				return secretKey;
+				return sessionKey;
 			}
 			
 			return null;
@@ -592,9 +479,9 @@ public class FileClient extends Client implements FileClientInterface {
 		 	System.out.println("challenge env:" + env);
 
 		 	//Send the challenge (encrypted with the session key) to server
-		 	output.writeObject(Envelope.buildSuper(env, secretKey));
+		 	output.writeObject(Envelope.buildSuper(env, sessionKey));
 
-		 	response = Envelope.extractInner((Envelope)input.readObject(), secretKey);
+		 	response = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
 
 		 	if(response.getMessage().equals("CH_RESPONSE")){
 
@@ -603,7 +490,7 @@ public class FileClient extends Client implements FileClientInterface {
 		 		if(challengeAnswer.equals(r1)){
 
 		 			Envelope success = new Envelope("AUTH_SUCCESS");
-		 			output.writeObject(Envelope.buildSuper(success, secretKey));
+		 			output.writeObject(Envelope.buildSuper(success, sessionKey));
 
 		 			return true;
 		 		}
@@ -618,24 +505,221 @@ public class FileClient extends Client implements FileClientInterface {
 
 	 }
 
-	public void generateFingerprints(){
-
-		cachedKeyFingerprint = javax.xml.bind.DatatypeConverter.printHexBinary(Hasher.hash(cachedPublicKey));
-		serverKeyFingerprint = javax.xml.bind.DatatypeConverter.printHexBinary(Hasher.hash(serverPublicKey));
-
-	}
-
 	public int authenticateFileServerRSA(
 					String publicKeyPath, 
 					String privateKeyPath) {
 		KeyPair keyPair = RSA.loadRSA(publicKeyPath, privateKeyPath);
 		PublicKey fsPublicKey = requestFSPublicKey();
-		verifyFSKey(fsPublicKey);
-		sessionKey = establishSession(keyPair, fsPublicKey);
-		if (sessionKey == null) {
+		ServerInfo serverInfo = new ServerInfo(sock);
+		if (!lookUpFSKey(serverInfo, fsPublicKey)) {
+			// Key lookup failed
 			return -1;
 		}
+		sessionKey = signedDiffieHellman(keyPair, fsPublicKey);
+		if (sessionKey == null) {
+			// Signed DiffieHellman failed
+			return -2;
+		}
 		return 0;
+	}
+
+	public PublicKey requestFSPublicKey() {
+		Envelope response = null;
+		try {
+			Envelope env = new Envelope("REQUEST");
+			System.out.println("REQUESTING FILESERVER PUBLICKEY");
+			System.out.println(env);
+			output.writeObject(env);
+			response = (Envelope)input.readObject();
+			System.out.println("RECEIVED RESPONSE");
+			System.out.println(response);
+			if (response != null) {
+				if (response.getMessage().equals("REQ_RESPONSE")) {
+					if (response.getObjContents().size() == 1) {
+						if (response.getObjContents().get(0) != null) {
+							return (PublicKey)response.getObjContents().get(0);
+						}
+					}
+				}
+			}
+			return null;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	/**
+	  * using the server's public key retrieved from establishSessionKey,
+	  * the client verifies that the file server's hostname:port match
+	  * the given public key for the file server the client has cached
+	  * @return	true if the public key is cached and matches the host:port
+	  * for the file server, false otherwise 
+	  */
+	public boolean lookUpFSKey(ServerInfo serverInfo, PublicKey serverKey) {
+		if (serverKey == null) {
+			return false;
+		}
+		// check the client's file server registry for the hostname:ip
+		// pairing with the corresponding public key
+		ServerRegistry fsReg;
+		//attempt to load serverregistry from file
+		try{
+			File registryFile = new File(fileserverRegistry);
+			FileInputStream fis = new FileInputStream(fileserverRegistry);
+			ObjectInputStream ois = new ObjectInputStream(fis);
+			fsReg = (ServerRegistry)ois.readObject();
+			ois.close();
+			fis.close();
+		}
+		catch (FileNotFoundException e){
+			//If file not found, make new fileserverRegistry file
+			try {
+				FileOutputStream fout = new FileOutputStream(fileserverRegistry);
+				ObjectOutputStream oout = new ObjectOutputStream(fout);
+				fsReg = new ServerRegistry();
+				oout.writeObject(fsReg);
+				oout.close();
+				fout.close();
+			} 
+			catch (Exception e1) {
+				e.printStackTrace();
+				return false;
+			}
+		}
+		catch (Exception e){
+			e.printStackTrace();
+			return false;
+		}
+		//retrieve cached EXPECTED public key
+		cachedPublicKey = fsReg.getServerPublicKey(serverInfo);
+		//compare with current key
+		if(cachedPublicKey != null && cachedPublicKey.equals(serverKey)){
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * add the server to the user's registry cache
+	 * @return success/failure
+	 */
+	public boolean addServerToRegistry(ServerInfo serverInfo, PublicKey serverKey) {
+		// retrieve the registry
+		ServerRegistry fsReg;
+		//attempt to load serverregistry from file
+		try{
+			File registryFile = new File(fileserverRegistry);
+			FileInputStream fis = new FileInputStream(fileserverRegistry);
+			ObjectInputStream ois = new ObjectInputStream(fis);
+			fsReg = (ServerRegistry)ois.readObject();
+			ois.close();
+			fis.close();
+		}
+		catch (Exception e){
+			e.printStackTrace();
+			return false;
+		}
+		//Add server to registry
+		fsReg.insertServerInfo(serverInfo, serverKey);
+		//Write out to file
+		try {
+			FileOutputStream fout = new FileOutputStream(fileserverRegistry);
+			ObjectOutputStream oout = new ObjectOutputStream(fout);
+			oout.writeObject(fsReg);
+			oout.close();
+			fout.close();
+		} 
+		catch (Exception e1) {
+				e1.printStackTrace();
+				return false;
+		}
+		return true;
+	}
+
+	public SecretKey signedDiffieHellman(KeyPair keyPair, PublicKey serverKey) {
+		KeyPair DHKeyPair = null;
+		KeyAgreement keyAgreement = null;
+		try {
+			DHKeyPair = DiffieHellman.genKeyPair();
+			keyAgreement = DiffieHellman.genKeyAgreement(DHKeyPair);
+			// Send message 1 Client public key
+			System.out.println("File server connection: SENDING FIRST MESSAGE");
+			Envelope publicKeyEnv = new Envelope("SIGNED-DIFFIE-HELLMAN");
+			SealedObject encryptedKey = CipherBox.encrypt(keyPair.getPublic(), serverKey);
+			publicKeyEnv.addObject(encryptedKey);
+			System.out.println(publicKeyEnv);
+			output.writeObject(publicKeyEnv);
+			// Recv the second message
+			Envelope response = (Envelope)input.readObject();
+			System.out.println("RECVD SECOND MESSAGE");
+			System.out.println(response);
+			if (response != null) {
+				if (response.getMessage().equals("SIGNED-DIFFIE-HELLMAN-1")) {
+					if (response.getObjContents().size() == 2) {
+						if (response.getObjContents().get(0) != null) {
+							if (response.getObjContents().get(1) != null) {
+								SealedObject recvSealedHash = (SealedObject)response.getObjContents().get(0);
+								byte[] recvHash = (byte[])CipherBox.decrypt(recvSealedHash, serverKey);
+								PublicKey DHServerKey = (PublicKey)response.getObjContents().get(1);
+								if (Hasher.verifyHash(recvHash, DHServerKey)) {
+									System.out.println("MATCHING HASHES");
+									// Generate secretKey
+									SecretKey sessionKey = DiffieHellman.generateSecretKey(DHServerKey, keyAgreement);
+									// Make and send Message 3
+									Envelope message = new Envelope("SIGNED-DIFFIE-HELLMAN-2");
+									byte[] hashedPublicKey = Hasher.hash(DHKeyPair.getPublic());
+									SealedObject sealedKey = CipherBox.encrypt(hashedPublicKey, keyPair.getPrivate());
+									message.addObject(sealedKey);
+									message.addObject(DHKeyPair.getPublic());
+									System.out.println("SENDING MESSAGE 3");
+									System.out.println(message);
+									output.writeObject(message);
+									// Recv Message 4
+									response = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+									System.out.println("RECVD 4th Message");
+									System.out.println(response);
+									if (response != null) {
+										if (response.getMessage().equals("SUCCESS")) {
+											if (response.getObjContents().size() == 2) {
+												if (response.getObjContents().get(0) != null) {
+													if (response.getObjContents(). get(1) != null) {
+														recvHash = (byte[])response.getObjContents().get(0);
+														sequenceNumber = (Integer)response.getObjContents().get(1).intValue();
+														String keyPlusServer = CipherBox.getKeyAsString(sessionKey);
+														keyPlusServer = keyPlusServer + "fileserver";
+														System.out.println(keyPlusServer);
+														if (Hasher.verifyHash(recvHash, keyPlusServer)) {
+															// Send Message 5
+															Envelope innerResponse = new Envelope("SUCCESS");
+															String keyPlusName = CipherBox.getKeyAsString(sessionKey);
+															keyPlusName = keyPlusName + "client";
+															byte[] hashSuccess = Hasher.hash(keyPlusName);
+															innerResponse.addObject(hashSuccess);
+															sequenceNumber++;
+															innerResponse.addObject(sequenceNumber);
+															System.out.println("SENDING MESSAGE 5");
+															System.out.println(innerResponse);
+															response = Envelope.buildSuper(innerResponse, sessionKey);
+															System.out.println("SECURE AND AUTH's CONNECTION ESTABLISHED WITH FILESERVER");
+															return sessionKey;
+														}  
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			return null;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 }
 

@@ -1,4 +1,5 @@
 import java.io.Serializable;
+import java.net.Socket;
 
 
 public class ServerInfo implements Serializable {
@@ -12,6 +13,11 @@ public class ServerInfo implements Serializable {
 		this.port = port;
 	}
 	
+	public ServerInfo(Socket sock) {
+		this.hostname = sock.getInetAddress().getHostName();
+		this.port = Integer.toString(sock.getPort());
+	}
+
 	public String getHostname() {
 		return this.hostname;
 	}
