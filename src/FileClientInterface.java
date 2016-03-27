@@ -57,10 +57,12 @@ public interface FileClientInterface
      * @return true on success, false on failure
      *
      */
-    public boolean upload(final String sourceFile, final String destFile, final String group, final UserToken token,
-    		GroupMetadata groupMetadata);
-
-
+    public boolean upload(
+                        final String sourceFile, 
+                        final String destFile, 
+                        final String group, 
+                        final UserToken token, 
+                        final GroupMetadata groupMetadata);
     /**
      * Downloads a file from the server.  The user must be a member of
      * the group with which this file is shared.
@@ -74,9 +76,12 @@ public interface FileClientInterface
      * @return true on success, false on failure
      *
      */
-    public boolean download(final String sourceFile, final String destFile, final String group, final UserToken token,
-    		GroupMetadata groupMetadata);
-
+    public boolean download(
+                        String sourceFile, 
+                        String destFile, 
+                        String group, 
+                        UserToken token, 
+                        GroupMetadata groupMetadata);
 
     /**
      * Deletes a file from the server.  The user must be a member of

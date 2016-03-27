@@ -230,7 +230,7 @@ operations it can with their newfound permissions even after the stolen token ha
 "expired". As we need to ensure that tokens cannot be used outside their destination, 
 then the solution is to add the intended destination of the token to the token 
 itself as an additional section. In this case, the destination will be the 
-"hostname:port" string of the intended file or group server (with which the client is 
+public key string of the intended file or group server (with which the client is 
 already connected and authenticated with) that the user is attempting to perform 
 an operation with. The client will send this information along with their username 
 to the group server when they request a token, which will return to them a token 

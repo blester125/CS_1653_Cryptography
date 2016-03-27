@@ -8,6 +8,11 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
 import java.security.Key;
+import java.security.PublicKey;
+import java.security.KeyPair;
+import java.security.*;
+
+import java.io.*;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -25,11 +30,11 @@ public class Hasher {
 		}
 	}
 
-	public static byte[] generateHMAC(Key k, Object obj) {
+	public static byte[] generateHMAC(Key k, byte[] obj) {
 		try {		
 			Mac mac = Mac.getInstance("HmacSHA256", "BC");
 			mac.init(k);
-			byte[] raw = mac.doFinal(obj.toString().getBytes("UTF-8"));
+			byte[] raw = mac.doFinal(obj);
 			return raw;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -37,27 +42,34 @@ public class Hasher {
 		}	
 	}
 
-	public static boolean verifiyHash(byte[] revHash, Object obj) {
+	public static boolean verifyHash(byte[] recvHash, Object obj) {
 		byte[] madeHash = hash(obj);
-		return MessageDigest.isEqual(revHash, madeHash);
+		return MessageDigest.isEqual(recvHash, madeHash);
 	}
 
-	public static boolean verifyHMAC(byte[] revHMAC, Key k, Object obj) {
-		byte[] madeHMAC = generateHMAC(k, obj);
-		return MessageDigest.isEqual(revHMAC, madeHMAC);
+	public static boolean verifyHMAC(byte[] recvHMAC, byte[] madeHMAC) {
+		return MessageDigest.isEqual(recvHMAC, madeHMAC);
+	}
+
+	public static byte[] convertToByteArray(Object object) {
+		try 
+			(ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			ObjectOutput out = new ObjectOutputStream(bos)) 
+		{
+			out.writeObject(object);
+			return bos.toByteArray();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 
 	public static void main(String args[]) throws Exception {
 		Security.addProvider(new BouncyCastleProvider());
-		Envelope test = new Envelope("Test");
-		String testString = "TEST STRING";
-		test.addObject(testString);
-		Envelope test2 = new Envelope("Test");
-		String testString2 = "TEST STRING";
-		test2.addObject(testString2);
-		String hash1 = new String(hash(test));
-		String hash2 = new String(hash(test2));
-		System.out.println(hash1 + "\n\n");
-		System.out.println(hash2);
+		KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA", "BC");
+		keyGen.initialize(2048);
+		KeyPair keyPair = keyGen.generateKeyPair();
+		System.out.println(keyPair.getPublic().toString());
+		System.out.println(keyPair.getPublic().getEncoded());
 	}
 }

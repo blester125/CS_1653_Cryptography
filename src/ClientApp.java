@@ -142,6 +142,7 @@ public class ClientApp {
 		gbc_publicPathField.gridx = 2;
 		gbc_publicPathField.gridy = 2;
 		homePage.add(publicPathField, gbc_publicPathField);
+		publicPathField.setText("adminpublic.key");
 
 		//Private path text field
 		privatePathField = new JTextField();
@@ -151,7 +152,8 @@ public class ClientApp {
 		gbc_privateFilePath.gridx = 3;
 		gbc_privateFilePath.gridy = 2;
 		homePage.add(privatePathField, gbc_privateFilePath);
-		
+		privatePathField.setText("adminprivate.key");
+
 		//New User button
 		final JButton btnNewUser = new JButton("New User");
 		GridBagConstraints gbc_btnNewUser = new GridBagConstraints();
@@ -797,7 +799,7 @@ public class ClientApp {
 			// Establish secure connection with Diffie-Hellman Protocol
 			try {
 				int result = RunClient.groupC.authenticateGroupServerRSA(username, publicPath, privatePath);
-				if (result == -2) {
+				/*if (result == -2) {
 					// Error sending response
 					JOptionPane.showMessageDialog(
 									null, 
@@ -806,7 +808,8 @@ public class ClientApp {
 									JOptionPane.OK_CANCEL_OPTION);
 					return;
 				} 
-				else if (result == -1) {
+				else*/ 
+				if (result == -1) {
 					// Error getting session key
 					JOptionPane.showMessageDialog(
 									null, 

@@ -614,11 +614,24 @@ public class FileClient extends Client implements FileClientInterface {
 
 	 }
 
-	 public void generateFingerprints(){
+	public void generateFingerprints(){
 
-	 	cachedKeyFingerprint = javax.xml.bind.DatatypeConverter.printHexBinary(Hasher.hash(cachedPublicKey));
-	 	serverKeyFingerprint = javax.xml.bind.DatatypeConverter.printHexBinary(Hasher.hash(serverPublicKey));
+		cachedKeyFingerprint = javax.xml.bind.DatatypeConverter.printHexBinary(Hasher.hash(cachedPublicKey));
+		serverKeyFingerprint = javax.xml.bind.DatatypeConverter.printHexBinary(Hasher.hash(serverPublicKey));
 
-	 }
+	}
+
+	public int authenticateFileServerRSA(
+					String publicKeyPath, 
+					String privateKeyPath) {
+		KeyPair keyPair = RSA.loadRSA(publicKeyPath, privateKeyPath);
+		PublicKey fsPublicKey = requestFSPublicKey();
+		verifyFSKey(fsPublicKey);
+		sessionKey = establishSession(keyPair, fsPublicKey);
+		if (sessionKey == null) {
+			return -1;
+		}
+		return 0;
+	}
 }
 
