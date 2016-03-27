@@ -328,12 +328,13 @@ public class GroupThread extends Thread
 							UserToken yourToken = (UserToken)message.getObjContents().get(0);
 
 							//check token to ensure expected and actual public keys match
-							if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
-								innerResponse = new Envelope("FAIL");
-							}
+							//if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
+							//	innerResponse = new Envelope("FAIL");
+							//}
 							
 							ArrayList<GroupMetadata> gMetaData = retrieveGroupsMetadata(yourToken);
 							if(gMetaData != null) {
+								innerResponse = new Envelope("OK");
 								innerResponse.addObject(gMetaData);
 							}
 						}

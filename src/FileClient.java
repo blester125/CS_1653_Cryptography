@@ -161,7 +161,7 @@ public class FileClient extends Client implements FileClientInterface {
 					else {
 						int keyIndex = (Integer)env.getObjContents().get(2);
 						int keyVersion = (Integer)env.getObjContents().get(3);
-						iv = (IvParameterSpec)env.getObjContents().get(4);
+						iv = new IvParameterSpec((byte[])env.getObjContents().get(4));
 						try {
 							key = groupMetadata.calculateKey(keyIndex, keyVersion);
 						} catch (Exception e) {
@@ -353,7 +353,7 @@ public class FileClient extends Client implements FileClientInterface {
 				// send the key index, key version, and IV used to encrypt the file
 				message.addObject(new Integer(keyIndex));
 				message.addObject(new Integer(keyVersion));
-				message.addObject(iv);
+				message.addObject(iv.getIV());
 				output.writeObject(Envelope.buildSuper(message, secretKey));
 				
 				env = Envelope.extractInner((Envelope)input.readObject(), secretKey);

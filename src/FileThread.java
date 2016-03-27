@@ -338,7 +338,7 @@ public class FileThread extends Thread
 											else {
 												int keyIndex = ((Integer)e.getObjContents().get(0)).intValue();
 												int keyVersion = ((Integer)e.getObjContents().get(1)).intValue();
-												IvParameterSpec iv = (IvParameterSpec)e.getObjContents().get(2);
+												byte[] iv = (byte[])e.getObjContents().get(2);
 												System.out.printf("Transfer successful file %s\n", remotePath);
 												FileServer.fileList.addFile(yourToken.getSubject(), group, 
 														remotePath, keyIndex, keyVersion, iv);
@@ -429,7 +429,7 @@ public class FileThread extends Thread
 										if(!sentMetadata) {
 											response.addObject(new Integer(sf.getKeyIndex()));
 											response.addObject(new Integer(sf.getKeyVersion()));
-											response.addObject(sf.getIvParameterSpec());
+											response.addObject(sf.getIv());
 											sentMetadata = true;
 										}
 
@@ -554,9 +554,9 @@ public class FileThread extends Thread
 		}
 
 		//check token to ensure expected and actual public keys match
-		if (KeyBox.compareKey(token.getPublicKey(), rsaPair.getPublic())) {
-			return false;
-		}
+		//if (KeyBox.compareKey(token.getPublicKey(), rsaPair.getPublic())) {
+		//	return false;
+		//}
 
 		//get group server public key
 		serverPublicKey = RSA.loadServerKey(groupServerPath);
