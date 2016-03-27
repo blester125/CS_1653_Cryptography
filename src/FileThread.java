@@ -426,7 +426,7 @@ public class FileThread extends Thread
 										// send meta-data along with the first chunk of the file
 										if(!sentMetadata) {
 											response.addObject(new Integer(sf.getKeyIndex()));
-											response.addObject(new Integer(sf.getKeyVersion());
+											response.addObject(new Integer(sf.getKeyVersion()));
 											response.addObject(sf.getIvParameterSpec());
 											sentMetadata = true;
 										}
@@ -438,10 +438,8 @@ public class FileThread extends Thread
 									}
 									while (fis.available()>0);
 
-									//If server indicates success, return the member list
 									if(e != null && e.getMessage().compareTo("DOWNLOADF")==0 && isSecureConnection  && isAuthenticated)
 									{
-
 										response = new Envelope("EOF");
 										output.writeObject(Envelope.buildSuper(response, sessionKey));
 										System.out.println("SENT from DOWNLOADF - EOF: " + response);
@@ -456,7 +454,6 @@ public class FileThread extends Thread
 										}
 									}
 									else {
-
 										System.out.printf("Upload failed: %s\n", e.getMessage());
 										sendFail(response, output);
 									}

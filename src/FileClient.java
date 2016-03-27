@@ -126,104 +126,100 @@ public class FileClient extends Client implements FileClientInterface {
 		File file = new File(destFile);
     	try {		
 			if (!file.exists()) {
-			file.createNewFile();
-			FileOutputStream fos = new FileOutputStream(file);
-				    
-			Envelope env = new Envelope("DOWNLOADF"); //Success
-			env.addObject(sourceFile);
-			env.addObject(token);
-
-			//build nested envelope, encrypt, and send
-			Envelope superEnv = Envelope.buildSuper(env, secretKey);
-			output.writeObject(superEnv);
-				
-			//receive, extract, and decrypt inner envelope
-			env = Envelope.extractInner((Envelope)input.readObject(), secretKey);
-			Cipher AESCipherDecrypt = null ;
-			IvParameterSpec iv = null;
-			Key key = null;
-			if(env.getObjContents().size() == 5) {
-				if(env.getObjContents().get(0) == null) {
-					System.err.println("Error: null text");
-				}
-				else if(env.getObjContents().get(1) == null) {
-					System.err.println("Error: null length");
-				}
-				else if(env.getObjContents().get(2) == null) {
-					System.err.println("Error: null key index");
-				}
-				else if(env.getObjContents().get(3) == null) {
-					System.err.println("Error: null key version");
-				}
-				else if(env.getObjContents().get(4) == null) {
-					System.err.println("Error: null IV");
+				file.createNewFile();
+				FileOutputStream fos = new FileOutputStream(file);
+					    
+				Envelope env = new Envelope("DOWNLOADF"); //Success
+				env.addObject(sourceFile);
+				env.addObject(token);
+	
+				//build nested envelope, encrypt, and send
+				Envelope superEnv = Envelope.buildSuper(env, secretKey);
+				output.writeObject(superEnv);
+					
+				//receive, extract, and decrypt inner envelope
+				env = Envelope.extractInner((Envelope)input.readObject(), secretKey);
+				Cipher AESCipherDecrypt = null ;
+				IvParameterSpec iv = null;
+				Key key = null;
+				// process meta-data for file and initialize decryption
+				if(env.getObjContents().size() == 5) {
+					if(env.getObjContents().get(0) == null) {
+						System.err.println("Error: null text");
+					}
+					else if(env.getObjContents().get(1) == null) {
+						System.err.println("Error: null length");
+					}
+					else if(env.getObjContents().get(2) == null) {
+						System.err.println("Error: null key index");
+					}
+					else if(env.getObjContents().get(3) == null) {
+						System.err.println("Error: null key version");
+					}
+					else if(env.getObjContents().get(4) == null) {
+						System.err.println("Error: null IV");
+					}
+					else {
+						int keyIndex = (Integer)env.getObjContents().get(2);
+						int keyVersion = (Integer)env.getObjContents().get(3);
+						iv = (IvParameterSpec)env.getObjContents().get(4);
+						try {
+							key = groupMetadata.calculateKey(keyIndex, keyVersion);
+							AESCipherDecrypt = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");
+							AESCipherDecrypt.init(Cipher.DECRYPT_MODE, key, iv);
+						} catch (Exception e) {
+							e.printStackTrace();
+							fos.close();
+							return false;
+						}
+					}
 				}
 				else {
-					int keyIndex = (Integer)env.getObjContents().get(2);
-					int keyVersion = (Integer)env.getObjContents().get(3);
-					iv = (IvParameterSpec)env.getObjContents().get(4);
+					System.err.println("Error: invalid number of object contents");
+				}
+				while (env.getMessage().compareTo("CHUNK")==0) {
+					
 					try {
-						key = groupMetadata.calculateKey(keyIndex, keyVersion);
-						AESCipherDecrypt = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");
-						AESCipherDecrypt.init(Cipher.DECRYPT_MODE, key, iv);
+						byte[] decryptedText = AESCipherDecrypt.doFinal((byte[])env.getObjContents().get(0));
+						fos.write(decryptedText, 0, (Integer)env.getObjContents().get(1));
+						System.out.printf(".");
 					} catch (Exception e) {
 						e.printStackTrace();
 						fos.close();
 						return false;
 					}
-				}
-			}
-			else {
-				System.err.println("Error: invalid number of object contents");
-			}
-			while (env.getMessage().compareTo("CHUNK")==0) {
-				
-				try {
-					byte[] decryptedText = AESCipherDecrypt.doFinal((byte[])env.getObjContents().get(0));
-					fos.write(decryptedText, 0, (Integer)env.getObjContents().get(1));
-					System.out.printf(".");
-				} catch (Exception e) {
-					e.printStackTrace();
-					fos.close();
-					return false;
-				}
-
-				env = new Envelope("DOWNLOADF"); //Success
-				output.writeObject(Envelope.buildSuper(env, secretKey));
-				env = Envelope.extractInner((Envelope)input.readObject(), secretKey);									
-			}										
-			fos.close();
-						
-		    if(env.getMessage().compareTo("EOF")==0) {
+	
+					env = new Envelope("DOWNLOADF"); //Success
+					output.writeObject(Envelope.buildSuper(env, secretKey));
+					env = Envelope.extractInner((Envelope)input.readObject(), secretKey);									
+				}										
 				fos.close();
-								System.out.printf("\nTransfer successful file %s\n", sourceFile);
-								env = new Envelope("OK"); //Success
-								output.writeObject(Envelope.buildSuper(env, secretKey));
-						}
-						else {
-								System.out.printf("Error reading file %s (%s)\n", sourceFile, env.getMessage());
-								file.delete();
-								return false;								
-						}
-				    }    
-					 
-				    else {
-						System.out.printf("Error couldn't create file %s\n", destFile);
-						return false;
-				    }
-								
-			
-			    } catch (IOException e1) {
-			    	
-			    	System.out.printf("Error couldn't create file %s\n", destFile);
-			    	return false;
-			    
-					
+							
+			    if(env.getMessage().compareTo("EOF")==0) {
+					fos.close();
+					System.out.printf("\nTransfer successful file %s\n", sourceFile);
+					env = new Envelope("OK"); //Success
+					output.writeObject(Envelope.buildSuper(env, secretKey));
+			    }
+				else {
+						System.out.printf("Error reading file %s (%s)\n", sourceFile, env.getMessage());
+						file.delete();
+						return false;								
 				}
-			    catch (ClassNotFoundException e1) {
-					e1.printStackTrace();
-				}
-				 return true;
+		    }    
+		    else {
+				System.out.printf("Error couldn't create file %s\n", destFile);
+				return false;
+		    }
+	    } catch (IOException e1) {
+	    	
+	    	System.out.printf("Error couldn't create file %s\n", destFile);
+	    	return false;
+		}
+	    catch (ClassNotFoundException e1) {
+			e1.printStackTrace();
+		}
+    	return true;
 	}
 
 	@SuppressWarnings("unchecked")
