@@ -1,5 +1,6 @@
 /* FileClient provides all the client functionality regarding the file server */
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -9,16 +10,24 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.crypto.Cipher;
+import javax.crypto.CipherInputStream;
 import javax.crypto.CipherOutputStream;
 import javax.crypto.KeyAgreement;
+import javax.crypto.KeyGenerator;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SealedObject;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
@@ -146,7 +155,6 @@ public class FileClient extends Client implements FileClientInterface {
 				IvParameterSpec iv = null;
 				Key key = null;
 				Cipher AESCipherDecrypt = null;
-				ByteArrayOutputStream decryptedBuf = null;
 				// process meta-data for file and initialize decryption
 				if(env.getObjContents().size() == 5) {
 					if(env.getObjContents().get(0) == null) {
@@ -172,7 +180,6 @@ public class FileClient extends Client implements FileClientInterface {
 							key = groupMetadata.calculateKey(keyIndex, keyVersion);
 							AESCipherDecrypt = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");
 							AESCipherDecrypt.init(Cipher.DECRYPT_MODE, key, iv);
-							decryptedBuf = new ByteArrayOutputStream(4096);
 						} catch (Exception e) {
 							e.printStackTrace();
 							fos.close();
@@ -183,20 +190,22 @@ public class FileClient extends Client implements FileClientInterface {
 				else {
 					System.err.println("Error: invalid number of object contents");
 				}
-				
-			 	CipherOutputStream out = new CipherOutputStream(decryptedBuf, AESCipherDecrypt);
+				CipherInputStream in = null;
 				while (env.getMessage().compareTo("CHUNK")==0) {
 					
 					try {
 						// decrypt chunk and write to local file
 						byte[] encryptedText = (byte[])env.getObjContents().get(0);
-						out.write(encryptedText);
-						fos.write(decryptedBuf.toByteArray(), 0, (Integer)env.getObjContents().get(1));
+						byte[] decryptedText = new byte[encryptedText.length];
+						ByteArrayInputStream encryptedStream = new ByteArrayInputStream(encryptedText);
+					 	in = new CipherInputStream(encryptedStream, AESCipherDecrypt);
+						in.read(decryptedText);
+						fos.write(decryptedText, 0, (Integer)env.getObjContents().get(1));
 						System.out.printf(".");
 					} catch (Exception e) {
 						e.printStackTrace();
 						fos.close();
-						out.close();
+						in.close();
 						return false;
 					}
 	
@@ -208,7 +217,7 @@ public class FileClient extends Client implements FileClientInterface {
 							
 			    if(env.getMessage().compareTo("EOF")==0) {
 					fos.close();
-					out.close();
+					in.close();
 					System.out.printf("\nTransfer successful file %s\n", sourceFile);
 					env = new Envelope("OK"); //Success
 					output.writeObject(Envelope.buildSuper(env, secretKey));
@@ -216,7 +225,7 @@ public class FileClient extends Client implements FileClientInterface {
 				else {
 						System.out.printf("Error reading file %s (%s)\n", sourceFile, env.getMessage());
 						file.delete();
-						out.close();
+						in.close();
 						return false;								
 				}
 		    }    
@@ -654,6 +663,33 @@ public class FileClient extends Client implements FileClientInterface {
 			return -1;
 		}
 		return 0;
+	}*/
+	/*
+	public static void main(String[] args) throws InvalidKeyException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException, NoSuchPaddingException, IOException  {
+		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+		
+		// test encrypt/decrypt byte array
+		String text = "this is a test.";
+		byte[] bytes = new byte[4096]; 
+		
+		KeyGenerator kg = KeyGenerator.getInstance("AES");
+		kg.init(new SecureRandom());
+		SecretKey sk = kg.generateKey();
+		IvParameterSpec iv = CipherBox.generateRandomIV();
+	 	Cipher AESCipherEncrypt = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");
+		AESCipherEncrypt.init(Cipher.ENCRYPT_MODE, sk, iv);
+		ByteArrayOutputStream encryptedBuf = new ByteArrayOutputStream(4096);
+	 	CipherOutputStream out = new CipherOutputStream(encryptedBuf, AESCipherEncrypt);
+	 	out.write(text.getBytes());
+	 	out.close();
+	 	
+	 	byte[] b = new byte[4096];
+	 	Cipher AESCipherDecrypt = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");
+	 	AESCipherDecrypt.init(Cipher.DECRYPT_MODE, sk, iv);
+	 	ByteArrayInputStream in = new ByteArrayInputStream(encryptedBuf.toByteArray());
+	 	CipherInputStream incipher = new CipherInputStream(in, AESCipherDecrypt);
+	 	incipher.read(b);
+	 	System.out.println(new String(b));
 	}*/
 }
 
