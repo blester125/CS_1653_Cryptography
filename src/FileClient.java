@@ -16,10 +16,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.crypto.Cipher;
+import javax.crypto.CipherOutputStream;
 import javax.crypto.KeyAgreement;
 import javax.crypto.SealedObject;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
+
+import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
 
 public class FileClient extends Client implements FileClientInterface {
 	private SecretKey secretKey;
@@ -141,6 +144,8 @@ public class FileClient extends Client implements FileClientInterface {
 				env = Envelope.extractInner((Envelope)input.readObject(), secretKey);
 				IvParameterSpec iv = null;
 				Key key = null;
+				Cipher AESCipherDecrypt = null;
+				ByteOutputStream decryptedBuf = null;
 				// process meta-data for file and initialize decryption
 				if(env.getObjContents().size() == 5) {
 					if(env.getObjContents().get(0) == null) {
@@ -164,6 +169,9 @@ public class FileClient extends Client implements FileClientInterface {
 						iv = new IvParameterSpec((byte[])env.getObjContents().get(4));
 						try {
 							key = groupMetadata.calculateKey(keyIndex, keyVersion);
+							AESCipherDecrypt = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");
+							AESCipherDecrypt.init(Cipher.DECRYPT_MODE, key, iv);
+							decryptedBuf = new ByteOutputStream(4096);
 						} catch (Exception e) {
 							e.printStackTrace();
 							fos.close();
@@ -174,11 +182,15 @@ public class FileClient extends Client implements FileClientInterface {
 				else {
 					System.err.println("Error: invalid number of object contents");
 				}
+				
+			 	CipherOutputStream out = new CipherOutputStream(decryptedBuf, AESCipherDecrypt);
 				while (env.getMessage().compareTo("CHUNK")==0) {
 					
 					try {
-						byte[] decryptedText = Hasher.convertToByteArray(((SealedObject)env.getObjContents().get(0)));
-						fos.write(decryptedText, 0, (Integer)env.getObjContents().get(1));
+						// decrypt chunk and write to local file
+						byte[] encryptedText = (byte[])env.getObjContents().get(0);
+						out.write(encryptedText);
+						fos.write(decryptedBuf.getBytes(), 0, (Integer)env.getObjContents().get(1));
 						System.out.printf(".");
 					} catch (Exception e) {
 						e.printStackTrace();
@@ -318,11 +330,16 @@ public class FileClient extends Client implements FileClientInterface {
 		 	SecretKey key = groupMetadata.getCurrentKey();
 		 	int keyIndex = groupMetadata.getCurrentKeyIndex();
 		 	int keyVersion = groupMetadata.getCurrentKeyVer();
-			 do {
-				 byte[] buf = new byte[4096];
+		 	Cipher AESCipherEncrypt = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");
+			AESCipherEncrypt.init(Cipher.ENCRYPT_MODE, key, iv);
+			ByteOutputStream encryptedBuf = new ByteOutputStream(4096);
+		 	CipherOutputStream out = new CipherOutputStream(encryptedBuf, AESCipherEncrypt);
+		 	do {
+				 	byte[] buf = new byte[4096];
 				 	if (env.getMessage().compareTo("READY")!=0) {
 				 		System.out.printf("Server error: %s\n", env.getMessage());
 				 		fis.close();
+				 		out.close();
 				 		return false;
 				 	}
 				 	message = new Envelope("CHUNK");
@@ -332,14 +349,15 @@ public class FileClient extends Client implements FileClientInterface {
 					} else if (n < 0) {
 						System.out.println("Read error");
 						fis.close();
+				 		out.close();
 						return false;
 					}
+					out.write(buf);
 					// encrypt with key and IV
-					message.addObject(CipherBox.encrypt(buf, key, iv));
+					message.addObject(encryptedBuf.getBytes());
 					message.addObject(new Integer(n));
 					
 					output.writeObject(Envelope.buildSuper(message, secretKey));
-					
 					
 					env = Envelope.extractInner((Envelope)input.readObject(), secretKey);
 					
@@ -347,6 +365,7 @@ public class FileClient extends Client implements FileClientInterface {
 			 }
 			 while (fis.available()>0);		 
 			 fis.close();
+			 out.close();
 			 if(env.getMessage().compareTo("READY")==0)
 			 { 
 				message = new Envelope("EOF");

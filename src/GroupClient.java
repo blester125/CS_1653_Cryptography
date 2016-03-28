@@ -327,7 +327,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			superResponse = (Envelope)input.readObject();
 			response = Envelope.extractInner(superResponse, sessionKey);
 
-			//If server indicates success, return the member list
+			//If server indicates success, return the m)ember list
 			if (response.getMessage().equals("OK")) { 
 				return (List<String>)response.getObjContents().get(0); //This cast creates compiler warnings. Sorry.
 			}

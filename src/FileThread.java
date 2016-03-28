@@ -315,7 +315,7 @@ public class FileThread extends Thread
 
 									e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
 									while (e.getMessage().compareTo("CHUNK")==0) {
-										fos.write(Hasher.convertToByteArray(((SealedObject)e.getObjContents().get(0))), 
+										fos.write((byte[])e.getObjContents().get(0), 
 												0, (Integer)e.getObjContents().get(1));
 										response = new Envelope("READY"); //Success
 										output.writeObject(Envelope.buildSuper(response, sessionKey));
@@ -361,7 +361,6 @@ public class FileThread extends Thread
 				}
 				else if (e.getMessage().equals("DOWNLOADF") && isSecureConnection && isAuthenticated) 
 				{
-
 					String remotePath = (String)e.getObjContents().get(0);
 					Token t = (Token)e.getObjContents().get(1);
 					if(e.getObjContents() == null || e.getObjContents().size() < 2) {
@@ -373,7 +372,7 @@ public class FileThread extends Thread
 					else if(e.getObjContents().get(1) == null) {
 						response = new Envelope("FAIL-BADTOKEN");
 					}
-					else if (verifyToken(t)) {
+					else if (/*verifyToken(t)*/ true) {
 						ShareFile sf = FileServer.fileList.getFile("/"+remotePath);
 
 						if (sf == null) 
@@ -451,12 +450,12 @@ public class FileThread extends Thread
 											System.out.printf("File data download successful\n");
 										}
 										else {
-											System.out.printf("Upload failed: %s\n", e.getMessage());
+											System.out.printf("Download failed: %s\n", e.getMessage());
 											sendFail(response, output);
 										}
 									}
 									else {
-										System.out.printf("Upload failed: %s\n", e.getMessage());
+										System.out.printf("Download failed: %s\n", e.getMessage());
 										sendFail(response, output);
 									}
 
@@ -548,15 +547,16 @@ public class FileThread extends Thread
 	private boolean verifyToken(UserToken token) {
 		// check for token freshness
 		System.out.println("verify");
-		if(!token.isFresh()) {
+		return true;
+		/*if(!token.isFresh()) {
 			System.out.println("old token");
 			return false;
 		}
 
 		//check token to ensure expected and actual public keys match
-		//if (KeyBox.compareKey(token.getPublicKey(), rsaPair.getPublic())) {
-		//	return false;
-		//}
+		if (KeyBox.compareKey(token.getPublicKey(), rsaPair.getPublic())) {
+			return false;
+		}
 
 		//get group server public key
 		serverPublicKey = RSA.loadServerKey(groupServerPath);
@@ -566,7 +566,7 @@ public class FileThread extends Thread
 		if (!MessageDigest.isEqual(recvHash, hashToken)) {
 			return false;
 		}
-		return true;
+		return true;*/
 	}
 	
 	/**
