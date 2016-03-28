@@ -15,6 +15,7 @@ import java.security.MessageDigest;
 import java.security.PublicKey;
 import java.security.Security;
 import java.security.spec.X509EncodedKeySpec;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 
 import javax.crypto.KeyAgreement;
@@ -32,6 +33,9 @@ public class FileThread extends Thread
 	// Group Server Public Key
 	public PublicKey serverPublicKey = null;
 	private String groupServerPath = "groupserverpublic.key";
+	private String fileServerPublicPath = "fileserverpublic.key";
+	private String fileServerPrivatePath = "fileserverprivate.key";
+	private int sequenceNumber;
 
 	public FileThread (Socket _socket, KeyPair _rsaPair) {
 		socket = _socket;
@@ -101,7 +105,7 @@ public class FileThread extends Thread
 				System.out.println("Request received: " + e.getMessage());
 
 				// Client wishes to establish a shared symmetric secret key
-				if(e.getMessage().equals("SESSIONKEY") && e.getObjContents() != null && e.getObjContents().get(0) != null) {
+				/*if(e.getMessage().equals("SESSIONKEY") && e.getObjContents() != null && e.getObjContents().get(0) != null) {
 
 					// Retrieve Client's public key
 					PublicKey clientPK = (PublicKey)e.getObjContents().get(0);
@@ -127,6 +131,100 @@ public class FileThread extends Thread
 						response.addObject(response);
 						output.writeObject(response);
 					}
+				}*/
+				if (e.getMessage().equals("REQUEST")) {
+					rsaPair = RSA.loadRSA(fileServerPublicPath, fileServerPrivatePath);
+					response = new Envelope("REQ-RESPONSE");
+					response.addObject(rsaPair.getPublic());
+					System.out.println(response);
+					output.writeObject(response);
+				}
+				else if (e.getMessage().equals("SIGNED-DIFFIE-HELLMAN")) {
+					response = new Envelope("Fail");
+					System.out.println("RECV MESSAGE 1 USER PUBLIC KEY");
+					if (e.getObjContents().size() == 1) {
+						if (e.getObjContents().get(0) != null) {
+							SealedObject sealedKey;
+							//= (SealedObject)e.getObjContents().get(0);
+							//PublicKey userPublicKey = (PublicKey)CipherBox.decrypt(sealedKey, rsaPair.getPrivate());
+							PublicKey userPublicKey = (PublicKey)e.getObjContents().get(0);
+							// Send second Message
+							try {
+								response = new Envelope("SIGNED-DIFFIE-HELLMAN-2");
+								KeyPair keyPair = DiffieHellman.genKeyPair();
+								KeyAgreement keyAgreement = DiffieHellman.genKeyAgreement(keyPair); 
+								byte[] hashedPublicKey = Hasher.hash(keyPair.getPublic());
+								sealedKey = CipherBox.encrypt(hashedPublicKey, rsaPair.getPublic());
+								response.addObject(sealedKey);
+								response.addObject(keyPair.getPublic());
+								System.out.println("SENDING DH MESSAGE");
+								System.out.println(response);
+								output.writeObject(response);
+								// Recv thrid message
+								Envelope check = (Envelope)input.readObject();
+								System.out.println("RECVD 3rd message");
+								System.out.println(check);
+								if (check != null) {
+									if (check.getMessage().equals("SIGNED-DIFFIE-HELLMAN-3")) {
+										if (check.getObjContents().size() ==2) {
+											if (check.getObjContents().get(0) != null) {
+												if (check.getObjContents().get(1) != null) {
+													byte[] recvHash = (byte[])check.getObjContents().get(0);
+													PublicKey recvKey = (PublicKey)check.getObjContents().get(1);
+													byte[] madeHash = Hasher.hash(recvKey);
+													if (Hasher.verifyHash(recvHash, madeHash)) {
+														System.out.println("MATCHING HASHES");
+														sessionKey = DiffieHellman.generateSecretKey(recvKey, keyAgreement);
+														Envelope resp = new Envelope("SUCCESS");
+														String keyPlusWord = CipherBox.getKeyAsString(sessionKey);
+														keyPlusWord = keyPlusWord + "fileserver";
+														byte[] hashResponse = Hasher.hash(keyPlusWord);
+														resp.addObject(keyPlusWord);
+														SecureRandom rand = new SecureRandom();
+														int sequenceNumber = rand.nextInt(101);
+														resp.addObject(sequenceNumber);
+														System.out.println("SENDING 4th message");
+														System.out.println(resp);
+														Envelope message = Envelope.buildSuper(resp, sessionKey);
+														// Recv 5th message
+														check = (Envelope)input.readObject();
+														System.out.println("RECVD 5th message");
+														Envelope innerCheck = Envelope.extractInner(check, sessionKey);
+														if (innerCheck != null) {
+															if (innerCheck.getMessage().equals("SUCCESS")) {
+																if (innerCheck.getObjContents().size() == 2) {
+																	if (innerCheck.getObjContents().get(0) != null) {
+																		if (innerCheck.getObjContents().get(1) != null) {
+																			byte[] recvHashWord = (byte[])innerCheck.getObjContents().get(0);
+																			keyPlusWord = CipherBox.getKeyAsString(sessionKey);
+																			keyPlusWord = keyPlusWord + "client";
+																			if (Hasher.verifyHash(recvHashWord, keyPlusWord)) {
+																				Integer seq = (Integer)innerCheck.getObjContents().get(1);
+																				int seqNum = seq.intValue();
+																				if (seqNum == sequenceNumber + 1) {
+																					sequenceNumber += 2;
+																					isSecureConnection = true;
+																					isAuthenticated = true;
+																					System.out.println("SECURE AND AUTH'D CONNECTION");
+																				}
+																			}
+																		}
+																	}
+																}
+															}
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							} catch (Exception error) {
+								response = new Envelope("FAIL");
+								sendFail(response, output);
+							}
+						}
+					} 
 				}
 				// Client sends server the challenge, server will decrypt and respond
 				else if(e.getMessage().equals("CHALLENGE") && isSecureConnection){

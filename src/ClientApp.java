@@ -294,7 +294,12 @@ public class ClientApp {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
 
-					attemptFileConnection(fileIpField, filePortField, tabbedPane);
+					attemptFileConnection(
+						fileIpField, 
+						filePortField, 
+						publicPathField,
+						privatePathField,
+						tabbedPane);
 
 				}
 			}
@@ -863,9 +868,13 @@ public class ClientApp {
 	public void attemptFileConnection(
 					JTextField fileipField, 
 					JTextField filePortField, 
+					JTextField publicPathField,
+					JTextField privatePathField,
 					JTabbedPane tabbedPane) {
 		String ipAddr = fileIpField.getText();
 		int port = Integer.parseInt(filePortField.getText());
+		String publicPath = publicPathField.getText();
+		String privatePath = privatePathField.getText();
 		if(RunClient.fileC.isConnected()) {
 			RunClient.fileC.disconnect();
 		}
@@ -875,21 +884,24 @@ public class ClientApp {
 			return;
 		}
 		// Establish secret key with Diffie-Hellman Protocol
-		if(RunClient.fileC.establishSessionKey() == null) {
+		/*if(RunClient.fileC.establishSessionKey() == null) {
 			JOptionPane.showMessageDialog(null, "Connection failure. Could not establish a secure connection to FILE server at " + ipAddr + ":" + port + ".", "Connection Failure", JOptionPane.OK_CANCEL_OPTION);
 			return;
-		}
-		// Authenticate file server
-		if(true/*RunClient.fileC.authenticateServer()*/) {	
+		}*/
 
-			//RunClient.fileC.generateFingerprints();	
+		int result = RunClient.fileC.authenticateFileServerRSA(
+										publicPath, 
+										privatePath);
+		if (result == -1) {
+			String cached = RSA.generateFingerprints(RunClient.fileC.cachedPublicKey);
+			String server = RSA.generateFingerprints(RunClient.fileC.serverPublicKey);
 
 			//Construct a dialogue box to capture user input and do so.
 			JPanel alertServerDialog = new JPanel();
 			JLabel serverDialogLabel = new JLabel("Public Key Not Found!");
 			JLabel serverHostnamePort = new JLabel("Hostname:Port - " + RunClient.fileC.sock.getInetAddress().getHostName() + ":" + Integer.toString(RunClient.fileC.sock.getPort()));
-			JTextField serverExpectedKey = new JTextField("Expected Key: " + RunClient.fileC.cachedKeyFingerprint);
-			JTextField serverCurrentKey = new JTextField("Received Key: " + RunClient.fileC.serverKeyFingerprint);
+			JTextField serverExpectedKey = new JTextField("Expected Key: " + cached);
+			JTextField serverCurrentKey = new JTextField("Received Key: " + server);
 			JLabel serverWarning = new JLabel("Please verify the integrity of this server with your system administrator before connecting.");
 
 			alertServerDialog.setLayout(new BoxLayout(alertServerDialog, BoxLayout.Y_AXIS));
@@ -911,7 +923,7 @@ public class ClientApp {
 
 			if(dialogue == 0){
 
-				//RunClient.fileC.addServerToRegistry();
+				RunClient.fileC.addServerToRegistry(new ServerInfo(RunClient.fileC.sock), RunClient.fileC.serverPublicKey);
 			}
 			else {
 				JOptionPane.showMessageDialog(null, "Connection aborted. Please alert your system administrator of suspicious file servers.", "Connection Aborted", JOptionPane.OK_CANCEL_OPTION);
@@ -921,8 +933,8 @@ public class ClientApp {
 
 		}
 
-		if(!RunClient.fileC.issueChallenge()){
-			JOptionPane.showMessageDialog(null, "Server failed to correctly answer the challenge.", "Challenge Failure", JOptionPane.OK_CANCEL_OPTION);
+		if(RunClient.fileC.signedDiffieHellman(publicPath, privatePath) == null){
+			JOptionPane.showMessageDialog(null, "Server failed.", "Challenge Failure", JOptionPane.OK_CANCEL_OPTION);
 			RunClient.fileC.disconnect();
 			return;
 		}

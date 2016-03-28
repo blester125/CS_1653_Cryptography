@@ -509,13 +509,14 @@ public class FileClient extends Client implements FileClientInterface {
 					String publicKeyPath, 
 					String privateKeyPath) {
 		KeyPair keyPair = RSA.loadRSA(publicKeyPath, privateKeyPath);
-		PublicKey fsPublicKey = requestFSPublicKey();
+		serverPublicKey = requestFSPublicKey();
 		ServerInfo serverInfo = new ServerInfo(sock);
-		if (!lookUpFSKey(serverInfo, fsPublicKey)) {
+		if (!lookUpFSKey(serverInfo, serverPublicKey)) {
 			// Key lookup failed
+			System.out.println("Look Up Failed");
 			return -1;
 		}
-		sessionKey = signedDiffieHellman(keyPair, fsPublicKey);
+		sessionKey = signedDiffieHellman(keyPair, serverPublicKey);
 		if (sessionKey == null) {
 			// Signed DiffieHellman failed
 			return -2;
@@ -534,7 +535,7 @@ public class FileClient extends Client implements FileClientInterface {
 			System.out.println("RECEIVED RESPONSE");
 			System.out.println(response);
 			if (response != null) {
-				if (response.getMessage().equals("REQ_RESPONSE")) {
+				if (response.getMessage().equals("REQ-RESPONSE")) {
 					if (response.getObjContents().size() == 1) {
 						if (response.getObjContents().get(0) != null) {
 							return (PublicKey)response.getObjContents().get(0);
@@ -557,6 +558,7 @@ public class FileClient extends Client implements FileClientInterface {
 	  * for the file server, false otherwise 
 	  */
 	public boolean lookUpFSKey(ServerInfo serverInfo, PublicKey serverKey) {
+		System.out.println("Looking up key");
 		if (serverKey == null) {
 			return false;
 		}
@@ -637,6 +639,11 @@ public class FileClient extends Client implements FileClientInterface {
 		return true;
 	}
 
+	public SecretKey signedDiffieHellman(String a, String b) {
+		KeyPair keyPair = RSA.loadRSA(a, b);
+		return signedDiffieHellman(keyPair, serverPublicKey);
+	}
+
 	public SecretKey signedDiffieHellman(KeyPair keyPair, PublicKey serverKey) {
 		KeyPair DHKeyPair = null;
 		KeyAgreement keyAgreement = null;
@@ -646,8 +653,9 @@ public class FileClient extends Client implements FileClientInterface {
 			// Send message 1 Client public key
 			System.out.println("File server connection: SENDING FIRST MESSAGE");
 			Envelope publicKeyEnv = new Envelope("SIGNED-DIFFIE-HELLMAN");
-			SealedObject encryptedKey = CipherBox.encrypt(keyPair.getPublic(), serverKey);
-			publicKeyEnv.addObject(encryptedKey);
+			//SealedObject encryptedKey = CipherBox.encrypt(keyPair.getPublic(), serverKey);
+			//publicKeyEnv.addObject(encryptedKey);
+			publicKeyEnv.addObject(keyPair.getPublic());
 			System.out.println(publicKeyEnv);
 			output.writeObject(publicKeyEnv);
 			// Recv the second message
@@ -655,7 +663,7 @@ public class FileClient extends Client implements FileClientInterface {
 			System.out.println("RECVD SECOND MESSAGE");
 			System.out.println(response);
 			if (response != null) {
-				if (response.getMessage().equals("SIGNED-DIFFIE-HELLMAN-1")) {
+				if (response.getMessage().equals("SIGNED-DIFFIE-HELLMAN-2")) {
 					if (response.getObjContents().size() == 2) {
 						if (response.getObjContents().get(0) != null) {
 							if (response.getObjContents().get(1) != null) {
@@ -667,14 +675,14 @@ public class FileClient extends Client implements FileClientInterface {
 									// Generate secretKey
 									SecretKey sessionKey = DiffieHellman.generateSecretKey(DHServerKey, keyAgreement);
 									// Make and send Message 3
-									Envelope message = new Envelope("SIGNED-DIFFIE-HELLMAN-2");
+									Envelope message = new Envelope("SIGNED-DIFFIE-HELLMAN-3");
 									byte[] hashedPublicKey = Hasher.hash(DHKeyPair.getPublic());
 									SealedObject sealedKey = CipherBox.encrypt(hashedPublicKey, keyPair.getPrivate());
 									message.addObject(sealedKey);
 									message.addObject(DHKeyPair.getPublic());
 									System.out.println("SENDING MESSAGE 3");
 									System.out.println(message);
-									output.writeObject(message);
+									output.writeObject("Sending: " + message);
 									// Recv Message 4
 									response = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
 									System.out.println("RECVD 4th Message");
@@ -685,7 +693,8 @@ public class FileClient extends Client implements FileClientInterface {
 												if (response.getObjContents().get(0) != null) {
 													if (response.getObjContents(). get(1) != null) {
 														recvHash = (byte[])response.getObjContents().get(0);
-														sequenceNumber = (Integer)response.getObjContents().get(1).intValue();
+														Integer seqNumber = (Integer)response.getObjContents().get(1);
+														sequenceNumber = seqNumber.intValue();
 														String keyPlusServer = CipherBox.getKeyAsString(sessionKey);
 														keyPlusServer = keyPlusServer + "fileserver";
 														System.out.println(keyPlusServer);

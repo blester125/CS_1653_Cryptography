@@ -68,12 +68,12 @@ public class RSA {
 
 				//Store both keys to file
 				X509EncodedKeySpec x590keyspec = new X509EncodedKeySpec(publicKey.getEncoded());
-				FileOutputStream keyOut = new FileOutputStream("userpublic.key");
+				FileOutputStream keyOut = new FileOutputStream(publicKeyPath);
 				keyOut.write(x590keyspec.getEncoded());
 				keyOut.close();
 
 				PKCS8EncodedKeySpec pkcs8keyspec = new PKCS8EncodedKeySpec(privateKey.getEncoded());
-				keyOut = new FileOutputStream("userprivate.key");
+				keyOut = new FileOutputStream(privateKeyPath);
 				keyOut.write(pkcs8keyspec.getEncoded());
 				keyOut.close();
 
@@ -124,6 +124,9 @@ public class RSA {
 	}
 
 	public static String generateFingerprints(PublicKey key) {
+		if (key == null) {
+			return "null";
+		}
 		return javax.xml.bind.DatatypeConverter.printHexBinary(Hasher.hash(key));
 	}
 }
