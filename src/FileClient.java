@@ -1,5 +1,6 @@
 /* FileClient provides all the client functionality regarding the file server */
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -145,7 +146,7 @@ public class FileClient extends Client implements FileClientInterface {
 				IvParameterSpec iv = null;
 				Key key = null;
 				Cipher AESCipherDecrypt = null;
-				ByteOutputStream decryptedBuf = null;
+				ByteArrayOutputStream decryptedBuf = null;
 				// process meta-data for file and initialize decryption
 				if(env.getObjContents().size() == 5) {
 					if(env.getObjContents().get(0) == null) {
@@ -171,7 +172,7 @@ public class FileClient extends Client implements FileClientInterface {
 							key = groupMetadata.calculateKey(keyIndex, keyVersion);
 							AESCipherDecrypt = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");
 							AESCipherDecrypt.init(Cipher.DECRYPT_MODE, key, iv);
-							decryptedBuf = new ByteOutputStream(4096);
+							decryptedBuf = new ByteArrayOutputStream(4096);
 						} catch (Exception e) {
 							e.printStackTrace();
 							fos.close();
@@ -190,11 +191,12 @@ public class FileClient extends Client implements FileClientInterface {
 						// decrypt chunk and write to local file
 						byte[] encryptedText = (byte[])env.getObjContents().get(0);
 						out.write(encryptedText);
-						fos.write(decryptedBuf.getBytes(), 0, (Integer)env.getObjContents().get(1));
+						fos.write(decryptedBuf.toByteArray(), 0, (Integer)env.getObjContents().get(1));
 						System.out.printf(".");
 					} catch (Exception e) {
 						e.printStackTrace();
 						fos.close();
+						out.close();
 						return false;
 					}
 	
@@ -206,6 +208,7 @@ public class FileClient extends Client implements FileClientInterface {
 							
 			    if(env.getMessage().compareTo("EOF")==0) {
 					fos.close();
+					out.close();
 					System.out.printf("\nTransfer successful file %s\n", sourceFile);
 					env = new Envelope("OK"); //Success
 					output.writeObject(Envelope.buildSuper(env, secretKey));
@@ -213,6 +216,7 @@ public class FileClient extends Client implements FileClientInterface {
 				else {
 						System.out.printf("Error reading file %s (%s)\n", sourceFile, env.getMessage());
 						file.delete();
+						out.close();
 						return false;								
 				}
 		    }    
@@ -332,7 +336,7 @@ public class FileClient extends Client implements FileClientInterface {
 		 	int keyVersion = groupMetadata.getCurrentKeyVer();
 		 	Cipher AESCipherEncrypt = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");
 			AESCipherEncrypt.init(Cipher.ENCRYPT_MODE, key, iv);
-			ByteOutputStream encryptedBuf = new ByteOutputStream(4096);
+			ByteArrayOutputStream encryptedBuf = new ByteArrayOutputStream(4096);
 		 	CipherOutputStream out = new CipherOutputStream(encryptedBuf, AESCipherEncrypt);
 		 	do {
 				 	byte[] buf = new byte[4096];
@@ -354,7 +358,7 @@ public class FileClient extends Client implements FileClientInterface {
 					}
 					out.write(buf);
 					// encrypt with key and IV
-					message.addObject(encryptedBuf.getBytes());
+					message.addObject(encryptedBuf.toByteArray());
 					message.addObject(new Integer(n));
 					
 					output.writeObject(Envelope.buildSuper(message, secretKey));
