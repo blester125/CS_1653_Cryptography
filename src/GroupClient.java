@@ -198,15 +198,18 @@ public class GroupClient extends Client implements GroupClientInterface {
 	 
 	public boolean createUser(
 					String username, 
-					String password, 
+					String publicKeyPath, 
 					UserToken token) {
 		try {
+			//Get only public key from file
+			PublicKey publicKey = RSA.loadPublic(publicKeyPath);
+			//Create envelopes for transmission
 			Envelope message = null, response = null;
 			Envelope superE = null, superResponse = null;
 			//Tell the server to create a user
 			message = new Envelope("CUSER");
 			message.addObject(username); //Add user name string
-			message.addObject(password);
+			message.addObject(publicKey);
 			message.addObject(token); //Add the requester's token
 			superE = Envelope.buildSuper(message, sessionKey);
 			output.writeObject(superE);

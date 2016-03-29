@@ -977,13 +977,13 @@ public class ClientApp {
 		JPanel newUserDialogue = new JPanel();
 		JTextField newUsernameField = new JTextField(20);
 		JLabel usernameDialogueLabel = new JLabel("Please enter a username: ");
-		JTextField newPasswordField = new JPasswordField(20);
-		JLabel passwordDialogueLabel = new JLabel("Please enter a password: ");
+		JTextField newPublicKeyField = new JTextField(20);
+		JLabel keyPathDialogueLabel = new JLabel("Please enter RSA Public Key Path: ");
 
 		newUserDialogue.add(usernameDialogueLabel);
 		newUserDialogue.add(newUsernameField);
-		newUserDialogue.add(passwordDialogueLabel);
-		newUserDialogue.add(newPasswordField);
+		newUserDialogue.add(keyPathDialogueLabel);
+		newUserDialogue.add(newPublicKeyField);
 
 		int dialogue = JOptionPane.showOptionDialog(
 										null, 
@@ -996,7 +996,7 @@ public class ClientApp {
 										null);
 		
 		String newUsername = newUsernameField.getText();
-		String newPassword = newPasswordField.getText();
+		String newPubKeyPath = newPublicKeyField.getText();
 
 		UserToken currToken = RunClient.groupC.getToken(currentUsername);
 		
@@ -1015,7 +1015,7 @@ public class ClientApp {
 			// If fail, report and return
 			if (!RunClient.groupC.createUser(
 									newUsername, 
-									newPassword, 
+									newPubKeyPath, 
 									currToken)) {
 				JOptionPane.showMessageDialog(
 								null, 
