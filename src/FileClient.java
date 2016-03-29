@@ -528,12 +528,14 @@ public class FileClient extends Client implements FileClientInterface {
 		Envelope response = null;
 		try {
 			Envelope env = new Envelope("REQUEST");
-			System.out.println("REQUESTING FILESERVER PUBLICKEY");
+			System.out.println("REQUESTING FILESERVER PUBLICKEY: Sending request");
 			System.out.println(env);
 			output.writeObject(env);
+			System.out.println("---------------------------------------------");
 			response = (Envelope)input.readObject();
 			System.out.println("RECEIVED RESPONSE");
 			System.out.println(response);
+			System.out.println("---------------------------------------------");
 			if (response != null) {
 				if (response.getMessage().equals("REQ-RESPONSE")) {
 					if (response.getObjContents().size() == 1) {
@@ -657,18 +659,24 @@ public class FileClient extends Client implements FileClientInterface {
 			//publicKeyEnv.addObject(encryptedKey);
 			publicKeyEnv.addObject(keyPair.getPublic());
 			System.out.println(publicKeyEnv);
+			System.out.println("---------------------------------------------");
 			output.writeObject(publicKeyEnv);
 			// Recv the second message
 			Envelope response = (Envelope)input.readObject();
 			System.out.println("RECVD SECOND MESSAGE");
 			System.out.println(response);
+			System.out.println("---------------------------------------------");
 			if (response != null) {
 				if (response.getMessage().equals("SIGNED-DIFFIE-HELLMAN-2")) {
 					if (response.getObjContents().size() == 2) {
 						if (response.getObjContents().get(0) != null) {
 							if (response.getObjContents().get(1) != null) {
+								//System.out.println(serverKey);
 								SealedObject recvSealedHash = (SealedObject)response.getObjContents().get(0);
+								System.out.println(recvSealedHash);
+								System.out.println("BEFORE DECRYPT");
 								byte[] recvHash = (byte[])CipherBox.decrypt(recvSealedHash, serverKey);
+								System.out.println("RecvHash: " + recvHash);
 								PublicKey DHServerKey = (PublicKey)response.getObjContents().get(1);
 								if (Hasher.verifyHash(recvHash, DHServerKey)) {
 									System.out.println("MATCHING HASHES");
@@ -681,8 +689,8 @@ public class FileClient extends Client implements FileClientInterface {
 									message.addObject(sealedKey);
 									message.addObject(DHKeyPair.getPublic());
 									System.out.println("SENDING MESSAGE 3");
-									System.out.println(message);
-									output.writeObject("Sending: " + message);
+									System.out.println("Sending: " + message);
+									output.writeObject(message);
 									// Recv Message 4
 									response = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
 									System.out.println("RECVD 4th Message");
@@ -710,6 +718,7 @@ public class FileClient extends Client implements FileClientInterface {
 															System.out.println("SENDING MESSAGE 5");
 															System.out.println(innerResponse);
 															response = Envelope.buildSuper(innerResponse, sessionKey);
+															output.writeObject(response);
 															System.out.println("SECURE AND AUTH's CONNECTION ESTABLISHED WITH FILESERVER");
 															return sessionKey;
 														}  

@@ -151,15 +151,18 @@ public class FileThread extends Thread
 							// Send second Message
 							try {
 								response = new Envelope("SIGNED-DIFFIE-HELLMAN-2");
+								System.out.println(rsaPair.getPublic());
 								KeyPair keyPair = DiffieHellman.genKeyPair();
 								KeyAgreement keyAgreement = DiffieHellman.genKeyAgreement(keyPair); 
 								byte[] hashedPublicKey = Hasher.hash(keyPair.getPublic());
-								sealedKey = CipherBox.encrypt(hashedPublicKey, rsaPair.getPublic());
+								sealedKey = CipherBox.encrypt(hashedPublicKey, rsaPair.getPrivate());
 								response.addObject(sealedKey);
 								response.addObject(keyPair.getPublic());
 								System.out.println("SENDING DH MESSAGE");
 								System.out.println(response);
+								System.out.println("SENDING DH2");
 								output.writeObject(response);
+								System.out.println("SENT DH2");
 								// Recv thrid message
 								Envelope check = (Envelope)input.readObject();
 								System.out.println("RECVD 3rd message");
@@ -169,23 +172,24 @@ public class FileThread extends Thread
 										if (check.getObjContents().size() ==2) {
 											if (check.getObjContents().get(0) != null) {
 												if (check.getObjContents().get(1) != null) {
-													byte[] recvHash = (byte[])check.getObjContents().get(0);
+													SealedObject sealedHash = (SealedObject)check.getObjContents().get(0);
+													byte[] recvHash = (byte[])CipherBox.decrypt(sealedHash, userPublicKey);
 													PublicKey recvKey = (PublicKey)check.getObjContents().get(1);
-													byte[] madeHash = Hasher.hash(recvKey);
-													if (Hasher.verifyHash(recvHash, madeHash)) {
+													if (Hasher.verifyHash(recvHash, recvKey)) {
 														System.out.println("MATCHING HASHES");
 														sessionKey = DiffieHellman.generateSecretKey(recvKey, keyAgreement);
 														Envelope resp = new Envelope("SUCCESS");
 														String keyPlusWord = CipherBox.getKeyAsString(sessionKey);
 														keyPlusWord = keyPlusWord + "fileserver";
 														byte[] hashResponse = Hasher.hash(keyPlusWord);
-														resp.addObject(keyPlusWord);
+														resp.addObject(hashResponse);
 														SecureRandom rand = new SecureRandom();
 														int sequenceNumber = rand.nextInt(101);
 														resp.addObject(sequenceNumber);
 														System.out.println("SENDING 4th message");
 														System.out.println(resp);
 														Envelope message = Envelope.buildSuper(resp, sessionKey);
+														output.writeObject(message);
 														// Recv 5th message
 														check = (Envelope)input.readObject();
 														System.out.println("RECVD 5th message");
@@ -681,6 +685,12 @@ public class FileThread extends Thread
 			output.writeObject(Envelope.buildSuper(response, sessionKey));
 		} catch (IOException e) {
 			e.printStackTrace();
+		} catch (NullPointerException e1) {
+			try {
+				output.writeObject(response);
+			} catch (Exception e2) {
+				e2.printStackTrace();
+			}
 		}
 	}
 }

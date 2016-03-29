@@ -933,11 +933,11 @@ public class ClientApp {
 
 		}
 
-		if(RunClient.fileC.signedDiffieHellman(publicPath, privatePath) == null){
-			JOptionPane.showMessageDialog(null, "Server failed.", "Challenge Failure", JOptionPane.OK_CANCEL_OPTION);
-			RunClient.fileC.disconnect();
-			return;
-		}
+		//if(RunClient.fileC.signedDiffieHellman(publicPath, privatePath) == null){
+		//	JOptionPane.showMessageDialog(null, "Server failed.", "Challenge Failure", JOptionPane.OK_CANCEL_OPTION);
+		//	RunClient.fileC.disconnect();
+		//	return;
+		//}
 		
 		tabbedPane.setEnabledAt(2,true);
 
