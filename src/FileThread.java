@@ -15,6 +15,7 @@ import java.security.MessageDigest;
 import java.security.PublicKey;
 import java.security.Security;
 import java.security.spec.X509EncodedKeySpec;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 
 import javax.crypto.KeyAgreement;
@@ -32,6 +33,9 @@ public class FileThread extends Thread
 	// Group Server Public Key
 	public PublicKey serverPublicKey = null;
 	private String groupServerPath = "groupserverpublic.key";
+	private String fileServerPublicPath = "fileserverpublic.key";
+	private String fileServerPrivatePath = "fileserverprivate.key";
+	private int sequenceNumber;
 
 	public FileThread (Socket _socket, KeyPair _rsaPair) {
 		socket = _socket;
@@ -101,7 +105,7 @@ public class FileThread extends Thread
 				System.out.println("Request received: " + e.getMessage());
 
 				// Client wishes to establish a shared symmetric secret key
-				if(e.getMessage().equals("SESSIONKEY") && e.getObjContents() != null && e.getObjContents().get(0) != null) {
+				/*if(e.getMessage().equals("SESSIONKEY") && e.getObjContents() != null && e.getObjContents().get(0) != null) {
 
 					// Retrieve Client's public key
 					PublicKey clientPK = (PublicKey)e.getObjContents().get(0);
@@ -127,6 +131,124 @@ public class FileThread extends Thread
 						response.addObject(response);
 						output.writeObject(response);
 					}
+				}*/
+				if (e.getMessage().equals("REQUEST")) {
+					rsaPair = RSA.loadRSA(fileServerPublicPath, fileServerPrivatePath);
+					response = new Envelope("REQ-RESPONSE");
+					response.addObject(rsaPair.getPublic());
+					System.out.println("-----REQUEST - Sending my Public Key to User-----");
+					System.out.println("Sent: ");
+					System.out.println(response + "\n");
+					output.writeObject(response);
+				}
+				// TODO add send Fails
+				else if (e.getMessage().equals("SIGNED-DIFFIE-HELLMAN")) {
+					response = new Envelope("Fail");
+					System.out.println("-----SIGENED-DIFFIE-HELLMAN - User Sends Public Key-----");
+					System.out.println("Received:");
+					System.out.println(e + "\n");
+					if (e.getObjContents().size() == 1) {
+						if (e.getObjContents().get(0) != null) {
+							// Recive Public Key from the user.
+							SealedObject sealedKey;
+							//= (SealedObject)e.getObjContents().get(0);
+							//PublicKey userPublicKey = (PublicKey)CipherBox.decrypt(sealedKey, rsaPair.getPrivate());
+							PublicKey userPublicKey = (PublicKey)e.getObjContents().get(0);
+							try {
+								// Send the Second Message
+								Envelope message1 = new Envelope("SIGNED-DIFFIE-HELLMAN-2");
+								System.out.println("-----SIGENED-DIFFIE-HELLMAN - Sending my Diffie Hellman Keys-----");
+								KeyPair keyPair = DiffieHellman.genKeyPair();
+								KeyAgreement keyAgreement = DiffieHellman.genKeyAgreement(keyPair); 
+								// Hash my public key
+								byte[] hashedPublicKey = Hasher.hash(keyPair.getPublic());
+								// Encrypt my public key
+								sealedKey = CipherBox.encrypt(hashedPublicKey, rsaPair.getPrivate());
+								message1.addObject(sealedKey);
+								message1.addObject(keyPair.getPublic());
+								System.out.println("Sending:");
+								System.out.println(message1 + "\n");
+								// Send the message
+								output.writeObject(message1);
+								// Recv thrid message
+								Envelope message2 = (Envelope)input.readObject();
+								System.out.println("-----SIGNED-DIFFIE-HELLMAN - Receiving the users Diffie Hellman Keys-----");
+								System.out.println("Received Message: ");
+								System.out.println(message2 + "\n");
+								if (message2 != null) {
+									if (message2.getMessage().equals("SIGNED-DIFFIE-HELLMAN-3")) {
+										if (message2.getObjContents().size() ==2) {
+											if (message2.getObjContents().get(0) != null) {
+												if (message2.getObjContents().get(1) != null) {
+													SealedObject sealedHash = (SealedObject)message2.getObjContents().get(0);
+													byte[] recvHash = (byte[])CipherBox.decrypt(sealedHash, userPublicKey);
+													PublicKey recvKey = (PublicKey)message2.getObjContents().get(1);
+													System.out.println("Verify that the signed hash matches the hash of the public key");
+													if (Hasher.verifyHash(recvHash, recvKey)) {
+														System.out.println("Hashes Matched.");
+														System.out.print("Session Key created: ");
+														sessionKey = DiffieHellman.generateSecretKey(recvKey, keyAgreement);
+														System.out.println(sessionKey);
+														System.out.println("-----SIGNED-DIFFIE-HELLMAN - Sending the Success Hash and Inital Sequence Number-----");
+														Envelope message3 = new Envelope("SUCCESS");
+														String keyPlusWord = CipherBox.getKeyAsString(sessionKey);
+														keyPlusWord = keyPlusWord + "fileserver";
+														byte[] hashResponse = Hasher.hash(keyPlusWord);
+														message3.addObject(hashResponse);
+														SecureRandom rand = new SecureRandom();
+														int sequenceNumber = rand.nextInt(101);
+														System.out.println("Inital Sequence Number: " + sequenceNumber);
+														message3.addObject(sequenceNumber);
+														System.out.println("Sending: ");
+														System.out.println(message3 + "\n");
+														Envelope superMessage3 = Envelope.buildSuper(message3, sessionKey);
+														output.writeObject(superMessage3);
+														// Recv 5th message
+														Envelope superMessage4 = (Envelope)input.readObject();
+														System.out.println("-----SIGNED-DIFFIE-HELLMAN - Checking the Client Succes Hash-----");
+														Envelope message4 = Envelope.extractInner(superMessage4, sessionKey);
+														System.out.println("Received:");
+														System.out.println(message4 + "\n");
+														if (message4 != null) {
+															if (message4.getMessage().equals("SUCCESS")) {
+																if (message4.getObjContents().size() == 2) {
+																	if (message4.getObjContents().get(0) != null) {
+																		if (message4.getObjContents().get(1) != null) {
+																			byte[] recvHashWord = (byte[])message4.getObjContents().get(0);
+																			keyPlusWord = CipherBox.getKeyAsString(sessionKey);
+																			keyPlusWord = keyPlusWord + "client";
+																			System.out.println("Verify the received hash matches the hash of the sessionKey plus \"client\"");
+																			if (Hasher.verifyHash(recvHashWord, keyPlusWord)) {
+																				System.out.println("Hashed Matched");
+																				Integer seq = (Integer)message4.getObjContents().get(1);
+																				int seqNum = seq.intValue();
+																				System.out.println("Checking sequence number");
+																				if (seqNum == sequenceNumber + 1) {
+																					System.out.println("Sequence number is Correct");
+																					sequenceNumber += 2;
+																					System.out.println("New sequence number: " + sequenceNumber);
+																					isSecureConnection = true;
+																					isAuthenticated = true;
+																					System.out.println("\nSecure and Authenticated connection established with the File Client");
+																				}
+																			}
+																		}
+																	}
+																}
+															}
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							} catch (Exception error) {
+								response = new Envelope("FAIL");
+								sendFail(response, output);
+							}
+						}
+					} 
 				}
 				// Client sends server the challenge, server will decrypt and respond
 				else if(e.getMessage().equals("CHALLENGE") && isSecureConnection){
@@ -315,8 +437,7 @@ public class FileThread extends Thread
 
 									e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
 									while (e.getMessage().compareTo("CHUNK")==0) {
-										fos.write((byte[])e.getObjContents().get(0), 
-												0, (Integer)e.getObjContents().get(1));
+										fos.write(((byte[])e.getObjContents().get(0)), 0, (Integer)e.getObjContents().get(1));
 										response = new Envelope("READY"); //Success
 										output.writeObject(Envelope.buildSuper(response, sessionKey));
 										System.out.println("SENT from UPLOADF - READYCHUNK: " + response);
@@ -338,7 +459,7 @@ public class FileThread extends Thread
 											else {
 												int keyIndex = ((Integer)e.getObjContents().get(0)).intValue();
 												int keyVersion = ((Integer)e.getObjContents().get(1)).intValue();
-												byte[] iv = (byte[])e.getObjContents().get(2);
+												IvParameterSpec iv = (IvParameterSpec)e.getObjContents().get(2);
 												System.out.printf("Transfer successful file %s\n", remotePath);
 												FileServer.fileList.addFile(yourToken.getSubject(), group, 
 														remotePath, keyIndex, keyVersion, iv);
@@ -361,6 +482,7 @@ public class FileThread extends Thread
 				}
 				else if (e.getMessage().equals("DOWNLOADF") && isSecureConnection && isAuthenticated) 
 				{
+
 					String remotePath = (String)e.getObjContents().get(0);
 					Token t = (Token)e.getObjContents().get(1);
 					if(e.getObjContents() == null || e.getObjContents().size() < 2) {
@@ -372,7 +494,7 @@ public class FileThread extends Thread
 					else if(e.getObjContents().get(1) == null) {
 						response = new Envelope("FAIL-BADTOKEN");
 					}
-					else if (/*verifyToken(t)*/ true) {
+					else if (verifyToken(t)) {
 						ShareFile sf = FileServer.fileList.getFile("/"+remotePath);
 
 						if (sf == null) 
@@ -428,7 +550,7 @@ public class FileThread extends Thread
 										if(!sentMetadata) {
 											response.addObject(new Integer(sf.getKeyIndex()));
 											response.addObject(new Integer(sf.getKeyVersion()));
-											response.addObject(sf.getIv());
+											response.addObject(sf.getIvParameterSpec());
 											sentMetadata = true;
 										}
 
@@ -439,8 +561,10 @@ public class FileThread extends Thread
 									}
 									while (fis.available()>0);
 
+									//If server indicates success, return the member list
 									if(e != null && e.getMessage().compareTo("DOWNLOADF")==0 && isSecureConnection  && isAuthenticated)
 									{
+
 										response = new Envelope("EOF");
 										output.writeObject(Envelope.buildSuper(response, sessionKey));
 										System.out.println("SENT from DOWNLOADF - EOF: " + response);
@@ -450,12 +574,13 @@ public class FileThread extends Thread
 											System.out.printf("File data download successful\n");
 										}
 										else {
-											System.out.printf("Download failed: %s\n", e.getMessage());
+											System.out.printf("Upload failed: %s\n", e.getMessage());
 											sendFail(response, output);
 										}
 									}
 									else {
-										System.out.printf("Download failed: %s\n", e.getMessage());
+
+										System.out.printf("Upload failed: %s\n", e.getMessage());
 										sendFail(response, output);
 									}
 
@@ -547,8 +672,7 @@ public class FileThread extends Thread
 	private boolean verifyToken(UserToken token) {
 		// check for token freshness
 		System.out.println("verify");
-		return true;
-		/*if(!token.isFresh()) {
+		if(!token.isFresh()) {
 			System.out.println("old token");
 			return false;
 		}
@@ -566,7 +690,7 @@ public class FileThread extends Thread
 		if (!MessageDigest.isEqual(recvHash, hashToken)) {
 			return false;
 		}
-		return true;*/
+		return true;
 	}
 	
 	/**
@@ -581,6 +705,12 @@ public class FileThread extends Thread
 			output.writeObject(Envelope.buildSuper(response, sessionKey));
 		} catch (IOException e) {
 			e.printStackTrace();
+		} catch (NullPointerException e1) {
+			try {
+				output.writeObject(response);
+			} catch (Exception e2) {
+				e2.printStackTrace();
+			}
 		}
 	}
 }

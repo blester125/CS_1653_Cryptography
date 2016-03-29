@@ -68,12 +68,12 @@ public class RSA {
 
 				//Store both keys to file
 				X509EncodedKeySpec x590keyspec = new X509EncodedKeySpec(publicKey.getEncoded());
-				FileOutputStream keyOut = new FileOutputStream("userpublic.key");
+				FileOutputStream keyOut = new FileOutputStream(publicKeyPath);
 				keyOut.write(x590keyspec.getEncoded());
 				keyOut.close();
 
 				PKCS8EncodedKeySpec pkcs8keyspec = new PKCS8EncodedKeySpec(privateKey.getEncoded());
-				keyOut = new FileOutputStream("userprivate.key");
+				keyOut = new FileOutputStream(privateKeyPath);
 				keyOut.write(pkcs8keyspec.getEncoded());
 				keyOut.close();
 
@@ -104,30 +104,6 @@ public class RSA {
 		}
 	}
 
-	// Loads only a public key from file (instead of generating a KeyPair object)
-	public static PublicKey loadPublic(String publicKeyPath){
-
-		try {
-			//Get only public key from file
-			File fsPublicKey = new File(publicKeyPath);
-			FileInputStream keyIn = new FileInputStream(publicKeyPath);
-			byte[] encPublicKey = new byte[(int) fsPublicKey.length()];
-			keyIn.read(encPublicKey);
-			keyIn.close();
-
-			KeyFactory kf = KeyFactory.getInstance("RSA", "BC");
-			X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(encPublicKey);
-			PublicKey publicKey = kf.generatePublic(publicKeySpec);
-
-			System.out.println("Found RSA public key. Loaded successfully!");
-			return publicKey;
-		} catch (Exception e) {
-			System.out.println("Error loading RSA public key from file path: " + publicKeyPath);
-			return null;
-		}
-
-	}
-
 	// Load the groupserver public key
 	public static PublicKey loadServerKey(String path) {
 		try {
@@ -145,5 +121,12 @@ public class RSA {
 			System.out.println("You need the servers Public Key.");
 			return null;
 		}
+	}
+
+	public static String generateFingerprints(PublicKey key) {
+		if (key == null) {
+			return "null";
+		}
+		return javax.xml.bind.DatatypeConverter.printHexBinary(Hasher.hash(key));
 	}
 }

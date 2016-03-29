@@ -294,7 +294,12 @@ public class ClientApp {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
 
-					attemptFileConnection(fileIpField, filePortField, tabbedPane);
+					attemptFileConnection(
+						fileIpField, 
+						filePortField, 
+						publicPathField,
+						privatePathField,
+						tabbedPane);
 
 				}
 			}
@@ -305,7 +310,7 @@ public class ClientApp {
 		homePage.add(btnFileServer, gbc_btnFileServer);
 
 		//Login/lougout buttons
-		final JButton btnRSASetup = new JButton("Update RSA");
+		final JButton btnRSASetup = new JButton("RSA Setup");
 		final JButton btnRSA = new JButton("RSA Login");
 		final JButton btnLogout = new JButton("Logout");
 
@@ -350,6 +355,8 @@ public class ClientApp {
 					usernameField, 
 					ipField, 
 					portField, 
+					publicPathField,
+					privatePathField,
 					btnNewUser, 
 					tabbedPane, 
 					btnDeleteUser, 
@@ -774,7 +781,9 @@ public class ClientApp {
 	public void attemptRSALogin(
 					JTextField usernameField, 
 					JTextField ipField, 
-					JTextField portField, 
+					JTextField portField,
+					JTextField publicPathField,
+					JTextField privatePathField,
 					JButton btnNewUser, 
 					JTabbedPane tabbedPane, 
 					JButton btnDeleteUser, 
@@ -829,7 +838,7 @@ public class ClientApp {
 		usernameField.setEnabled(false);
 		ipField.setEnabled(false);
 		portField.setEnabled(false);
-		publicPathField.setEnabled(true);
+		publicPathField.setEnabled(false);
 		btnNewUser.setEnabled(true);
 		btnDeleteUser.setEnabled(true);
 		tabbedPane.setEnabledAt(1,true);
@@ -846,7 +855,7 @@ public class ClientApp {
 			if (result == 0) {
 				JOptionPane.showMessageDialog(
 						null, 
-						"RSA Key sucessfully updated.", 
+						"RSA Key susscfully shared.", 
 						"Success", 
 						JOptionPane.OK_CANCEL_OPTION);
 			}
@@ -859,9 +868,13 @@ public class ClientApp {
 	public void attemptFileConnection(
 					JTextField fileipField, 
 					JTextField filePortField, 
+					JTextField publicPathField,
+					JTextField privatePathField,
 					JTabbedPane tabbedPane) {
 		String ipAddr = fileIpField.getText();
 		int port = Integer.parseInt(filePortField.getText());
+		String publicPath = publicPathField.getText();
+		String privatePath = privatePathField.getText();
 		if(RunClient.fileC.isConnected()) {
 			RunClient.fileC.disconnect();
 		}
@@ -871,21 +884,24 @@ public class ClientApp {
 			return;
 		}
 		// Establish secret key with Diffie-Hellman Protocol
-		if(RunClient.fileC.establishSessionKey() == null) {
+		/*if(RunClient.fileC.establishSessionKey() == null) {
 			JOptionPane.showMessageDialog(null, "Connection failure. Could not establish a secure connection to FILE server at " + ipAddr + ":" + port + ".", "Connection Failure", JOptionPane.OK_CANCEL_OPTION);
 			return;
-		}
-		// Authenticate file server
-		if(!RunClient.fileC.authenticateServer()) {	
+		}*/
 
-			RunClient.fileC.generateFingerprints();	
+		int result = RunClient.fileC.authenticateFileServerRSA(
+										publicPath, 
+										privatePath);
+		if (result == -1) {
+			String cached = RSA.generateFingerprints(RunClient.fileC.cachedPublicKey);
+			String server = RSA.generateFingerprints(RunClient.fileC.serverPublicKey);
 
 			//Construct a dialogue box to capture user input and do so.
 			JPanel alertServerDialog = new JPanel();
 			JLabel serverDialogLabel = new JLabel("Public Key Not Found!");
 			JLabel serverHostnamePort = new JLabel("Hostname:Port - " + RunClient.fileC.sock.getInetAddress().getHostName() + ":" + Integer.toString(RunClient.fileC.sock.getPort()));
-			JTextField serverExpectedKey = new JTextField("Expected Key: " + RunClient.fileC.cachedKeyFingerprint);
-			JTextField serverCurrentKey = new JTextField("Received Key: " + RunClient.fileC.serverKeyFingerprint);
+			JTextField serverExpectedKey = new JTextField("Expected Key: " + cached);
+			JTextField serverCurrentKey = new JTextField("Received Key: " + server);
 			JLabel serverWarning = new JLabel("Please verify the integrity of this server with your system administrator before connecting.");
 
 			alertServerDialog.setLayout(new BoxLayout(alertServerDialog, BoxLayout.Y_AXIS));
@@ -907,7 +923,12 @@ public class ClientApp {
 
 			if(dialogue == 0){
 
-				RunClient.fileC.addServerToRegistry();
+				RunClient.fileC.addServerToRegistry(new ServerInfo(RunClient.fileC.sock), RunClient.fileC.serverPublicKey);
+				if(RunClient.fileC.signedDiffieHellman(publicPath, privatePath) == null){
+					JOptionPane.showMessageDialog(null, "Server failed.", "Challenge Failure", JOptionPane.OK_CANCEL_OPTION);
+					RunClient.fileC.disconnect();
+					return;
+				}
 			}
 			else {
 				JOptionPane.showMessageDialog(null, "Connection aborted. Please alert your system administrator of suspicious file servers.", "Connection Aborted", JOptionPane.OK_CANCEL_OPTION);
@@ -915,12 +936,6 @@ public class ClientApp {
 				return;
 			}
 
-		}
-
-		if(!RunClient.fileC.issueChallenge()){
-			JOptionPane.showMessageDialog(null, "Server failed to correctly answer the challenge.", "Challenge Failure", JOptionPane.OK_CANCEL_OPTION);
-			RunClient.fileC.disconnect();
-			return;
 		}
 		
 		tabbedPane.setEnabledAt(2,true);
@@ -977,13 +992,13 @@ public class ClientApp {
 		JPanel newUserDialogue = new JPanel();
 		JTextField newUsernameField = new JTextField(20);
 		JLabel usernameDialogueLabel = new JLabel("Please enter a username: ");
-		JTextField newPublicKeyField = new JTextField(20);
-		JLabel keyPathDialogueLabel = new JLabel("Please enter RSA Public Key Path: ");
+		JTextField newPasswordField = new JPasswordField(20);
+		JLabel passwordDialogueLabel = new JLabel("Please enter a password: ");
 
 		newUserDialogue.add(usernameDialogueLabel);
 		newUserDialogue.add(newUsernameField);
-		newUserDialogue.add(keyPathDialogueLabel);
-		newUserDialogue.add(newPublicKeyField);
+		newUserDialogue.add(passwordDialogueLabel);
+		newUserDialogue.add(newPasswordField);
 
 		int dialogue = JOptionPane.showOptionDialog(
 										null, 
@@ -996,7 +1011,7 @@ public class ClientApp {
 										null);
 		
 		String newUsername = newUsernameField.getText();
-		String newPubKeyPath = newPublicKeyField.getText();
+		String newPassword = newPasswordField.getText();
 
 		UserToken currToken = RunClient.groupC.getToken(currentUsername);
 		
@@ -1015,7 +1030,7 @@ public class ClientApp {
 			// If fail, report and return
 			if (!RunClient.groupC.createUser(
 									newUsername, 
-									newPubKeyPath, 
+									newPassword, 
 									currToken)) {
 				JOptionPane.showMessageDialog(
 								null, 
@@ -1505,7 +1520,6 @@ public class ClientApp {
 		for(GroupMetadata group : userGroupsMetadata) {
 			if(group.getGroupname().equals(currGroup)) {
 				currGroupMetadata = group;
-				break;
 			}
 		}
 		if(currGroupMetadata == null){

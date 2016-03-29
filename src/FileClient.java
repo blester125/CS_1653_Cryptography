@@ -1,7 +1,5 @@
 /* FileClient provides all the client functionality regarding the file server */
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -10,37 +8,27 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.crypto.Cipher;
-import javax.crypto.CipherInputStream;
-import javax.crypto.CipherOutputStream;
 import javax.crypto.KeyAgreement;
-import javax.crypto.KeyGenerator;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SealedObject;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
-import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
-
 public class FileClient extends Client implements FileClientInterface {
-	private SecretKey secretKey;
+	private SecretKey sessionKey;
 	public PublicKey cachedPublicKey;
 	private String fileserverRegistry = "FileServerRegistry.bin";
 	public PublicKey serverPublicKey = null;
 	public String cachedKeyFingerprint;
 	public String serverKeyFingerprint;
+	public int sequenceNumber;
 	
 	public FileClient() {
 
@@ -74,7 +62,7 @@ public class FileClient extends Client implements FileClientInterface {
 		if (isConnected()) {
 			try {
 				Envelope message = new Envelope("DISCONNECT");
-				Envelope superE = Envelope.buildSuper(message, secretKey);
+				Envelope superE = Envelope.buildSuper(message, sessionKey);
 				output.writeObject(superE);
 				sock.close(); //close the socket
 			}
@@ -105,11 +93,11 @@ public class FileClient extends Client implements FileClientInterface {
 		try {
 
 			//build nested envelope, encrypt, and send
-			Envelope superEnv = Envelope.buildSuper(env, secretKey);
+			Envelope superEnv = Envelope.buildSuper(env, sessionKey);
 			output.writeObject(superEnv);
 
 			//receive, extract, and decrypt inner envelope
-			env = Envelope.extractInner((Envelope)input.readObject(), secretKey);
+			env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
 		   
 			if (env.getMessage().compareTo("OK")==0) {
 
@@ -139,109 +127,104 @@ public class FileClient extends Client implements FileClientInterface {
 		File file = new File(destFile);
     	try {		
 			if (!file.exists()) {
-				file.createNewFile();
-				FileOutputStream fos = new FileOutputStream(file);
-					    
-				Envelope env = new Envelope("DOWNLOADF"); //Success
-				env.addObject(sourceFile);
-				env.addObject(token);
-	
-				//build nested envelope, encrypt, and send
-				Envelope superEnv = Envelope.buildSuper(env, secretKey);
-				output.writeObject(superEnv);
-					
-				//receive, extract, and decrypt inner envelope
-				env = Envelope.extractInner((Envelope)input.readObject(), secretKey);
-				IvParameterSpec iv = null;
-				Key key = null;
-				Cipher AESCipherDecrypt = null;
-				// process meta-data for file and initialize decryption
-				if(env.getObjContents().size() == 5) {
-					if(env.getObjContents().get(0) == null) {
-						System.err.println("Error: null text");
-					}
-					else if(env.getObjContents().get(1) == null) {
-						System.err.println("Error: null length");
-					}
-					else if(env.getObjContents().get(2) == null) {
-						System.err.println("Error: null key index");
-					}
-					else if(env.getObjContents().get(3) == null) {
-						System.err.println("Error: null key version");
-					}
-					else if(env.getObjContents().get(4) == null) {
-						System.err.println("Error: null IV");
-					}
-					else {
-						int keyIndex = (Integer)env.getObjContents().get(2);
-						int keyVersion = (Integer)env.getObjContents().get(3);
-						iv = new IvParameterSpec((byte[])env.getObjContents().get(4));
-						try {
-							key = groupMetadata.calculateKey(keyIndex, keyVersion);
-							AESCipherDecrypt = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");
-							AESCipherDecrypt.init(Cipher.DECRYPT_MODE, key, iv);
-						} catch (Exception e) {
-							e.printStackTrace();
-							fos.close();
-							return false;
-						}
-					}
+			file.createNewFile();
+			FileOutputStream fos = new FileOutputStream(file);
+				    
+			Envelope env = new Envelope("DOWNLOADF"); //Success
+			env.addObject(sourceFile);
+			env.addObject(token);
+
+			//build nested envelope, encrypt, and send
+			Envelope superEnv = Envelope.buildSuper(env, sessionKey);
+			output.writeObject(superEnv);
+				
+			//receive, extract, and decrypt inner envelope
+			env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+			Cipher AESCipherDecrypt = null ;
+			IvParameterSpec iv = null;
+			Key key = null;
+			if(env.getObjContents().size() == 5) {
+				if(env.getObjContents().get(0) == null) {
+					System.err.println("Error: null text");
+				}
+				else if(env.getObjContents().get(1) == null) {
+					System.err.println("Error: null length");
+				}
+				else if(env.getObjContents().get(2) == null) {
+					System.err.println("Error: null key index");
+				}
+				else if(env.getObjContents().get(3) == null) {
+					System.err.println("Error: null key version");
+				}
+				else if(env.getObjContents().get(4) == null) {
+					System.err.println("Error: null IV");
 				}
 				else {
-					System.err.println("Error: invalid number of object contents");
-				}
-				CipherInputStream in = null;
-				while (env.getMessage().compareTo("CHUNK")==0) {
-					
+					int keyIndex = (Integer)env.getObjContents().get(2);
+					int keyVersion = (Integer)env.getObjContents().get(3);
+					iv = (IvParameterSpec)env.getObjContents().get(4);
 					try {
-						// decrypt chunk and write to local file
-						byte[] encryptedText = (byte[])env.getObjContents().get(0);
-						byte[] decryptedText = new byte[encryptedText.length];
-						ByteArrayInputStream encryptedStream = new ByteArrayInputStream(encryptedText);
-					 	in = new CipherInputStream(encryptedStream, AESCipherDecrypt);
-						in.read(decryptedText);
-						fos.write(decryptedText, 0, (Integer)env.getObjContents().get(1));
-						System.out.printf(".");
+						key = groupMetadata.calculateKey(keyIndex, keyVersion);
+						AESCipherDecrypt = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");
+						AESCipherDecrypt.init(Cipher.DECRYPT_MODE, key, iv);
 					} catch (Exception e) {
 						e.printStackTrace();
 						fos.close();
-						in.close();
 						return false;
 					}
-	
-					env = new Envelope("DOWNLOADF"); //Success
-					output.writeObject(Envelope.buildSuper(env, secretKey));
-					env = Envelope.extractInner((Envelope)input.readObject(), secretKey);									
-				}										
-				fos.close();
-							
-			    if(env.getMessage().compareTo("EOF")==0) {
-					fos.close();
-					in.close();
-					System.out.printf("\nTransfer successful file %s\n", sourceFile);
-					env = new Envelope("OK"); //Success
-					output.writeObject(Envelope.buildSuper(env, secretKey));
-			    }
-				else {
-						System.out.printf("Error reading file %s (%s)\n", sourceFile, env.getMessage());
-						file.delete();
-						in.close();
-						return false;								
 				}
-		    }    
-		    else {
-				System.out.printf("Error couldn't create file %s\n", destFile);
-				return false;
-		    }
-	    } catch (IOException e1) {
-	    	
-	    	System.out.printf("Error couldn't create file %s\n", destFile);
-	    	return false;
-		}
-	    catch (ClassNotFoundException e1) {
-			e1.printStackTrace();
-		}
-    	return true;
+			}
+			else {
+				System.err.println("Error: invalid number of object contents");
+			}
+			while (env.getMessage().compareTo("CHUNK")==0) {
+				
+				try {
+					byte[] decryptedText = AESCipherDecrypt.doFinal((byte[])env.getObjContents().get(0));
+					fos.write(decryptedText, 0, (Integer)env.getObjContents().get(1));
+					System.out.printf(".");
+				} catch (Exception e) {
+					e.printStackTrace();
+					fos.close();
+					return false;
+				}
+
+				env = new Envelope("DOWNLOADF"); //Success
+				output.writeObject(Envelope.buildSuper(env, sessionKey));
+				env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);									
+			}										
+			fos.close();
+						
+		    if(env.getMessage().compareTo("EOF")==0) {
+				fos.close();
+								System.out.printf("\nTransfer successful file %s\n", sourceFile);
+								env = new Envelope("OK"); //Success
+								output.writeObject(Envelope.buildSuper(env, sessionKey));
+						}
+						else {
+								System.out.printf("Error reading file %s (%s)\n", sourceFile, env.getMessage());
+								file.delete();
+								return false;								
+						}
+				    }    
+					 
+				    else {
+						System.out.printf("Error couldn't create file %s\n", destFile);
+						return false;
+				    }
+								
+			
+			    } catch (IOException e1) {
+			    	
+			    	System.out.printf("Error couldn't create file %s\n", destFile);
+			    	return false;
+			    
+					
+				}
+			    catch (ClassNotFoundException e1) {
+					e1.printStackTrace();
+				}
+				 return true;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -252,9 +235,9 @@ public class FileClient extends Client implements FileClientInterface {
 			 //Tell the server to return the member list
 			 message = new Envelope("LFILES");
 			 message.addObject(token); //Add requester's token
-			 output.writeObject(Envelope.buildSuper(message, secretKey)); 
+			 output.writeObject(Envelope.buildSuper(message, sessionKey)); 
 			 
-			 e = Envelope.extractInner((Envelope)input.readObject(), secretKey);
+			 e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
 			 
 			 //If server indicates success, return the member list
 			 if(e.getMessage().equals("OK"))
@@ -281,9 +264,9 @@ public class FileClient extends Client implements FileClientInterface {
 			 message = new Envelope("LFILESG");
 			 message.addObject(groupName); // add groupname
 			 message.addObject(token); //Add requester's token
-			 output.writeObject(Envelope.buildSuper(message, secretKey)); 
+			 output.writeObject(Envelope.buildSuper(message, sessionKey)); 
 			 
-			 e = Envelope.extractInner((Envelope)input.readObject(), secretKey);
+			 e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
 			 
 			 //If server indicates success, return the member list
 			 if(e.getMessage().equals("OK"))
@@ -319,12 +302,12 @@ public class FileClient extends Client implements FileClientInterface {
 			 message.addObject(group);
 			 message.addObject(token); //Add requester's token
 			 message.addObject(groupMetadata);
-			 output.writeObject(Envelope.buildSuper(message, secretKey));
+			 output.writeObject(Envelope.buildSuper(message, sessionKey));
 			
 			 
 			 FileInputStream fis = new FileInputStream(sourceFile);
 			 
-			 env = Envelope.extractInner((Envelope)input.readObject(), secretKey);
+			 env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
 			 
 			 //If server indicates success, return the member list
 			 if(env.getMessage().equals("READY"))
@@ -343,16 +326,11 @@ public class FileClient extends Client implements FileClientInterface {
 		 	SecretKey key = groupMetadata.getCurrentKey();
 		 	int keyIndex = groupMetadata.getCurrentKeyIndex();
 		 	int keyVersion = groupMetadata.getCurrentKeyVer();
-		 	Cipher AESCipherEncrypt = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");
-			AESCipherEncrypt.init(Cipher.ENCRYPT_MODE, key, iv);
-			ByteArrayOutputStream encryptedBuf = new ByteArrayOutputStream(4096);
-		 	CipherOutputStream out = new CipherOutputStream(encryptedBuf, AESCipherEncrypt);
-		 	do {
-				 	byte[] buf = new byte[4096];
+			 do {
+				 byte[] buf = new byte[4096];
 				 	if (env.getMessage().compareTo("READY")!=0) {
 				 		System.out.printf("Server error: %s\n", env.getMessage());
 				 		fis.close();
-				 		out.close();
 				 		return false;
 				 	}
 				 	message = new Envelope("CHUNK");
@@ -362,33 +340,34 @@ public class FileClient extends Client implements FileClientInterface {
 					} else if (n < 0) {
 						System.out.println("Read error");
 						fis.close();
-				 		out.close();
 						return false;
 					}
-					out.write(buf);
-					// encrypt with key and IV
-					message.addObject(encryptedBuf.toByteArray());
+					// encrypt to byte[] with key and IV
+					Cipher AESCipherEncrypt = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");
+					AESCipherEncrypt.init(Cipher.ENCRYPT_MODE, key, iv);
+					byte[] encryptedText = AESCipherEncrypt.doFinal(buf);
+					message.addObject(encryptedText);
 					message.addObject(new Integer(n));
 					
-					output.writeObject(Envelope.buildSuper(message, secretKey));
+					output.writeObject(Envelope.buildSuper(message, sessionKey));
 					
-					env = Envelope.extractInner((Envelope)input.readObject(), secretKey);
+					
+					env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
 					
 										
 			 }
 			 while (fis.available()>0);		 
 			 fis.close();
-			 out.close();
 			 if(env.getMessage().compareTo("READY")==0)
 			 { 
 				message = new Envelope("EOF");
 				// send the key index, key version, and IV used to encrypt the file
 				message.addObject(new Integer(keyIndex));
 				message.addObject(new Integer(keyVersion));
-				message.addObject(iv.getIV());
-				output.writeObject(Envelope.buildSuper(message, secretKey));
+				message.addObject(iv);
+				output.writeObject(Envelope.buildSuper(message, sessionKey));
 				
-				env = Envelope.extractInner((Envelope)input.readObject(), secretKey);
+				env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
 				if(env.getMessage().compareTo("OK")==0) {
 					System.out.printf("\nFile data upload successful\n");
 				}
@@ -419,126 +398,12 @@ public class FileClient extends Client implements FileClientInterface {
 		// send the user's public symmetric key value to the file server
 		// and establish a shared secret symmetric key upon receiving the file server's
 		// public value
-		establishSessionKey();
+		//establishSessionKey();
 		// authenticates the server by checking the server's public key
 		// against the cached registry of hostname:ip to public keys
-		authenticateServer();
+		//authenticateServer();
 		
 		return false;
-	}
-
-	/**
-	  * using the server's public key retrieved from establishSessionKey,
-	  * the client verifies that the file server's hostname:port match
-	  * the given public key for the file server the client has cached
-	  * @return	true if the public key is cached and matches the host:port
-	  * for the file server, false otherwise 
-	  */
-	public boolean authenticateServer() {
-		// check the client's file server registry for the hostname:ip
-		// pairing with the corresponding public key
-		ServerRegistry fsReg;
-
-		//attempt to load serverregistry from file
-		try{
-
-			File registryFile = new File(fileserverRegistry);
-			FileInputStream fis = new FileInputStream(fileserverRegistry);
-			ObjectInputStream ois = new ObjectInputStream(fis);
-
-			fsReg = (ServerRegistry)ois.readObject();
-
-			ois.close();
-			fis.close();
-
-		}
-		catch (FileNotFoundException e){
-			//If file not found, make new fileserverRegistry file
-			try {
-				FileOutputStream fout = new FileOutputStream(fileserverRegistry);
-				ObjectOutputStream oout = new ObjectOutputStream(fout);
-
-				fsReg = new ServerRegistry();
-
-				oout.writeObject(fsReg);
-
-				oout.close();
-				fout.close();
-			} 
-			catch (Exception e1) {
-
-				e.printStackTrace();
-				return false;
-			}
-
-		}
-		catch (Exception e){
-
-			e.printStackTrace();
-			return false;
-		}
-
-		//retrieve cached EXPECTED public key
-		cachedPublicKey = fsReg.getServerPublicKey(new ServerInfo(this.sock.getInetAddress().getHostName(), Integer.toString(this.sock.getPort())));
-
-		//compare with current key
-		if(cachedPublicKey != null && cachedPublicKey.equals(serverPublicKey)){
-			return true;
-		}
-
-		
-		return false;
-	}
-	
-	/**
-	 * add the server to the user's registry cache
-	 * @return success/failure
-	 */
-	public boolean addServerToRegistry() {
-		// retrieve the registry
-
-		ServerRegistry fsReg;
-
-		//attempt to load serverregistry from file
-		try{
-
-			File registryFile = new File(fileserverRegistry);
-			FileInputStream fis = new FileInputStream(fileserverRegistry);
-			ObjectInputStream ois = new ObjectInputStream(fis);
-
-			fsReg = (ServerRegistry)ois.readObject();
-
-			ois.close();
-			fis.close();
-
-		}
-		catch (Exception e){
-
-			e.printStackTrace();
-			return false;
-		}
-
-
-		//Add server to registry
-		fsReg.insertServerInfo(new ServerInfo(this.sock.getInetAddress().getHostName(), Integer.toString(this.sock.getPort())), this.serverPublicKey);
-
-		//Write out to file
-		try {
-			FileOutputStream fout = new FileOutputStream(fileserverRegistry);
-			ObjectOutputStream oout = new ObjectOutputStream(fout);
-
-			oout.writeObject(fsReg);
-
-			oout.close();
-			fout.close();
-		} 
-		catch (Exception e1) {
-
-				e1.printStackTrace();
-				return false;
-		}
-
-		return true;
 	}
 
 	/**
@@ -575,12 +440,12 @@ public class FileClient extends Client implements FileClientInterface {
 				PublicKey fileServerPK = (PublicKey)response.getObjContents().get(0);
 
 				// generate the shared secret key
-				secretKey = DiffieHellman.generateSecretKey(fileServerPK, keyAgreement);
+				sessionKey = DiffieHellman.generateSecretKey(fileServerPK, keyAgreement);
 
 				// get the server public key
 				serverPublicKey = (PublicKey)response.getObjContents().get(1);
 	
-				return secretKey;
+				return sessionKey;
 			}
 			
 			return null;
@@ -614,9 +479,9 @@ public class FileClient extends Client implements FileClientInterface {
 		 	System.out.println("challenge env:" + env);
 
 		 	//Send the challenge (encrypted with the session key) to server
-		 	output.writeObject(Envelope.buildSuper(env, secretKey));
+		 	output.writeObject(Envelope.buildSuper(env, sessionKey));
 
-		 	response = Envelope.extractInner((Envelope)input.readObject(), secretKey);
+		 	response = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
 
 		 	if(response.getMessage().equals("CH_RESPONSE")){
 
@@ -625,7 +490,7 @@ public class FileClient extends Client implements FileClientInterface {
 		 		if(challengeAnswer.equals(r1)){
 
 		 			Envelope success = new Envelope("AUTH_SUCCESS");
-		 			output.writeObject(Envelope.buildSuper(success, secretKey));
+		 			output.writeObject(Envelope.buildSuper(success, sessionKey));
 
 		 			return true;
 		 		}
@@ -640,56 +505,239 @@ public class FileClient extends Client implements FileClientInterface {
 
 	 }
 
-	public void generateFingerprints(){
-
-		if(cachedPublicKey != null) {
-			cachedKeyFingerprint = javax.xml.bind.DatatypeConverter.printHexBinary(Hasher.hash(cachedPublicKey));
-		}
-		else {
-			cachedKeyFingerprint = null;
-		}
-		serverKeyFingerprint = javax.xml.bind.DatatypeConverter.printHexBinary(Hasher.hash(serverPublicKey));
-
-	}
-	/*
 	public int authenticateFileServerRSA(
 					String publicKeyPath, 
 					String privateKeyPath) {
 		KeyPair keyPair = RSA.loadRSA(publicKeyPath, privateKeyPath);
-		PublicKey fsPublicKey = requestFSPublicKey();
-		verifyFSKey(fsPublicKey);
-		sessionKey = establishSession(keyPair, fsPublicKey);
-		if (sessionKey == null) {
+		serverPublicKey = requestFSPublicKey();
+		ServerInfo serverInfo = new ServerInfo(sock);
+		if (!lookUpFSKey(serverInfo, serverPublicKey)) {
+			// Key lookup failed
+			System.out.println("Look Up Failed");
 			return -1;
 		}
+		sessionKey = signedDiffieHellman(keyPair, serverPublicKey);
+		if (sessionKey == null) {
+			// Signed DiffieHellman failed
+			return -2;
+		}
 		return 0;
-	}*/
-	/*
-	public static void main(String[] args) throws InvalidKeyException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException, NoSuchPaddingException, IOException  {
-		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
-		
-		// test encrypt/decrypt byte array
-		String text = "this is a test.";
-		byte[] bytes = new byte[4096]; 
-		
-		KeyGenerator kg = KeyGenerator.getInstance("AES");
-		kg.init(new SecureRandom());
-		SecretKey sk = kg.generateKey();
-		IvParameterSpec iv = CipherBox.generateRandomIV();
-	 	Cipher AESCipherEncrypt = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");
-		AESCipherEncrypt.init(Cipher.ENCRYPT_MODE, sk, iv);
-		ByteArrayOutputStream encryptedBuf = new ByteArrayOutputStream(4096);
-	 	CipherOutputStream out = new CipherOutputStream(encryptedBuf, AESCipherEncrypt);
-	 	out.write(text.getBytes());
-	 	out.close();
-	 	
-	 	byte[] b = new byte[4096];
-	 	Cipher AESCipherDecrypt = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");
-	 	AESCipherDecrypt.init(Cipher.DECRYPT_MODE, sk, iv);
-	 	ByteArrayInputStream in = new ByteArrayInputStream(encryptedBuf.toByteArray());
-	 	CipherInputStream incipher = new CipherInputStream(in, AESCipherDecrypt);
-	 	incipher.read(b);
-	 	System.out.println(new String(b));
-	}*/
+	}
+
+	public PublicKey requestFSPublicKey() {
+		Envelope response = null;
+		try {
+			Envelope env = new Envelope("REQUEST");
+			System.out.println("-----Requesting Fileserver Public Key - Sending request-----");
+			System.out.println(env + "\n");
+			output.writeObject(env);
+			response = (Envelope)input.readObject();
+			System.out.println("-----Requesting Fileserver Public Key - Receiving response-----");
+			System.out.println(response + "\n");
+			if (response != null) {
+				if (response.getMessage().equals("REQ-RESPONSE")) {
+					if (response.getObjContents().size() == 1) {
+						if (response.getObjContents().get(0) != null) {
+							return (PublicKey)response.getObjContents().get(0);
+						}
+					}
+				}
+			}
+			return null;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	/**
+	  * using the server's public key retrieved from establishSessionKey,
+	  * the client verifies that the file server's hostname:port match
+	  * the given public key for the file server the client has cached
+	  * @return	true if the public key is cached and matches the host:port
+	  * for the file server, false otherwise 
+	  */
+	public boolean lookUpFSKey(ServerInfo serverInfo, PublicKey serverKey) {
+		if (serverKey == null) {
+			return false;
+		}
+		// check the client's file server registry for the hostname:ip
+		// pairing with the corresponding public key
+		ServerRegistry fsReg;
+		//attempt to load serverregistry from file
+		try{
+			File registryFile = new File(fileserverRegistry);
+			FileInputStream fis = new FileInputStream(fileserverRegistry);
+			ObjectInputStream ois = new ObjectInputStream(fis);
+			fsReg = (ServerRegistry)ois.readObject();
+			ois.close();
+			fis.close();
+		}
+		catch (FileNotFoundException e){
+			//If file not found, make new fileserverRegistry file
+			try {
+				FileOutputStream fout = new FileOutputStream(fileserverRegistry);
+				ObjectOutputStream oout = new ObjectOutputStream(fout);
+				fsReg = new ServerRegistry();
+				oout.writeObject(fsReg);
+				oout.close();
+				fout.close();
+			} 
+			catch (Exception e1) {
+				e.printStackTrace();
+				return false;
+			}
+		}
+		catch (Exception e){
+			e.printStackTrace();
+			return false;
+		}
+		//retrieve cached EXPECTED public key
+		cachedPublicKey = fsReg.getServerPublicKey(serverInfo);
+		//compare with current key
+		if(cachedPublicKey != null && cachedPublicKey.equals(serverKey)){
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * add the server to the user's registry cache
+	 * @return success/failure
+	 */
+	public boolean addServerToRegistry(ServerInfo serverInfo, PublicKey serverKey) {
+		// retrieve the registry
+		ServerRegistry fsReg;
+		//attempt to load serverregistry from file
+		try{
+			File registryFile = new File(fileserverRegistry);
+			FileInputStream fis = new FileInputStream(fileserverRegistry);
+			ObjectInputStream ois = new ObjectInputStream(fis);
+			fsReg = (ServerRegistry)ois.readObject();
+			ois.close();
+			fis.close();
+		}
+		catch (Exception e){
+			e.printStackTrace();
+			return false;
+		}
+		//Add server to registry
+		fsReg.insertServerInfo(serverInfo, serverKey);
+		//Write out to file
+		try {
+			FileOutputStream fout = new FileOutputStream(fileserverRegistry);
+			ObjectOutputStream oout = new ObjectOutputStream(fout);
+			oout.writeObject(fsReg);
+			oout.close();
+			fout.close();
+		} 
+		catch (Exception e1) {
+				e1.printStackTrace();
+				return false;
+		}
+		return true;
+	}
+
+	public SecretKey signedDiffieHellman(String a, String b) {
+		KeyPair keyPair = RSA.loadRSA(a, b);
+		return signedDiffieHellman(keyPair, serverPublicKey);
+	}
+
+	public SecretKey signedDiffieHellman(KeyPair keyPair, PublicKey serverKey) {
+		KeyPair DHKeyPair = null;
+		KeyAgreement keyAgreement = null;
+		try {
+			DHKeyPair = DiffieHellman.genKeyPair();
+			keyAgreement = DiffieHellman.genKeyAgreement(DHKeyPair);
+			// Send message 1 Client public key
+			System.out.println("-----SIGNED-DIFFIE-HELLMAN - Sending My Public Key to Server-----");
+			Envelope message1 = new Envelope("SIGNED-DIFFIE-HELLMAN");
+			//SealedObject encryptedKey = CipherBox.encrypt(keyPair.getPublic(), serverKey);
+			//publicKeyEnv.addObject(encryptedKey);
+			message1.addObject(keyPair.getPublic());
+			System.out.println("Sending: ");
+			System.out.println(message1 + "\n");
+			output.writeObject(message1);
+			// Recv the second message
+			Envelope message2 = (Envelope)input.readObject();
+			System.out.println("-----SIGNED-DIFFIE-HELLMAN - Receiving the Server's Diffie Hellman Keys-----");
+			System.out.println("Received: ");
+			System.out.println(message2 + "\n");
+			if (message2 != null) {
+				if (message2.getMessage().equals("SIGNED-DIFFIE-HELLMAN-2")) {
+					if (message2.getObjContents().size() == 2) {
+						if (message2.getObjContents().get(0) != null) {
+							if (message2.getObjContents().get(1) != null) {
+								//System.out.println(serverKey);
+								SealedObject recvSealedHash = (SealedObject)message2.getObjContents().get(0);
+								byte[] recvHash = (byte[])CipherBox.decrypt(recvSealedHash, serverKey);
+								PublicKey DHServerKey = (PublicKey)message2.getObjContents().get(1);
+								System.out.println("Verify that the signed hash matches the hash of the public key");
+								if (Hasher.verifyHash(recvHash, DHServerKey)) {
+									System.out.println("Hashes Matched");
+									// Generate secretKey
+									SecretKey sessionKey = DiffieHellman.generateSecretKey(DHServerKey, keyAgreement);
+									System.out.println("Session Key created: " + sessionKey);
+									// Make and send Message 3
+									System.out.println("\n-----SIGNED-DIFFIE-HELLMAN - Sending my Diffie Hellman keys-----");
+									Envelope message3 = new Envelope("SIGNED-DIFFIE-HELLMAN-3");
+									byte[] hashedPublicKey = Hasher.hash(DHKeyPair.getPublic());
+									SealedObject sealedKey = CipherBox.encrypt(hashedPublicKey, keyPair.getPrivate());
+									message3.addObject(sealedKey);
+									message3.addObject(DHKeyPair.getPublic());
+									System.out.println("SENDING MESSAGE 3");
+									System.out.println("Sending: \n" + message3 + "\n");
+									output.writeObject(message3);
+									// Recv Message 4
+									Envelope message4 = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+									System.out.println("-----SIGNED-DIFFIE-HELLMAN - Receiving the Success hash-----");
+									System.out.println(message4 + "\n");
+									if (message4 != null) {
+										if (message4.getMessage().equals("SUCCESS")) {
+											if (message4.getObjContents().size() == 2) {
+												if (message4.getObjContents().get(0) != null) {
+													if (message4.getObjContents(). get(1) != null) {
+														recvHash = (byte[])message4.getObjContents().get(0);
+														Integer seqNumber = (Integer)message4.getObjContents().get(1);
+														sequenceNumber = seqNumber.intValue();
+														System.out.println("Inital Sequence Number set to: " + sequenceNumber);
+														String keyPlusServer = CipherBox.getKeyAsString(sessionKey);
+														keyPlusServer = keyPlusServer + "fileserver";
+														System.out.println("Verifying the received Succes hash");
+														if (Hasher.verifyHash(recvHash, keyPlusServer)) {
+															System.out.println("Hashes Match");
+															// Send Message 5
+															System.out.println("\n-----SIGNED-DIFFIE-HELLMAN - Sending my Success Hash-----");
+															Envelope message5 = new Envelope("SUCCESS");
+															String keyPlusName = CipherBox.getKeyAsString(sessionKey);
+															keyPlusName = keyPlusName + "client";
+															byte[] hashSuccess = Hasher.hash(keyPlusName);
+															message5.addObject(hashSuccess);
+															sequenceNumber++;
+															message5.addObject(sequenceNumber);
+															System.out.println("Sending: ");
+															System.out.println(message5 + "\n");
+															Envelope superMessage5 = Envelope.buildSuper(message5, sessionKey);
+															output.writeObject(superMessage5);
+															System.out.println("Secure and Authenticated connection with File Server extablished.");
+															return sessionKey;
+														}  
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			return null;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
 }
 

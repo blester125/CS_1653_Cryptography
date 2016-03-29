@@ -93,31 +93,6 @@ public class CipherBox {
 	}
 	
 	/**
-	 * decrypts plaintext with given key and IV, this is necessary for
-	 * file decryption such as in file download where the encrypted data
-	 * is a byte[] rather than a sealed object
-	 * @param plainText
-	 * @param key
-	 * @param iv
-	 * @return	decrypted text, null on failure
-	 */
-	public static byte[] decrypt(byte[] plainText, Key key, IvParameterSpec iv) {
-		try {
-			AESCipherDecrypt = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");
-			AESCipherDecrypt.init(Cipher.DECRYPT_MODE, key, iv);
-		} catch(Exception e) {
-			e.printStackTrace();
-		}
-		try {
-			return AESCipherDecrypt.doFinal(plainText);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		
-		return null;
-	}
-	
-	/**
 	 * encrypts the given plaintext with the key provided
 	 * which is a member of an RSA pair
 	 * @param plainText	object to be encrypted
