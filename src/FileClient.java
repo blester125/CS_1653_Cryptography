@@ -643,6 +643,7 @@ public class FileClient extends Client implements FileClientInterface {
 		return signedDiffieHellman(keyPair, serverPublicKey);
 	}
 
+	// Establish File connection with RSA
 	public SecretKey signedDiffieHellman(KeyPair keyPair, PublicKey serverKey) {
 		KeyPair DHKeyPair = null;
 		KeyAgreement keyAgreement = null;
