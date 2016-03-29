@@ -53,16 +53,14 @@ public class GroupClient extends Client implements GroupClientInterface {
 		Envelope response = Envelope.extractInner(superResponse, sessionKey);
 		if (response.getMessage().equals("OK")) {
 			if(response.getObjContents().get(0) != null){
-				Integer seqNum = (Integer)message.getObjContents.get(0);
+				Integer seqNum = (Integer)message.getObjContents().get(0);
 				if(seqNum == sequenceNumber + 1){
 					sequenceNumber += 2;
 					return 0;
 				}
 			}
 		}
-		else {
-			return -1;
-		}
+		return -1;
 	}
 
 	// Login the group server with RSA
@@ -189,7 +187,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			//Tell the server to return a token.
 			message = new Envelope("GET");
 			message.addObject(username); //Add user name string
-			message.addObject(sequenceNumber) //Add sequence number
+			message.addObject(sequenceNumber); //Add sequence number
 			superE = Envelope.buildSuper(message, sessionKey);
 			output.writeObject(superE);
 			
