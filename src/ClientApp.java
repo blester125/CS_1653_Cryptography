@@ -305,7 +305,7 @@ public class ClientApp {
 		homePage.add(btnFileServer, gbc_btnFileServer);
 
 		//Login/lougout buttons
-		final JButton btnRSASetup = new JButton("RSA Setup");
+		final JButton btnRSASetup = new JButton("Update RSA");
 		final JButton btnRSA = new JButton("RSA Login");
 		final JButton btnLogout = new JButton("Logout");
 
@@ -829,7 +829,7 @@ public class ClientApp {
 		usernameField.setEnabled(false);
 		ipField.setEnabled(false);
 		portField.setEnabled(false);
-		publicPathField.setEnabled(false);
+		publicPathField.setEnabled(true);
 		btnNewUser.setEnabled(true);
 		btnDeleteUser.setEnabled(true);
 		tabbedPane.setEnabledAt(1,true);
@@ -846,7 +846,7 @@ public class ClientApp {
 			if (result == 0) {
 				JOptionPane.showMessageDialog(
 						null, 
-						"RSA Key susscfully shared.", 
+						"RSA Key sucessfully updated.", 
 						"Success", 
 						JOptionPane.OK_CANCEL_OPTION);
 			}
