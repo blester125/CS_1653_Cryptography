@@ -34,21 +34,6 @@ public class GroupClient extends Client implements GroupClientInterface {
 	public GroupClient() {
 		
 	}
-
-	public void disconnect()	 {
-		if (isConnected()) {
-			try {
-				Envelope message = new Envelope("DISCONNECT");
-				Envelope superE = Envelope.buildSuper(message, sessionKey);
-				output.writeObject(superE);
-				sock.close(); //close the socket
-			}
-			catch(Exception e) {
-				System.err.println("Error: " + e.getMessage());
-				e.printStackTrace(System.err);
-			}
-		}
-	}
 	
 	//---------------------RSA Authentication Functions-------------------------
 
@@ -320,6 +305,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message = new Envelope("DUSER");
 			message.addObject(username); //Add user name
 			message.addObject(token);  //Add requester's token
+			message.addObject(sequenceNumber); //Add sequence number
 			superE = Envelope.buildSuper(message, sessionKey);
 			output.writeObject(superE);
 			
@@ -328,7 +314,13 @@ public class GroupClient extends Client implements GroupClientInterface {
 	
 			//If server indicates success, return true
 			if (response.getMessage().equals("OK")) {
-				return true;
+				if (response.getObjContents().get(0) != null){
+					Integer seqNum = (Integer)response.getObjContents().get(0);
+					if (seqNum == sequenceNumber + 1){
+						sequenceNumber += 2;
+						return true;
+					}
+				}
 			}
 				
 			return false;
@@ -348,6 +340,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message = new Envelope("CGROUP");
 			message.addObject(groupname); //Add the group name string
 			message.addObject(token); //Add the requester's token
+			message.addObject(sequenceNumber); //add sequence number
 			superE = Envelope.buildSuper(message, sessionKey);
 			output.writeObject(superE); 
 			//System.out.println("Sent: " + message);
@@ -357,7 +350,13 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 			//If server indicates success, return true
 			if (response.getMessage().equals("OK")) {
-				return true;
+				if(response.getObjContents().get(0) != null){
+					Integer seqNum = (Integer)response.getObjContents().get(0);
+					if(seqNum == sequenceNumber + 1){
+						sequenceNumber += 2;
+						return true;
+					}
+				}
 			}
 				
 			return false;
@@ -377,6 +376,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message = new Envelope("DGROUP");
 			message.addObject(groupname); //Add group name string
 			message.addObject(token); //Add requester's token
+			message.addObject(sequenceNumber); //add sequence number
 			superE = Envelope.buildSuper(message, sessionKey);
 			output.writeObject(superE); 
 			
@@ -384,7 +384,13 @@ public class GroupClient extends Client implements GroupClientInterface {
 			response = Envelope.extractInner(superResponse, sessionKey);
 			//If server indicates success, return true
 			if (response.getMessage().equals("OK")) {
-				return true;
+				if(response.getObjContents().get(0) != null){
+					Integer seqNum = (Integer)response.getObjContents().get(0);
+					if(seqNum == sequenceNumber + 1){
+						sequenceNumber += 2;
+						return true;
+					}
+				}
 			}
 				
 			return false;
@@ -408,6 +414,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message = new Envelope("LMEMBERS");
 			message.addObject(group); //Add group name string
 			message.addObject(token); //Add requester's token
+			message.addObject(sequenceNumber); //Add seq num
 			superE = Envelope.buildSuper(message, sessionKey);
 			output.writeObject(superE); 
 			 
@@ -416,11 +423,17 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 			//If server indicates success, return the m)ember list
 			if (response.getMessage().equals("OK")) { 
-				return (List<String>)response.getObjContents().get(0); //This cast creates compiler warnings. Sorry.
-			}
-				
+				if(response.getObjContents().get(0) != null){
+					if(response.getObjContents().get(1) != null){
+						Integer seqNum = (Integer)response.getObjContents().get(1);
+						if(seqNum == sequenceNumber + 1){
+							sequenceNumber += 2;
+							return (List<String>)response.getObjContents().get(0); //This cast creates compiler warnings
+						}
+					}
+				}
+			}	
 			return null;
-			 
 		}
 		catch (Exception e) {
 			System.err.println("Error: " + e.getMessage());
@@ -441,6 +454,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message.addObject(username); //Add user name string
 			message.addObject(groupname); //Add group name string
 			message.addObject(token); //Add requester's token
+			message.addObject(sequenceNumber); //add seq num
 			superE = Envelope.buildSuper(message, sessionKey);
 			output.writeObject(superE); 
 			
@@ -448,7 +462,13 @@ public class GroupClient extends Client implements GroupClientInterface {
 			response = Envelope.extractInner(superResponse, sessionKey);
 			//If server indicates success, return true
 			if (response.getMessage().equals("OK")) {
-					return true;
+				if (response.getObjContents().get(0) != null){
+					Integer seqNum = (Integer)response.getObjContents().get(1);
+					if(seqNum == sequenceNumber + 1){
+						sequenceNumber += 2;
+						return true;
+					}
+				}
 			}
 			
 			return false;
@@ -472,6 +492,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message.addObject(username); //Add user name string
 			message.addObject(groupname); //Add group name string
 			message.addObject(token); //Add requester's token
+			message.addObject(sequenceNumber); //add seq num
 			superE = Envelope.buildSuper(message, sessionKey);
 			output.writeObject(superE);
 			
@@ -479,7 +500,13 @@ public class GroupClient extends Client implements GroupClientInterface {
 			response = Envelope.extractInner(superResponse, sessionKey);
 			//If server indicates success, return true
 			if (response.getMessage().equals("OK")) {
-				return true;
+				if (response.getObjContents().get(0) != null){
+					Integer seqNum = (Integer)response.getObjContents().get(1);
+					if(seqNum == sequenceNumber + 1){
+						sequenceNumber += 2;
+						return true;
+					}
+				}
 			}
 				
 			return false;
@@ -488,6 +515,21 @@ public class GroupClient extends Client implements GroupClientInterface {
 			System.err.println("Error: " + e.getMessage());
 			e.printStackTrace(System.err);
 			return false;
+		}
+	}
+
+	public void disconnect() {
+		if (isConnected()) {
+			try {
+				Envelope message = new Envelope("DISCONNECT");
+				Envelope superE = Envelope.buildSuper(message, sessionKey);
+				output.writeObject(superE);
+				sock.close(); //close the socket
+			}
+			catch(Exception e) {
+				System.err.println("Error: " + e.getMessage());
+				e.printStackTrace(System.err);
+			}
 		}
 	}
 

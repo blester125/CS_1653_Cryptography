@@ -301,27 +301,28 @@ public class GroupThread extends Thread
 						&& isSecureConnection
 						&& isAuthenticated) //Client wants to delete a user
 				{
-					if (message.getObjContents().size() < 2) {
+					if (message.getObjContents().size() < 3) {
 						innerResponse = new Envelope("FAIL");
 					}
 					else {
 						innerResponse = new Envelope("FAIL");
 						
-						if(message.getObjContents().get(0) != null)
-						{
-							if(message.getObjContents().get(1) != null)
-							{
-								String username = (String)message.getObjContents().get(0); //Extract the username
-								UserToken yourToken = (UserToken)message.getObjContents().get(1); //Extract the token
+						if(message.getObjContents().get(0) != null){
+							if(message.getObjContents().get(1) != null){
+								if(message.getObjContents().get(2) != null){
+									String username = (String)message.getObjContents().get(0); //Extract the username
+									UserToken yourToken = (UserToken)message.getObjContents().get(1); //Extract the token
+									sequenceNumber = (Integer)message.getObjContents().get(2); //extract seq num
 
-								//check token to ensure expected and actual public keys match
-								if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
-									innerResponse = new Envelope("FAIL");
-								}	
-								
-								if(deleteUser(username, yourToken))
-								{
-									innerResponse = new Envelope("OK"); //Success
+									//check token to ensure expected and actual public keys match
+									if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
+										innerResponse = new Envelope("FAIL");
+									}	
+									
+									if(deleteUser(username, yourToken)){
+										innerResponse = new Envelope("OK"); //Success
+										innerResponse.addObject(sequenceNumber + 1);
+									}
 								}
 							}
 						}
@@ -335,27 +336,28 @@ public class GroupThread extends Thread
 						&& isSecureConnection
 						&& isAuthenticated) //Client wants to create a group
 				{	
-					if (message.getObjContents().size() < 2) {
+					if (message.getObjContents().size() < 3) {
 						innerResponse = new Envelope("FAIL");
 					}
 					else {
 						innerResponse = new Envelope("FAIL");
 						
-						if(message.getObjContents().get(0) != null)
-						{
-							if(message.getObjContents().get(1) != null)
-							{
-								String groupname = (String)message.getObjContents().get(0); //Extract the groupname
-								UserToken yourToken = (UserToken)message.getObjContents().get(1); //Extract the token
+						if(message.getObjContents().get(0) != null){
+							if(message.getObjContents().get(1) != null){
+								if(message.getObjContents().get(2) != null){
+									String groupname = (String)message.getObjContents().get(0); //Extract the groupname
+									UserToken yourToken = (UserToken)message.getObjContents().get(1); //Extract the token
+									sequenceNumber = (Integer)message.getObjContents().get(2); //Extract sequence number
 
-								//check token to ensure expected and actual public keys match
-								if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
-									innerResponse = new Envelope("FAIL");
-								}
-								
-								if(createGroup(groupname, yourToken))
-								{
-									innerResponse = new Envelope("OK"); //Success
+									//check token to ensure expected and actual public keys match
+									if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
+										innerResponse = new Envelope("FAIL");
+									}
+									
+									if(createGroup(groupname, yourToken)){
+										innerResponse = new Envelope("OK"); //Success
+										innerResponse.addObject(sequenceNumber + 1);
+									}
 								}
 							}
 						}
@@ -370,28 +372,28 @@ public class GroupThread extends Thread
 						&& isSecureConnection
 						&& isAuthenticated) //Client wants to delete a group
 				{
-					if (message.getObjContents().size() < 2) {
+					if (message.getObjContents().size() < 3) {
 						innerResponse = new Envelope("FAIL");
 					}
-					else
-					{
+					else {
 						innerResponse = new Envelope("FAIL");
 						
-						if(message.getObjContents().get(0) != null)
-						{
-							if(message.getObjContents().get(1) != null)
-							{
-								String groupname = (String)message.getObjContents().get(0); //Extract the groupname
-								UserToken yourToken = (UserToken)message.getObjContents().get(1); //Extract the token
+						if(message.getObjContents().get(0) != null){
+							if(message.getObjContents().get(1) != null){
+								if(message.getObjContents().get(2) != null){
+									String groupname = (String)message.getObjContents().get(0); //Extract the groupname
+									UserToken yourToken = (UserToken)message.getObjContents().get(1); //Extract the token
+									sequenceNumber = (Integer)message.getObjContents().get(2); //extract sequence number
 
-								//check token to ensure expected and actual public keys match
-								if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
-									innerResponse = new Envelope("FAIL");
-								}
-								
-								if(deleteGroup(groupname, yourToken))
-								{
-									innerResponse = new Envelope("OK"); //Success
+									//check token to ensure expected and actual public keys match
+									if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
+										innerResponse = new Envelope("FAIL");
+									}
+									
+									if(deleteGroup(groupname, yourToken)){
+										innerResponse = new Envelope("OK"); //Success
+										innerResponse.addObject(sequenceNumber + 1);
+									}
 								}
 							}
 						}
@@ -406,38 +408,29 @@ public class GroupThread extends Thread
 						&& isAuthenticated) //Client wants a list of members in a group
 				{
 					// If there isn't enough information in the envelope
-					if (message.getObjContents().size() < 2) 
-					{
+					if (message.getObjContents().size() < 3) {
 						innerResponse = new Envelope("FAIL");
 					}
-					else 
-					{
+					else {
 						innerResponse = new Envelope("FAIL");
-						// If there is no groupName
-						if (message.getObjContents().get(0) != null)
-						{
-							//If there is no Token
-							if (message.getObjContents().get(1) != null)
-							{
-								// Extract groupName
-								String groupName = (String)message.getObjContents().get(0);
-								// Extract Token 
-								UserToken yourToken = (UserToken)message.getObjContents().get(1);
+						if (message.getObjContents().get(0) != null){
+							if (message.getObjContents().get(1) != null){
+								if(message.getObjContents().get(2) != null){
+									String groupName = (String)message.getObjContents().get(0);
+									UserToken yourToken = (UserToken)message.getObjContents().get(1);
+									sequenceNumber = (Integer)message.getObjContents().get(2);
 
-								//check token to ensure expected and actual public keys match
-								if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
-									innerResponse = new Envelope("FAIL");
-								}
+									//check token to ensure expected and actual public keys match
+									if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
+										innerResponse = new Envelope("FAIL");
+									}
 
-								// Get the memeber list for this group
-								List<String> members = listMembers(groupName, yourToken);
-								// If a list was returned
-								if (members != null) 
-								{
-									// Craft the envelope
-									innerResponse = new Envelope("OK");
-									innerResponse.addObject(members);
-									
+									List<String> members = listMembers(groupName, yourToken);
+									if (members != null) {
+										innerResponse = new Envelope("OK");
+										innerResponse.addObject(members);
+										innerResponse.addObject(sequenceNumber + 1);	
+									}
 								}
 							}
 						}
@@ -454,31 +447,31 @@ public class GroupThread extends Thread
 						&& isAuthenticated) //Client wants to add user to a group
 				{
 					// Is there a userName, groupName, and Token in the Envelope
-					if (message.getObjContents().size() < 3)
+					if (message.getObjContents().size() < 4)
 					{
 						innerResponse = new Envelope("FAIL");
 					}
 					else
 					{
 						innerResponse = new Envelope("FAIL");
-						if (message.getObjContents().get(0) != null)
-						{
-							if (message.getObjContents().get(1) != null)
-							{
-								if (message.getObjContents().get(2) != null)
-								{
-									String userName = (String)message.getObjContents().get(0);
-									String groupName = (String)message.getObjContents().get(1);
-									UserToken yourToken = (UserToken)message.getObjContents().get(2);
+						if (message.getObjContents().get(0) != null){
+							if (message.getObjContents().get(1) != null){
+								if (message.getObjContents().get(2) != null){
+									if (message.getObjContents().get(3) != null){
+										String userName = (String)message.getObjContents().get(0);
+										String groupName = (String)message.getObjContents().get(1);
+										UserToken yourToken = (UserToken)message.getObjContents().get(2);
+										sequenceNumber = (Integer)message.getObjContents().get(3);
 
-									//check token to ensure expected and actual public keys match
-									if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
-										innerResponse = new Envelope("FAIL");
-									}
+										//check token to ensure expected and actual public keys match
+										if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
+											innerResponse = new Envelope("FAIL");
+										}
 
-									if (addUserToGroup(userName, groupName, yourToken))
-									{
-										innerResponse = new Envelope("OK");
+										if (addUserToGroup(userName, groupName, yourToken)){
+											innerResponse = new Envelope("OK");
+											innerResponse.addObject(sequenceNumber + 1);
+										}
 									}
 								}
 							}
@@ -494,31 +487,29 @@ public class GroupThread extends Thread
 						&& isAuthenticated) //Client wants to remove user from a group
 				{
 					// Is there a userName, groupName, and Token in the Envelope
-					if (message.getObjContents().size() < 3)
-					{
+					if (message.getObjContents().size() < 4){
 						innerResponse = new Envelope("FAIL");
 					}
-					else
-					{
+					else {
 						innerResponse = new Envelope("FAIL");
-						if (message.getObjContents().get(0) != null)
-						{
-							if (message.getObjContents().get(1) != null)
-							{
-								if (message.getObjContents().get(2) != null)
-								{
-									String userName = (String)message.getObjContents().get(0);
-									String groupName = (String)message.getObjContents().get(1);
-									UserToken yourToken = (UserToken)message.getObjContents().get(2);
+						if (message.getObjContents().get(0) != null){
+							if (message.getObjContents().get(1) != null){
+								if (message.getObjContents().get(2) != null){
+									if (message.getObjContents().get(3) != null){
+										String userName = (String)message.getObjContents().get(0);
+										String groupName = (String)message.getObjContents().get(1);
+										UserToken yourToken = (UserToken)message.getObjContents().get(2);
+										sequenceNumber = (Integer)message.getObjContents().get(3);
 
-									//check token to ensure expected and actual public keys match
-									if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
-										innerResponse = new Envelope("FAIL");
-									}
-									
-									if (deleteUserFromGroup(userName, groupName, yourToken))
-									{
-										innerResponse = new Envelope("OK");
+										//check token to ensure expected and actual public keys match
+										if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
+											innerResponse = new Envelope("FAIL");
+										}
+										
+										if (deleteUserFromGroup(userName, groupName, yourToken)){
+											innerResponse = new Envelope("OK");
+											innerResponse.addObject(sequenceNumber + 1);
+										}
 									}
 								}
 							}
@@ -632,24 +623,20 @@ public class GroupThread extends Thread
 			ArrayList<String> temp = my_gs.userList.getUserGroups(requester);
 
 			//requester needs to be an administer
-			if(temp.contains("ADMIN"))
-			{
+			if(temp.contains("ADMIN")){
 				//Does user exist?
-				if(my_gs.userList.checkUser(username))
-				{
+				if(my_gs.userList.checkUser(username)){
 					//User needs deleted from the groups they belong
 					ArrayList<String> deleteFromGroups = new ArrayList<String>();
 					
 					//This will produce a hard copy of the list of groups this user belongs
-					for(int index = 0; index < my_gs.userList.getUserGroups(username).size(); index++)
-					{
+					for(int index = 0; index < my_gs.userList.getUserGroups(username).size(); index++){
 						deleteFromGroups.add(my_gs.userList.getUserGroups(username).get(index));
 					}
 					
 					//Delete the user from the groups
 					//If user is the owner, removeMember will automatically delete group!
-					for(int index = 0; index < deleteFromGroups.size(); index++)
-					{
+					for(int index = 0; index < deleteFromGroups.size(); index++){
 						System.out.println("index: " + index + ", group: " + deleteFromGroups.get(index));
 						my_gs.groupList.removeMember(deleteFromGroups.get(index), username);
 					}
@@ -658,14 +645,12 @@ public class GroupThread extends Thread
 					ArrayList<String> deleteOwnedGroup = new ArrayList<String>();
 					
 					//Make a hard copy of the user's ownership list
-					for(int index = 0; index < my_gs.userList.getUserOwnership(username).size(); index++)
-					{
+					for(int index = 0; index < my_gs.userList.getUserOwnership(username).size(); index++){
 						deleteOwnedGroup.add(my_gs.userList.getUserOwnership(username).get(index));
 					}
 					
 					//Delete owned groups
-					for(int index = 0; index < deleteOwnedGroup.size(); index++)
-					{
+					for(int index = 0; index < deleteOwnedGroup.size(); index++){
 						//Use the delete group method. Token must be created for this action
 						deleteGroup(deleteOwnedGroup.get(index), new Token(my_gs.name, username, deleteOwnedGroup));
 					}
@@ -675,19 +660,16 @@ public class GroupThread extends Thread
 					
 					return true;	
 				}
-				else
-				{
+				else {
 					return false; //User does not exist
 					
 				}
 			}
-			else
-			{
+			else {
 				return false; //requester is not an administer
 			}
 		}
-		else
-		{
+		else {
 			return false; //requester does not exist
 		}
 	}
@@ -704,11 +686,8 @@ public class GroupThread extends Thread
 		
 		// Check if group does not exist
 		// this assumes all group names must be unique, regardless of owner
-		if(!my_gs.groupList.checkGroup(groupName))
-		{
-			
-			if(my_gs.userList.checkUser(requester)){
-				
+		if(!my_gs.groupList.checkGroup(groupName)){
+			if(my_gs.userList.checkUser(requester)){		
 				my_gs.groupList.createGroup(groupName, requester);
 				my_gs.groupList.addMember(groupName, requester);
 				my_gs.userList.addGroup(requester, groupName);
@@ -717,8 +696,7 @@ public class GroupThread extends Thread
 			}
 			return false;
 		}
-		else
-		{
+		else {
 			return false; //group exists
 		}
 	}
@@ -736,8 +714,7 @@ public class GroupThread extends Thread
 			return false;
 
 		// check if group exists
-		if(my_gs.groupList.checkGroup(groupName))
-		{
+		if(my_gs.groupList.checkGroup(groupName)){
 			// check if requester is the group's owner
 			if(my_gs.groupList.getGroupOwner(groupName).equals(requester)) {
 				// delete group from users
@@ -764,27 +741,23 @@ public class GroupThread extends Thread
 		//Get the requester
 		String requester = token.getSubject();
 		// Does the requester exist?
-		if (my_gs.userList.checkUser(requester))
-		{
+		if (my_gs.userList.checkUser(requester)){
 			// Get the groups the requester belongs to
 			ArrayList<String> groups = my_gs.userList.getUserGroups(requester);
 
 			// is the user authorized to be in this group?
 			// check requester is the owner of the group
-			if (groups.contains(groupName) && my_gs.groupList.getGroupOwner(groupName).equals(requester))
-			{
+			if (groups.contains(groupName) && my_gs.groupList.getGroupOwner(groupName).equals(requester)){
 				// get the members of this group
 				return my_gs.groupList.getGroupUsers(groupName);
 			}
 			// The user is not authorized to see this group
-			else 
-			{
+			else {
 				return null;
 			}
 		}
 		// The requester doesn't exist
-		else
-		{
+		else {
 			return null;
 		}
 	}
@@ -799,39 +772,31 @@ public class GroupThread extends Thread
 	private boolean addUserToGroup(String userName, String groupName, UserToken token)
 	{
 		String requester = token.getSubject();
-		if (my_gs.userList.checkUser(requester))
-		{
+		if (my_gs.userList.checkUser(requester)){
 			ArrayList<String> owns = my_gs.userList.getUserOwnership(requester);
-			if (owns.contains(groupName))
-			{
-				if (my_gs.userList.checkUser(userName))
-				{
+			if (owns.contains(groupName)){
+				if (my_gs.userList.checkUser(userName)){
 					ArrayList<String> users_in_group = my_gs.groupList.getGroupUsers(groupName);
-					if (!users_in_group.contains(userName))
-					{
+					if (!users_in_group.contains(userName)){
 						//Add user to group
 						my_gs.groupList.addMember(groupName, userName);
 						// add group to user
 						my_gs.userList.addGroup(userName, groupName);
 						return true;
 					}
-					else
-					{ // User is already in the group
+					else { // User is already in the group
 						return false;
 					}
 				}
-				else
-				{ // user to be added doesn't exist
+				else { // user to be added doesn't exist
 					return false;
 				}
 			}
-			else
-			{ // requester doesn't own the group
+			else { // requester doesn't own the group
 				return false;
 			}
 		}
-		else
-		{ // requester doesn't exist
+		else { // requester doesn't exist
 			return false;
 		}
 	}
@@ -846,63 +811,33 @@ public class GroupThread extends Thread
 	private boolean deleteUserFromGroup(String userName, String groupName, UserToken token)
 	{
 		String requester = token.getSubject();
-		if (my_gs.userList.checkUser(requester))
-		{
+		if (my_gs.userList.checkUser(requester)){
 			ArrayList<String> owns = my_gs.userList.getUserOwnership(requester);
-			if (owns.contains(groupName))
-			{
-				if (my_gs.userList.checkUser(userName))
-				{
+			if (owns.contains(groupName)){
+				if (my_gs.userList.checkUser(userName)){
 					ArrayList<String> users_in_group = my_gs.groupList.getGroupUsers(groupName);
-					if (users_in_group.contains(userName))
-					{
+					if (users_in_group.contains(userName)){
 						// remove user from group
 						my_gs.groupList.removeMember(groupName, userName);
 						// remove group from user
 						my_gs.userList.removeGroup(userName, groupName);
 						return true;
 					}
-					else
-					{ // User is not in the group
+					else { // User is not in the group
 						return false;
 					}
 				}
-				else
-				{ // user to be added doesn't exist
+				else { // user to be added doesn't exist
 					return false;
 				}
 			}
-			else
-			{ // requester doesn't own the group
+			else { // requester doesn't own the group
 				return false;
 			}
 		}
-		else
-		{ // requester doesn't exist
+		else { // requester doesn't exist
 			return false;
 		}
-	}
-
-	private boolean checkUser(String user, String pwd) {
-		if (my_gs.userList.checkUser(user) == false) {
-			return false;
-		}
-		BigInteger salt = my_gs.userList.getSalt(user);
-		byte[] password = Passwords.generatePasswordHash(pwd, salt);
-		return my_gs.userList.checkPassword(user, password);
-	}
-
-	private boolean checkFlag(String user) {
-		return my_gs.userList.getNewPassword(user);
-	}
-
-	private boolean setPassword(String user, String password) {
-		BigInteger salt = Passwords.generateSalt();
-		my_gs.userList.setSalt(user, salt);
-		byte[] hashword = Passwords.generatePasswordHash(password, salt);
-		my_gs.userList.setPassword(user, hashword);
-		my_gs.userList.setNewPassword(user, false);
-		return true;
 	}
 
 	private boolean setRSAKey(String user, PublicKey key) {
@@ -1011,4 +946,34 @@ public class GroupThread extends Thread
 					response = Envelope.buildSuper(innerResponse, sessionKey);
 					output.writeObject(response);
 				}*/
+
+
+	/*
+
+	// More password-related methods
+	
+	private boolean setPassword(String user, String password) {
+		BigInteger salt = Passwords.generateSalt();
+		my_gs.userList.setSalt(user, salt);
+		byte[] hashword = Passwords.generatePasswordHash(password, salt);
+		my_gs.userList.setPassword(user, hashword);
+		my_gs.userList.setNewPassword(user, false);
+		return true;
+	}
+	
+		private boolean checkUser(String user, String pwd) {
+		if (my_gs.userList.checkUser(user) == false) {
+			return false;
+		}
+		BigInteger salt = my_gs.userList.getSalt(user);
+		byte[] password = Passwords.generatePasswordHash(pwd, salt);
+		return my_gs.userList.checkPassword(user, password);
+	}
+
+	private boolean checkFlag(String user) {
+		return my_gs.userList.getNewPassword(user);
+	}
+
+
+	*/
 }
