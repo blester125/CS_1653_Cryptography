@@ -355,12 +355,12 @@ public class GroupThread extends Thread
 							if(message.getObjContents().get(1) != null) {
 								if (message.getObjContents().get(2) != null) {
 									String username = (String)message.getObjContents().get(0); //Extract the username
-									String password = (String)message.getObjContents().get(1);
+									PublicKey newUserPubKey = (PublicKey)message.getObjContents().get(1);
 									UserToken yourToken = (UserToken)message.getObjContents().get(2); //Extract the token
 									if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
 										innerResponse = new Envelope("FAIL");
 									}	
-									if (createUser(username, password, yourToken)) {
+									if (createUser(username, newUserPubKey, yourToken)) {
 										innerResponse = new Envelope("OK"); //Success
 									}
 								}
@@ -648,7 +648,7 @@ public class GroupThread extends Thread
 	
 	//Method to create a user
 	private boolean createUser(String username, 
-						String password, 
+						PublicKey userPublicKey, 
 						UserToken yourToken) {
 		String requester = yourToken.getSubject();
 		
@@ -664,12 +664,14 @@ public class GroupThread extends Thread
 				}
 				else {
 					my_gs.userList.addUser(username);
-					BigInteger salt = Passwords.generateSalt();
-					my_gs.userList.setSalt(username, salt);
-					byte[] hashword = Passwords.generatePasswordHash(
-													password, 
-													salt); 
-					my_gs.userList.setPassword(username, hashword);
+					my_gs.userList.setPublicKey(username, userPublicKey);
+					// We no longer use passwords so this can be removed.
+					// BigInteger salt = Passwords.generateSalt();
+					// my_gs.userList.setSalt(username, salt);
+					// byte[] hashword = Passwords.generatePasswordHash(
+					// 								password, 
+					// 								salt); 
+					// my_gs.userList.setPassword(username, hashword);
 					return true;
 				}
 			}
