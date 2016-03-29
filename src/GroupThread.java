@@ -206,6 +206,9 @@ public class GroupThread extends Thread
 											}
 										}
 									}
+									else {
+										System.out.println("Look up failed");
+									}
 								}
 							}
 						}
@@ -982,6 +985,9 @@ public class GroupThread extends Thread
 	}
 
 	private PublicKey getUserPublicKey(String user) {
+		if (!my_gs.userList.checkUser(user)) {
+			return null;
+		}
 		return my_gs.userList.getPublicKey(user);
 	}
 	/**

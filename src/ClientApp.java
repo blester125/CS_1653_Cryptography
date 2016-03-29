@@ -924,6 +924,11 @@ public class ClientApp {
 			if(dialogue == 0){
 
 				RunClient.fileC.addServerToRegistry(new ServerInfo(RunClient.fileC.sock), RunClient.fileC.serverPublicKey);
+				if(RunClient.fileC.signedDiffieHellman(publicPath, privatePath) == null){
+					JOptionPane.showMessageDialog(null, "Server failed.", "Challenge Failure", JOptionPane.OK_CANCEL_OPTION);
+					RunClient.fileC.disconnect();
+					return;
+				}
 			}
 			else {
 				JOptionPane.showMessageDialog(null, "Connection aborted. Please alert your system administrator of suspicious file servers.", "Connection Aborted", JOptionPane.OK_CANCEL_OPTION);
@@ -932,12 +937,6 @@ public class ClientApp {
 			}
 
 		}
-
-		//if(RunClient.fileC.signedDiffieHellman(publicPath, privatePath) == null){
-		//	JOptionPane.showMessageDialog(null, "Server failed.", "Challenge Failure", JOptionPane.OK_CANCEL_OPTION);
-		//	RunClient.fileC.disconnect();
-		//	return;
-		//}
 		
 		tabbedPane.setEnabledAt(2,true);
 
