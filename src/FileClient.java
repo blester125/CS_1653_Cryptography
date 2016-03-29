@@ -714,6 +714,7 @@ public class FileClient extends Client implements FileClientInterface {
 															keyPlusName = keyPlusName + "client";
 															byte[] hashSuccess = Hasher.hash(keyPlusName);
 															message5.addObject(hashSuccess);
+															// Thread expects Initial Sequence Numbber + 1
 															sequenceNumber++;
 															message5.addObject(sequenceNumber);
 															System.out.println("Sending: ");
