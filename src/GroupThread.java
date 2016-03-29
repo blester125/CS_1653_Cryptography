@@ -141,6 +141,8 @@ public class GroupThread extends Thread
 																		Integer seqNum = (Integer)message3.getObjContents().get(1);
 																		sequenceNumber = seqNum.intValue();
 																		System.out.println("Inital Sequence Number set to: " + sequenceNumber);
+																		// Client expects sequenceNumber + 1
+																		sequenceNumber++;
 																		// Send 4th message
 																		System.out.println("-----SIGNED-DIFFIE-HELLMAN - Sending my Success Hash-----");
 																		Envelope message4 = new Envelope("SUCCESS");
@@ -148,7 +150,7 @@ public class GroupThread extends Thread
 																		keyPlusWord = keyPlusWord + "groupserver";
 																		byte[] hashResponse = Hasher.hash(keyPlusWord);
 																		message4.addObject(hashResponse);
-																		message4.addObject(sequenceNumber + 1);
+																		message4.addObject(sequenceNumber);
 																		System.out.println("Sending: ");
 																		System.out.println(message4 + "\n");
 																		response = Envelope.buildSuper(message4, sessionKey);
@@ -555,15 +557,14 @@ public class GroupThread extends Thread
 /*-------------------------Begin Additional Functions-------------------------*/
 	
 	//Method to create tokens
-	private UserToken createToken(String username) 
+	private UserToken createToken(String username, PublicKey serverKey) 
 	{
-
 		//Check that user exists
 		if(my_gs.userList.checkUser(username))
 		{
 			//Add the timestamp and signage
 			//Issue a new token with server's name, user's name, and user's groups
-			UserToken yourToken = new Token(my_gs.name, username, my_gs.userList.getUserGroups(username));
+			UserToken yourToken = new Token(my_gs.name, username, my_gs.userList.getUserGroups(username), serverKey);
 			System.out.println(yourToken);
 			return yourToken;
 		}
