@@ -35,6 +35,24 @@ public class GroupClient extends Client implements GroupClientInterface {
 		
 	}
 
+	//buildSuper and extractInner are now static functions within Envelope
+	// private Envelope buildSuper(Envelope env){
+
+	// 	IvParameterSpec ivspec = CipherBox.generateRandomIV();			
+	// 	Envelope superEnv = new Envelope("SUPER");
+	// 	superEnv.addObject(CipherBox.encrypt(env, sessionKey, ivspec));
+	// 	superEnv.addObject(ivspec.getIV());
+	// 	return superEnv;
+	// }
+
+	// private Envelope extractInner(Envelope superInputEnv){
+
+	// 	SealedObject innerEnv = (SealedObject)superInputEnv.getObjContents().get(0);
+	// 	IvParameterSpec decIVSpec = new IvParameterSpec((byte[])superInputEnv.getObjContents().get(1));
+	// 	Envelope env = (Envelope)CipherBox.decrypt(innerEnv, sessionKey, decIVSpec);
+	// 	return env;
+	// }
+
 	public void disconnect()	 {
 		if (isConnected()) {
 			try {
@@ -49,144 +67,56 @@ public class GroupClient extends Client implements GroupClientInterface {
 			}
 		}
 	}
-	
-	//---------------------RSA Authentication Functions-------------------------
 
-	public int setUpRSA() throws Exception {
-		KeyPair keyPair = RSA.loadRSA("","");
-		return shareRSA(keyPair);
+	public int authenticateGroupServer(String username, String password) throws Exception {
+		sessionKey = establishSessionKey();
+		if (sessionKey == null) {
+			// Unable to make the sessionKey();
+			return -1;
+		}
+		return login(username, password);
 	}
 
-	public int shareRSA(KeyPair keyPair) throws Exception {
-		Envelope message = new Envelope("RSAKEY");
-		message.addObject(keyPair.getPublic());
-		message.addObject(sequenceNumber); //add sequence number
-		Envelope superE = Envelope.buildSuper(message, sessionKey);
-		System.out.println(keyPair.getPublic());
-		output.writeObject(superE);
+	public int login(String username, String password) throws Exception 
+	{
+		Envelope contents = new Envelope("LOGIN");
+		contents.addObject(username);
+		contents.addObject(password);
+		Envelope message = Envelope.buildSuper(contents, sessionKey);
+		output.writeObject(message);
 		Envelope superResponse = (Envelope)input.readObject();
 		Envelope response = Envelope.extractInner(superResponse, sessionKey);
 		if (response.getMessage().equals("OK")) {
-			if(response.getObjContents().get(0) != null){
-				Integer seqNum = (Integer)message.getObjContents.get(0);
-				if(seqNum == sequenceNumber + 1){
-					sequenceNumber += 2;
-					return 0;
-				}
-			}
+			return 0;
 		}
-		else {
-			return -1;
+		else if (response.getMessage().equals("CHANGEPASSWORD")) {
+			return 1;
 		}
-	}
-
-	// Login the group server with RSA
-	public int authenticateGroupServerRSA(
-					String username, 
-					String publicKeyPath, 
-					String privateKeyPath) {
-		KeyPair keyPair = RSA.loadRSA(publicKeyPath, privateKeyPath);
-		PublicKey serverKey = RSA.loadServerKey(groupServerKeyPath);
-		sessionKey = establishSessionKeyRSA(username, keyPair, serverKey);
-		if (sessionKey == null) {
-			// Error creating the sharedKey
-			return -1;
+		else 
+		{
+			// Error Authinticating
+			return -2;
 		}
-		return 0;
-	}
+ 	}
 
-	// Establish key with Signed DiffieHellman
-	public SecretKey establishSessionKeyRSA(
-						String username, 
-						KeyPair keyPair, 
-						PublicKey serverKey) {
-		KeyPair DHKeyPair = null;
-		KeyAgreement keyAgreement = null;
-		try {
-			DHKeyPair = DiffieHellman.genKeyPair();
-			keyAgreement = DiffieHellman.genKeyAgreement(DHKeyPair);
-			byte[] hashedPublicKey = Hasher.hash(DHKeyPair.getPublic());
-			SealedObject sealedKey;
-			sealedKey = CipherBox.encrypt(hashedPublicKey, keyPair.getPrivate());
-			// Send message 1
-			Envelope message = new Envelope("RSALOGIN");
-			message.addObject(username);
-			message.addObject(sealedKey);
-			message.addObject(DHKeyPair.getPublic());
-			System.out.println("SENDING FIRST MESSAGE");
-			System.out.println(message);
-			output.writeObject(message);
-			// Recive Message 2
-			Envelope response = (Envelope)input.readObject();
-			System.out.println("RECVD SEND MESSAGE");
-			System.out.println(response);
-			if (response != null) {
-				if (response.getMessage().equals("RSALOGINOK")) {
-					if (response.getObjContents().size() == 2) {
-						if (response.getObjContents().get(0) != null) {
-							if (response.getObjContents().get(1) != null) {
-								SealedObject recvSealedHash = (SealedObject)response.getObjContents().get(0);
-								byte[] recvHash = (byte[])CipherBox.decrypt(recvSealedHash, serverKey);
-								PublicKey DHServerKey = (PublicKey)response.getObjContents().get(1);
-								if (Hasher.verifyHash(recvHash, DHServerKey)) {
-									System.out.println("MATCHING HASHES");
-									SecretKey sessionKey = DiffieHellman.generateSecretKey(DHServerKey, keyAgreement);
-									// Send Message 3
-									Envelope innerResponse = new Envelope("SUCCESS");
-									String keyPlusName = CipherBox.getKeyAsString(sessionKey);
-									keyPlusName = keyPlusName + username;
-									byte[] hashSuccess = Hasher.hash(keyPlusName);
-									innerResponse.addObject(hashSuccess);
-									SecureRandom rand = new SecureRandom();
-									sequenceNumber = rand.nextInt(101);
-									innerResponse.addObject(sequenceNumber);
-									System.out.println("SENDING THIRD MESSAGE");
-									System.out.println(innerResponse);
-									response = Envelope.buildSuper(innerResponse, sessionKey);
-									System.out.println("SUPER ENV FOR THIRD MESSAGE");
-									System.out.println(response);
-									output.writeObject(response);
-									// Recive Message 4
-									response = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-									System.out.println("RECVD FOURTH MESSAGE");
-									System.out.println(response);
-									if (response != null) {
-										if (response.getMessage().equals("SUCCESS")) {
-											if (response.getObjContents().size() == 2) {
-												if (response.getObjContents().get(0) != null) {
-													if (response.getObjContents().get(1) != null) {
-														recvHash = (byte[])response.getObjContents().get(0);
-														Integer seqNum = (Integer)response.getObjContents().get(1);
-														String keyPlusWord = CipherBox.getKeyAsString(sessionKey);
-														keyPlusWord = keyPlusWord + "groupserver";
-														System.out.println(keyPlusWord);
-														if (Hasher.verifyHash(recvHash, keyPlusWord)) {
-															if (seqNum == sequenceNumber + 1) {
-																sequenceNumber += 2;
-																System.out.println("SECURE AND AUTH'D CONNECTION ESTABLISHED");
-																return sessionKey;
-															}
-														}
-													}
-												}
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-			return null;
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
-	}
-
-	//------------------Post-Authentication Functionality-----------------------
-
+ 	public boolean newPassword(String password) {
+ 		try {
+	 		Envelope contents = new Envelope("CHANGEPASSWORD");
+ 			contents.addObject(password);
+ 			Envelope message = Envelope.buildSuper(contents, sessionKey);
+	 		output.writeObject(message);
+ 			Envelope superResponse = (Envelope)input.readObject();
+ 			Envelope response = Envelope.extractInner(superResponse, sessionKey);
+ 			if (response.getMessage().equals("OK")) {
+	 			return true;
+ 			}
+ 			return false;
+ 		} catch (Exception e) {
+ 			e.printStackTrace();
+ 			return false;
+ 		}
+ 	}
+ 
 	public UserToken getToken(String username) {
 		try {
 			UserToken token = null;
@@ -195,7 +125,6 @@ public class GroupClient extends Client implements GroupClientInterface {
 			//Tell the server to return a token.
 			message = new Envelope("GET");
 			message.addObject(username); //Add user name string
-			message.addObject(sequenceNumber) //Add sequence number
 			superE = Envelope.buildSuper(message, sessionKey);
 			output.writeObject(superE);
 			
@@ -203,17 +132,15 @@ public class GroupClient extends Client implements GroupClientInterface {
 			superResponse = (Envelope)input.readObject();
 			response = Envelope.extractInner(superResponse, sessionKey);			
 			//Successful response
-			if(response.getMessage().equals("OK")) {
-				if(response.getObjContents().get(0) != null){
-					if(response.getObjContents().get(1) != null){
-						Integer seqNum = (Integer)response.getObjContents().get(1);
-						if(seqNum == sequenceNumber + 1){
-
-							token = (UserToken)response.getObjContents().get(0);
-							sequenceNumber += 2;
-							return token;
-						}
-					}
+			if(response.getMessage().equals("OK"))
+			{
+				//If there is a token in the Envelope, return it 
+				ArrayList<Object> temp = null;
+				temp = response.getObjContents();
+				if(temp.size() == 1)
+				{
+					token = (UserToken)temp.get(0);
+					return token;
 				}
 			}
 			return null;
@@ -224,8 +151,8 @@ public class GroupClient extends Client implements GroupClientInterface {
 			return null;
 		}
 		
-	}
-
+	 }
+	
 	/**
 	 * retreives the meta-data for all of a user's groups
 	 * i.e. old keys, current key, current key version, and the associated
@@ -233,7 +160,6 @@ public class GroupClient extends Client implements GroupClientInterface {
 	 * @param	user's token
 	 * @return	group metadata for each group
 	 */
-	@SuppressWarnings("unchecked")
 	public ArrayList<GroupMetadata> getGroupsMetadata(UserToken	token) {
 		try {
 			ArrayList<GroupMetadata> groupsmd = null;
@@ -242,7 +168,6 @@ public class GroupClient extends Client implements GroupClientInterface {
 			//Tell the server to return the user's groups meta-data.
 			message = new Envelope("GET-GMETADATA");
 			message.addObject(token); //Add requester's token
-			message.addObject(sequenceNumber); //add sequence number
 			superE = Envelope.buildSuper(message, sessionKey);
 			output.writeObject(superE);
 			
@@ -250,17 +175,15 @@ public class GroupClient extends Client implements GroupClientInterface {
 			superResponse = (Envelope)input.readObject();
 			response = Envelope.extractInner(superResponse, sessionKey);			
 			//Successful response
-			if(response.getMessage().equals("OK")){
-				if(response.getObjContents().get(0) != null){
-					if(response.getObjContents().get(1) != null){
-						Integer seqNum = (Integer)response.getObjContents().get(1);
-						if(seqNum == sequenceNumber + 1){
-
-							groupsmd = (ArrayList<GroupMetadata>)response.getObjContents().get(0);
-							sequenceNumber += 2;
-							return groupsmd;
-						}
-					}
+			if(response.getMessage().equals("OK"))
+			{
+				//If there is a token in the Envelope, return it 
+				ArrayList<Object> temp = null;
+				temp = response.getObjContents();
+				if(temp.size() == 1)
+				{
+					groupsmd = (ArrayList<GroupMetadata>)temp.get(0);
+					return groupsmd;
 				}
 			}
 			return null;
@@ -274,34 +197,23 @@ public class GroupClient extends Client implements GroupClientInterface {
 	 
 	public boolean createUser(
 					String username, 
-					String publicKeyPath, 
+					String password, 
 					UserToken token) {
 		try {
-			//Get only public key from file
-			PublicKey publicKey = RSA.loadPublic(publicKeyPath);
-			//Create envelopes for transmission
 			Envelope message = null, response = null;
 			Envelope superE = null, superResponse = null;
 			//Tell the server to create a user
 			message = new Envelope("CUSER");
 			message.addObject(username); //Add user name string
-			message.addObject(publicKey);
+			message.addObject(password);
 			message.addObject(token); //Add the requester's token
-			message.addObject(sequenceNumber); //Add sequence number
 			superE = Envelope.buildSuper(message, sessionKey);
 			output.writeObject(superE);
 			superResponse = (Envelope)input.readObject();
 			response = Envelope.extractInner(superResponse, sessionKey);
-			//Check sequence number and server response message
-			if (response.getObjContents().get(0) != null){
-				if (response.getMessage().equals("OK")) {
-
-					Integer seqNum = (Integer)response.getObjContents().get(0);
-					if(seqNum == sequenceNumber + 1){
-						sequenceNumber += 2;
-						return true;
-					}
-				}
+			//If server indicates success, return true
+			if (response.getMessage().equals("OK")) {
+				return true;
 			}
 			return false;
 		}
@@ -414,7 +326,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			superResponse = (Envelope)input.readObject();
 			response = Envelope.extractInner(superResponse, sessionKey);
 
-			//If server indicates success, return the m)ember list
+			//If server indicates success, return the member list
 			if (response.getMessage().equals("OK")) { 
 				return (List<String>)response.getObjContents().get(0); //This cast creates compiler warnings. Sorry.
 			}
@@ -491,59 +403,11 @@ public class GroupClient extends Client implements GroupClientInterface {
 		}
 	}
 
-
-	//Passwords are now unused in Phase 4. All code below pertaining to passwords is no longer used.
-
-	/*
-	public int authenticateGroupServer(String username, String password) throws Exception {
-		sessionKey = establishSessionKey();
-		if (sessionKey == null) {
-			// Unable to make the sessionKey();
-			return -1;
-		}
-		return login(username, password);
-	}
-
-	public int login(String username, String password) throws Exception 
-	{
-		Envelope contents = new Envelope("LOGIN");
-		contents.addObject(username);
-		contents.addObject(password);
-		Envelope message = Envelope.buildSuper(contents, sessionKey);
-		output.writeObject(message);
-		Envelope superResponse = (Envelope)input.readObject();
-		Envelope response = Envelope.extractInner(superResponse, sessionKey);
-		if (response.getMessage().equals("OK")) {
-			return 0;
-		}
-		else if (response.getMessage().equals("CHANGEPASSWORD")) {
-			return 1;
-		}
-		else 
-		{
-			// Error Authinticating
-			return -2;
-		}
- 	}
-
-	public boolean newPassword(String password) {
-		try {
-			Envelope contents = new Envelope("CHANGEPASSWORD");
-			contents.addObject(password);
-			Envelope message = Envelope.buildSuper(contents, sessionKey);
-			output.writeObject(message);
-			Envelope superResponse = (Envelope)input.readObject();
-			Envelope response = Envelope.extractInner(superResponse, sessionKey);
-			if (response.getMessage().equals("OK")) {
-				return true;
-			}
-			return false;
-		} catch (Exception e) {
-			e.printStackTrace();
-			return false;
-		}
-	}
-
+	/**
+	 * establishes a shared session key by generating a shared symmetric key between
+	 * the client and the server 
+	 * @return	SecretKey on success, null on failure
+	 */
 	public SecretKey establishSessionKey() {
 		KeyPair keyPair = null;
 		KeyAgreement keyAgreement = null;
@@ -579,7 +443,6 @@ public class GroupClient extends Client implements GroupClientInterface {
 			return null;
 		}
 	}
-	*/
 
 	public int setUpRSA() throws Exception {
 		KeyPair keyPair = RSA.loadRSA("","");
@@ -715,4 +578,5 @@ public class GroupClient extends Client implements GroupClientInterface {
 			return null;
 		}
 	}
+
 }

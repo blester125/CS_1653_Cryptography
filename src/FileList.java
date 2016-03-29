@@ -17,7 +17,7 @@ import javax.crypto.spec.IvParameterSpec;
 	}
 	
 	public synchronized void addFile(String owner, String group, String path, int keyIndex, 
-			int keyVersion, byte[] iv)
+			int keyVersion, IvParameterSpec iv)
 	{
 		ShareFile newFile = new ShareFile(owner, group, path, keyIndex, keyVersion, iv);
 		list.add(newFile);

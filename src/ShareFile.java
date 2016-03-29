@@ -11,7 +11,7 @@ public class ShareFile implements java.io.Serializable, Comparable<ShareFile> {
 	private String owner;
 	private int keyIndex;
 	private int keyVersion;
-	private byte[] iv;
+	private IvParameterSpec iv;
 	
 	public ShareFile(
 						String _owner, 
@@ -19,7 +19,7 @@ public class ShareFile implements java.io.Serializable, Comparable<ShareFile> {
 						String _path, 
 						int _keyIndex,
 						int _keyVersion,
-						byte[] _iv) {
+						IvParameterSpec _iv) {
 		group = _group;
 		owner = _owner;
 		path = _path;
@@ -50,7 +50,7 @@ public class ShareFile implements java.io.Serializable, Comparable<ShareFile> {
 		return keyVersion;
 	}
 	
-	public byte[] getIv() {
+	public IvParameterSpec getIvParameterSpec() {
 		return iv;
 	}
 	

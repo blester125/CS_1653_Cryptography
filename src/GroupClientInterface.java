@@ -1,4 +1,3 @@
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -40,8 +39,7 @@ public interface GroupClientInterface
      *
      */
     public UserToken getToken(final String username);
-    
-    public ArrayList<GroupMetadata> getGroupsMetadata(final UserToken token);
+
 
     /**
      * Creates a new user.  This method should only succeed if the

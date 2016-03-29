@@ -437,8 +437,7 @@ public class FileThread extends Thread
 
 									e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
 									while (e.getMessage().compareTo("CHUNK")==0) {
-										fos.write((byte[])e.getObjContents().get(0), 
-												0, (Integer)e.getObjContents().get(1));
+										fos.write(((byte[])e.getObjContents().get(0)), 0, (Integer)e.getObjContents().get(1));
 										response = new Envelope("READY"); //Success
 										output.writeObject(Envelope.buildSuper(response, sessionKey));
 										System.out.println("SENT from UPLOADF - READYCHUNK: " + response);
@@ -460,7 +459,7 @@ public class FileThread extends Thread
 											else {
 												int keyIndex = ((Integer)e.getObjContents().get(0)).intValue();
 												int keyVersion = ((Integer)e.getObjContents().get(1)).intValue();
-												byte[] iv = (byte[])e.getObjContents().get(2);
+												IvParameterSpec iv = (IvParameterSpec)e.getObjContents().get(2);
 												System.out.printf("Transfer successful file %s\n", remotePath);
 												FileServer.fileList.addFile(yourToken.getSubject(), group, 
 														remotePath, keyIndex, keyVersion, iv);
@@ -483,6 +482,7 @@ public class FileThread extends Thread
 				}
 				else if (e.getMessage().equals("DOWNLOADF") && isSecureConnection && isAuthenticated) 
 				{
+
 					String remotePath = (String)e.getObjContents().get(0);
 					Token t = (Token)e.getObjContents().get(1);
 					if(e.getObjContents() == null || e.getObjContents().size() < 2) {
@@ -494,7 +494,7 @@ public class FileThread extends Thread
 					else if(e.getObjContents().get(1) == null) {
 						response = new Envelope("FAIL-BADTOKEN");
 					}
-					else if (/*verifyToken(t)*/ true) {
+					else if (verifyToken(t)) {
 						ShareFile sf = FileServer.fileList.getFile("/"+remotePath);
 
 						if (sf == null) 
@@ -550,7 +550,7 @@ public class FileThread extends Thread
 										if(!sentMetadata) {
 											response.addObject(new Integer(sf.getKeyIndex()));
 											response.addObject(new Integer(sf.getKeyVersion()));
-											response.addObject(sf.getIv());
+											response.addObject(sf.getIvParameterSpec());
 											sentMetadata = true;
 										}
 
@@ -561,8 +561,10 @@ public class FileThread extends Thread
 									}
 									while (fis.available()>0);
 
+									//If server indicates success, return the member list
 									if(e != null && e.getMessage().compareTo("DOWNLOADF")==0 && isSecureConnection  && isAuthenticated)
 									{
+
 										response = new Envelope("EOF");
 										output.writeObject(Envelope.buildSuper(response, sessionKey));
 										System.out.println("SENT from DOWNLOADF - EOF: " + response);
@@ -572,12 +574,13 @@ public class FileThread extends Thread
 											System.out.printf("File data download successful\n");
 										}
 										else {
-											System.out.printf("Download failed: %s\n", e.getMessage());
+											System.out.printf("Upload failed: %s\n", e.getMessage());
 											sendFail(response, output);
 										}
 									}
 									else {
-										System.out.printf("Download failed: %s\n", e.getMessage());
+
+										System.out.printf("Upload failed: %s\n", e.getMessage());
 										sendFail(response, output);
 									}
 
@@ -669,8 +672,7 @@ public class FileThread extends Thread
 	private boolean verifyToken(UserToken token) {
 		// check for token freshness
 		System.out.println("verify");
-		return true;
-		/*if(!token.isFresh()) {
+		if(!token.isFresh()) {
 			System.out.println("old token");
 			return false;
 		}
@@ -688,7 +690,7 @@ public class FileThread extends Thread
 		if (!MessageDigest.isEqual(recvHash, hashToken)) {
 			return false;
 		}
-		return true;*/
+		return true;
 	}
 	
 	/**
