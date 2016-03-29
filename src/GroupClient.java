@@ -494,61 +494,70 @@ public class GroupClient extends Client implements GroupClientInterface {
 			SealedObject sealedKey;
 			sealedKey = CipherBox.encrypt(hashedPublicKey, keyPair.getPrivate());
 			// Send message 1
-			Envelope message = new Envelope("RSALOGIN");
-			message.addObject(username);
-			message.addObject(sealedKey);
-			message.addObject(DHKeyPair.getPublic());
-			System.out.println("SENDING FIRST MESSAGE");
-			System.out.println(message);
-			output.writeObject(message);
+			System.out.println("-----SIGNED-DIFFIE-HELLMAN - Sending my Diffie Hellman Public Keys-----");
+			Envelope message1 = new Envelope("RSALOGIN");
+			message1.addObject(username);
+			message1.addObject(sealedKey);
+			message1.addObject(DHKeyPair.getPublic());
+			System.out.println("Sending:");
+			System.out.println(message1 + "\n");
+			output.writeObject(message1);
 			// Recive Message 2
-			Envelope response = (Envelope)input.readObject();
-			System.out.println("RECVD SEND MESSAGE");
-			System.out.println(response);
-			if (response != null) {
-				if (response.getMessage().equals("RSALOGINOK")) {
-					if (response.getObjContents().size() == 2) {
-						if (response.getObjContents().get(0) != null) {
-							if (response.getObjContents().get(1) != null) {
-								SealedObject recvSealedHash = (SealedObject)response.getObjContents().get(0);
+			System.out.println("-----SIGNED-DIFFIE-HELLMAN - Receiving group server Diffie Hellman Public Keys-----");
+			Envelope message2 = (Envelope)input.readObject();
+			System.out.println("Received:");
+			System.out.println(message2 + "\n");
+			if (message2 != null) {
+				if (message2.getMessage().equals("RSALOGINOK")) {
+					if (message2.getObjContents().size() == 2) {
+						if (message2.getObjContents().get(0) != null) {
+							if (message2.getObjContents().get(1) != null) {
+								SealedObject recvSealedHash = (SealedObject)message2.getObjContents().get(0);
 								byte[] recvHash = (byte[])CipherBox.decrypt(recvSealedHash, serverKey);
-								PublicKey DHServerKey = (PublicKey)response.getObjContents().get(1);
+								PublicKey DHServerKey = (PublicKey)message2.getObjContents().get(1);
+								System.out.println("Verify the signed hash matchs the generated hash");
 								if (Hasher.verifyHash(recvHash, DHServerKey)) {
-									System.out.println("MATCHING HASHES");
+									System.out.println("Hashes Match");
 									SecretKey sessionKey = DiffieHellman.generateSecretKey(DHServerKey, keyAgreement);
+									System.out.println("Generated Session Key: " + sessionKey);
 									// Send Message 3
-									Envelope innerResponse = new Envelope("SUCCESS");
+									System.out.println("-----SIGNED-DIFFIE-HELLMAN - Sending Success Hash and Inital Sequence Number-----");
+									Envelope message3 = new Envelope("SUCCESS");
 									String keyPlusName = CipherBox.getKeyAsString(sessionKey);
 									keyPlusName = keyPlusName + username;
 									byte[] hashSuccess = Hasher.hash(keyPlusName);
-									innerResponse.addObject(hashSuccess);
+									message3.addObject(hashSuccess);
 									SecureRandom rand = new SecureRandom();
 									sequenceNumber = rand.nextInt(101);
-									innerResponse.addObject(sequenceNumber);
-									System.out.println("SENDING THIRD MESSAGE");
-									System.out.println(innerResponse);
-									response = Envelope.buildSuper(innerResponse, sessionKey);
-									System.out.println("SUPER ENV FOR THIRD MESSAGE");
-									System.out.println(response);
-									output.writeObject(response);
+									System.out.println("Inital Sequence number set to: " + sequenceNumber);
+									message3.addObject(sequenceNumber);
+									System.out.println("Sending: ");
+									System.out.println(message3 + "\n");
+									Envelope superMessage3 = Envelope.buildSuper(message3, sessionKey);
+									output.writeObject(superMessage3);
 									// Recive Message 4
-									response = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-									System.out.println("RECVD FOURTH MESSAGE");
-									System.out.println(response);
-									if (response != null) {
-										if (response.getMessage().equals("SUCCESS")) {
-											if (response.getObjContents().size() == 2) {
-												if (response.getObjContents().get(0) != null) {
-													if (response.getObjContents().get(1) != null) {
-														recvHash = (byte[])response.getObjContents().get(0);
-														Integer seqNum = (Integer)response.getObjContents().get(1);
+									Envelope message4 = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+									System.out.println("-----SIGNED-DIFFIE-HELLMAN - Receiving the Success Hash-----");
+									System.out.println("Received: ");
+									System.out.println(message4 + "\n");
+									if (message4 != null) {
+										if (message4.getMessage().equals("SUCCESS")) {
+											if (message4.getObjContents().size() == 2) {
+												if (message4.getObjContents().get(0) != null) {
+													if (message4.getObjContents().get(1) != null) {
+														recvHash = (byte[])message4.getObjContents().get(0);
+														Integer seqNum = (Integer)message4.getObjContents().get(1);
 														String keyPlusWord = CipherBox.getKeyAsString(sessionKey);
 														keyPlusWord = keyPlusWord + "groupserver";
-														System.out.println(keyPlusWord);
+														System.out.println("Verify that the Success Hashs matchs");
 														if (Hasher.verifyHash(recvHash, keyPlusWord)) {
+															System.out.println("Hashes Match");
+															System.out.println("Checking Sequence Number");
 															if (seqNum == sequenceNumber + 1) {
+																System.out.println("Sequence Number is correct.");
 																sequenceNumber += 2;
-																System.out.println("SECURE AND AUTH'D CONNECTION ESTABLISHED");
+																System.out.println("Sequence Number set to: " + sequenceNumber);
+																System.out.println("\nSecure and Authenticated connection with group server Established.");
 																return sessionKey;
 															}
 														}

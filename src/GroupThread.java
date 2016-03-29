@@ -123,29 +123,25 @@ public class GroupThread extends Thread
 				}*/
 				if (message.getMessage().equals("RSALOGIN")) {
 					response = new Envelope("FAIL");
-					if (message.getObjContents().size() < 3) {
-						response = new Envelope("FAIL");
-					}
-					else {
-						// Get first message
+					if (message.getObjContents().size() == 3) {
 						if (message.getObjContents().get(0) != null) {
 							if (message.getObjContents().get(1) != null) {
 								if (message.getObjContents().get(2) != null) {
-									System.out.println("RECIVED FIRST MESSAGE");
-									System.out.println(message);
+									System.out.println("-----SIGNED-DIFFIE-HELLMAN - Receiving user Diffie Hellman Public Key-----");
+									System.out.println("Received: \n" + message + "\n");
 									String user = (String)message.getObjContents().get(0);
 									SealedObject sealedHash = (SealedObject)message.getObjContents().get(1);
 									PublicKey recvdKey = (PublicKey)message.getObjContents().get(2);
 									PublicKey userPublicKey = getUserPublicKey(user);
 									//System.out.println(userPublicKey);
+									System.out.println("Seaching for User Public Key");
 									if (userPublicKey != null) {
-										System.out.println("FOUND USER PUBLIC KEY");
+										System.out.println("Found User Public Key");
 										byte[] recvHash = (byte[])CipherBox.decrypt(sealedHash, userPublicKey);
-										System.out.println(new String(recvHash));
 										byte[] madeHash = Hasher.hash(recvdKey);
-										System.out.println(new String(madeHash));
+										System.out.println("Verify the signed Hash with the made one.");
 										if (Hasher.verifyHash(recvHash, recvdKey)) {
-											System.out.println("MATCHING HASHES");
+											System.out.println("Hashes Matched");
 											KeyPair keyPair = null;
 											KeyAgreement keyAgreement = null;
 											// generate secret key and send back public key
@@ -153,49 +149,52 @@ public class GroupThread extends Thread
 												keyPair = DiffieHellman.genKeyPair();
 												keyAgreement = DiffieHellman.genKeyAgreement(keyPair);
 												sessionKey = DiffieHellman.generateSecretKey(recvdKey, keyAgreement);
+												System.out.println("Generated Session Key: " + sessionKey);
 												// Send second message
-												response = new Envelope("RSALOGINOK");
+												System.out.println("-----SIGNED-DIFFIE-HELLMAN - Send my Diffie Hellman Public Keys-----");
+												Envelope message2 = new Envelope("RSALOGINOK");
 												byte[] hashedPublicKey = Hasher.hash(keyPair.getPublic());
 												SealedObject sealedKey;
 												sealedKey = CipherBox.encrypt(hashedPublicKey, my_gs.keyPair.getPrivate());
-												response.addObject(sealedKey);
-												response.addObject(keyPair.getPublic());
-												System.out.println("SENDING SECOND MESSAGE");
-												System.out.println(response);
-												output.writeObject(response);
+												message2.addObject(sealedKey);
+												message2.addObject(keyPair.getPublic());
+												System.out.println("Sending: ");
+												System.out.println(message2 + "\n");
+												output.writeObject(message2);
 												// Get third message
-												Envelope check = (Envelope)input.readObject();
-												System.out.println("RECIVED THRID MESSAGE: SUPER ENVELOPE");
-												System.out.println(check);
-												Envelope innerCheck = Envelope.extractInner(check, sessionKey);
-												System.out.println("RECIVED THRID MESSAGE: INNER ENV");
-												System.out.println(innerCheck);
-												response = new Envelope("FAIL");
-												if (innerCheck != null) {
-													if (innerCheck.getMessage().equals("SUCCESS")) {
-														if (innerCheck.getObjContents().size() == 2) {
-															if (innerCheck.getObjContents().get(0) != null) {
-																if (innerCheck.getObjContents().get(1) != null) {
-																	byte[] recvHashWord = (byte[])innerCheck.getObjContents().get(0);
+												Envelope superMessage3 = (Envelope)input.readObject();
+												Envelope message3 = Envelope.extractInner(superMessage3, sessionKey);
+												System.out.println("-----SIGNED-DIFFIE-HELLMAN - Received Succes Hash and Inital Sequence Number-----");
+												System.out.println("Received: " + message3 + "\n");
+												if (message3 != null) {
+													if (message3.getMessage().equals("SUCCESS")) {
+														if (message3.getObjContents().size() == 2) {
+															if (message3.getObjContents().get(0) != null) {
+																if (message3.getObjContents().get(1) != null) {
+																	byte[] recvHashWord = (byte[])message3.getObjContents().get(0);
 																	String keyPlusWord = CipherBox.getKeyAsString(sessionKey);
 																	keyPlusWord = keyPlusWord + user;
+																	System.out.println("Verify that the Succes Hash matches");
 																	if (Hasher.verifyHash(recvHashWord, keyPlusWord)) {
+																		System.out.println("Hashes Match");
 																		isSecureConnection = true;
 																		isAuthenticated = true;
 																		username = user;
-																		sequenceNumber = (Integer)innerCheck.getObjContents().get(1);
+																		Integer seqNum = (Integer)message3.getObjContents().get(1);
+																		sequenceNumber = seqNum.intValue();
+																		System.out.println("Inital Sequence Number set to: " + sequenceNumber);
 																		// Send 4th message
-																		innerResponse = new Envelope("SUCCESS");
+																		System.out.println("-----SIGNED-DIFFIE-HELLMAN - Sending my Success Hash-----");
+																		Envelope message4 = new Envelope("SUCCESS");
 																		keyPlusWord = CipherBox.getKeyAsString(sessionKey);
 																		keyPlusWord = keyPlusWord + "groupserver";
-																		System.out.println(keyPlusWord);
 																		byte[] hashResponse = Hasher.hash(keyPlusWord);
-																		innerResponse.addObject(hashResponse);
-																		innerResponse.addObject(sequenceNumber + 1);
-																		System.out.println("SENDING FOURTH MESSAGE");
-																		System.out.println(innerResponse);
-																		response = Envelope.buildSuper(innerResponse, sessionKey);
-																		System.out.println("SECURE AND AUTHENTICATED CONNECTION ESTABLISHED.");
+																		message4.addObject(hashResponse);
+																		message4.addObject(sequenceNumber + 1);
+																		System.out.println("Sending: ");
+																		System.out.println(message4 + "\n");
+																		response = Envelope.buildSuper(message4, sessionKey);
+																		System.out.println("Secure and Authenticated connection with Group Client Established.");
 																	}
 																}
 															}
