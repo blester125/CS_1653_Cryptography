@@ -215,7 +215,6 @@ public class GroupClient extends Client implements GroupClientInterface {
 			e.printStackTrace(System.err);
 			return null;
 		}
-		
 	}
 
 	/**
@@ -539,9 +538,50 @@ public class GroupClient extends Client implements GroupClientInterface {
 			}
 		}
 	}
+
+
+/*-------------------------------TEST METHODS---------------------------------*/
+
+	public UserToken wrongSequenceToken(String username) {
+		try {
+			UserToken token = null;
+			Envelope message = null, response = null;
+			Envelope superE = null, superResponse = null;	 	
+			//Tell the server to return a token.
+			message = new Envelope("GET");
+			message.addObject(username); //Add user name string
+			message.addObject(sequenceNumber-1); //Add sequence number
+			superE = Envelope.buildSuper(message, sessionKey);
+			output.writeObject(superE);
+			
+			//Get the response from the server
+			superResponse = (Envelope)input.readObject();
+			response = Envelope.extractInner(superResponse, sessionKey);			
+			//Successful response
+			if(response.getMessage().equals("OK")) {
+				if(response.getObjContents().get(0) != null){
+					if(response.getObjContents().get(1) != null){
+						Integer seqNum = (Integer)response.getObjContents().get(1);
+						if(seqNum == sequenceNumber + 1){
+
+							token = (UserToken)response.getObjContents().get(0);
+							sequenceNumber += 2;
+							return token;
+						}
+					}
+				}
+			}
+			return null;
+		}
+		catch(Exception e) {
+			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace(System.err);
+			return null;
+		}
+	}
 	
 
-
+/*-------------------------OLD PASSWORD CODE----------------------------------*/
 	/*
 	
 		public int authenticateGroupServer(String username, String password) throws Exception {
