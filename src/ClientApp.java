@@ -310,7 +310,7 @@ public class ClientApp {
 		homePage.add(btnFileServer, gbc_btnFileServer);
 
 		//Login/lougout buttons
-		final JButton btnRSASetup = new JButton("RSA Setup");
+		final JButton btnRSASetup = new JButton("Update RSA");
 		final JButton btnRSA = new JButton("RSA Login");
 		final JButton btnLogout = new JButton("Logout");
 
@@ -838,7 +838,7 @@ public class ClientApp {
 		usernameField.setEnabled(false);
 		ipField.setEnabled(false);
 		portField.setEnabled(false);
-		publicPathField.setEnabled(false);
+		publicPathField.setEnabled(true);
 		btnNewUser.setEnabled(true);
 		btnDeleteUser.setEnabled(true);
 		tabbedPane.setEnabledAt(1,true);
@@ -855,7 +855,7 @@ public class ClientApp {
 			if (result == 0) {
 				JOptionPane.showMessageDialog(
 						null, 
-						"RSA Key susscfully shared.", 
+						"RSA Key sucessfully updated.", 
 						"Success", 
 						JOptionPane.OK_CANCEL_OPTION);
 			}
@@ -993,13 +993,13 @@ public class ClientApp {
 		JPanel newUserDialogue = new JPanel();
 		JTextField newUsernameField = new JTextField(20);
 		JLabel usernameDialogueLabel = new JLabel("Please enter a username: ");
-		JTextField newPasswordField = new JPasswordField(20);
-		JLabel passwordDialogueLabel = new JLabel("Please enter a password: ");
+		JTextField newPublicKeyField = new JTextField(20);
+		JLabel keyPathDialogueLabel = new JLabel("Please enter RSA Public Key Path: ");
 
 		newUserDialogue.add(usernameDialogueLabel);
 		newUserDialogue.add(newUsernameField);
-		newUserDialogue.add(passwordDialogueLabel);
-		newUserDialogue.add(newPasswordField);
+		newUserDialogue.add(keyPathDialogueLabel);
+		newUserDialogue.add(newPublicKeyField);
 
 		int dialogue = JOptionPane.showOptionDialog(
 										null, 
@@ -1012,7 +1012,7 @@ public class ClientApp {
 										null);
 		
 		String newUsername = newUsernameField.getText();
-		String newPassword = newPasswordField.getText();
+		String newPubKeyPath = newPublicKeyField.getText();
 
 		UserToken currToken = RunClient.groupC.getToken(currentUsername);
 		
@@ -1031,7 +1031,7 @@ public class ClientApp {
 			// If fail, report and return
 			if (!RunClient.groupC.createUser(
 									newUsername, 
-									newPassword, 
+									newPubKeyPath, 
 									currToken)) {
 				JOptionPane.showMessageDialog(
 								null, 
@@ -1521,6 +1521,7 @@ public class ClientApp {
 		for(GroupMetadata group : userGroupsMetadata) {
 			if(group.getGroupname().equals(currGroup)) {
 				currGroupMetadata = group;
+				break;
 			}
 		}
 		if(currGroupMetadata == null){
