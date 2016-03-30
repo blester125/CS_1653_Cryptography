@@ -129,4 +129,20 @@ public class RSA {
 		}
 		return javax.xml.bind.DatatypeConverter.printHexBinary(Hasher.hash(key));
 	}
+
+	public static void main(String args[]){
+
+		//generate sample user keys (carl)
+		loadRSA("alicepublic.key", "aliceprivate.key");
+		loadRSA("bobpublic.key", "bobprivate.key");
+		loadRSA("carolpublic.key", "carolpublic.key");
+		loadRSA("davepublic.key", "daveprivate.key");
+		loadRSA("evepublic.key", "eveprivate.key");
+		loadRSA("fredpublic.key", "fredprivate.key");
+		loadRSA("gregpublic.key", "gregprivate.key");
+		loadRSA("harrypublic.key", "harryprivate.key");
+		loadRSA("igorpublic.key", "igorprivate.key");
+		loadRSA("jillpublic.key", "jillprivate.key");
+		loadRSA("trentpublic.key", "trentprivate.key");
+	}
 }
