@@ -207,28 +207,27 @@ public class GroupThread extends Thread
 				else if (message.getMessage().equals("GET") 
 							&& isSecureConnection
 							&& isAuthenticated) {//Client wants a token
-					String user = (String)message.getObjContents().get(0); //Get the username
-					if (message.getObjContents().get(1) == null) {
-						innerResponse = new Envelope("FAIL");
-					}
-					if (user == null) {
-						innerResponse = new Envelope("FAIL");
-					}
-					else {
-						innerResponse = new Envelope("FAIL");
-						int tempseq = (Integer)message.getObjContents().get(1); //get sequence number
-
-						if (tempseq == sequenceNumber + 1) {
-							UserToken yourToken = createToken(username); //Create a token
-							//Respond to the client. On error, the client will receive a null token
-							if (yourToken != null) {
-								// Sign token
-								if (yourToken.signToken(my_gs.keyPair.getPrivate())) {
-									sequenceNumber += 2;
-									innerResponse = new Envelope("OK");
-									innerResponse.addObject(yourToken);
-									innerResponse.addObject(sequenceNumber);
-									// If Token didn't fail the user exists no need to check here
+					innerResponse = new Envelope("FAIL");
+					if (message.getObjContents().size() == 3) {
+						if (message.getObjContents().get(0) != null){
+							if (message.getObjContents().get(1) != null){
+								if (message.getObjContents().get(2) != null){
+									String user = (String)message.getObjContents().get(0); //Get the username
+									PublicKey targetKey = (PublicKey)message.getObjContents().get(1);
+									int tempseq = (Integer)message.getObjContents().get(2); //get sequence number
+									if (tempseq == sequenceNumber + 1) {
+										UserToken yourToken = createToken(username, targetKey); //Create a token
+										//Respond to the client. On error, the client will receive a null token
+										if (yourToken != null) {
+											// Sign token
+											if (yourToken.signToken(my_gs.keyPair.getPrivate())) {
+												sequenceNumber += 2;
+												innerResponse = new Envelope("OK");
+												innerResponse.addObject(yourToken);
+												innerResponse.addObject(sequenceNumber);
+											}
+										}
+									}
 								}
 							}
 						}

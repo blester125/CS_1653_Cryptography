@@ -23,8 +23,8 @@ import javax.crypto.spec.IvParameterSpec;
 
 public class FileClient extends Client implements FileClientInterface {
 	private SecretKey sessionKey;
-	public PublicKey cachedPublicKey;
 	private String fileserverRegistry = "FileServerRegistry.bin";
+	public PublicKey cachedPublicKey;
 	public PublicKey serverPublicKey = null;
 	public String cachedKeyFingerprint;
 	public String serverKeyFingerprint;
@@ -32,6 +32,10 @@ public class FileClient extends Client implements FileClientInterface {
 	
 	public FileClient() {
 
+	}
+
+	public PublicKey getFileServerKey() {
+		return serverPublicKey;
 	}
 
 	//buildSuper and extractInner are now static functions within Envelope

@@ -28,11 +28,16 @@ public class GroupClient extends Client implements GroupClientInterface {
 	private SecretKey sessionKey;
 	private int sequenceNumber;
 	private String groupServerKeyPath = "groupserverpublic.key";
+	private PublicKey groupServerKey;
 
 	static final int RSA_BIT_KEYSIZE = 2048;
 		
 	public GroupClient() {
 		
+	}
+
+	public PublicKey getGroupServerKey() {
+		return groupServerKey;
 	}
 
 /*---------------------RSA Authentication Functions---------------------------*/
@@ -69,8 +74,8 @@ public class GroupClient extends Client implements GroupClientInterface {
 					String publicKeyPath, 
 					String privateKeyPath) {
 		KeyPair keyPair = RSA.loadRSA(publicKeyPath, privateKeyPath);
-		PublicKey serverKey = RSA.loadServerKey(groupServerKeyPath);
-		sessionKey = establishSessionKeyRSA(username, keyPair, serverKey);
+		groupServerKey = RSA.loadServerKey(groupServerKeyPath);
+		sessionKey = establishSessionKeyRSA(username, keyPair, groupServerKey);
 		if (sessionKey == null) {
 			// Error creating the sharedKey
 			return -1;
@@ -179,7 +184,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 /*------------------Post-Authentication Functionality-------------------------*/
  
-	public UserToken getToken(String username) {
+	public UserToken getToken(String username, PublicKey serverKey) {
 		try {
 			UserToken token = null;
 			Envelope message = null, response = null;
@@ -187,6 +192,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			//Tell the server to return a token.
 			message = new Envelope("GET");
 			message.addObject(username); //Add user name string
+			message.addObject(serverKey);
 			message.addObject(sequenceNumber); //Add sequence number
 			superE = Envelope.buildSuper(message, sessionKey);
 			output.writeObject(superE);
