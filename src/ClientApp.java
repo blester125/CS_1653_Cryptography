@@ -1013,7 +1013,7 @@ public class ClientApp {
 		String newUsername = newUsernameField.getText();
 		String newPubKeyPath = newPathField.getText();
 
-		UserToken currToken = null;// = RunClient.groupC.getToken(currentUsername);
+		UserToken currToken = RunClient.groupC.getToken(currentUsername, RunClient.groupC.getGroupServerKey());
 		
 		if (newUsername.contains(Token.sentinal)) {
 			JOptionPane.showMessageDialog(
@@ -1063,7 +1063,7 @@ public class ClientApp {
 		
 		String delUsername = delUsernameField.getText();
 
-		UserToken currToken = null;// = RunClient.groupC.getToken(currentUsername);
+		UserToken currToken = RunClient.groupC.getToken(currentUsername, RunClient.groupC.getGroupServerKey());
 
 		if(dialogue == 0 && delUsername.length() > 0 && !(currentUsername.equals(delUsername))){
 
@@ -1085,7 +1085,7 @@ public class ClientApp {
 			groupsListPanel.updateUI();
 		}
 
-		UserToken currToken = null;// = RunClient.groupC.getToken(currentUsername);
+		UserToken currToken = RunClient.groupC.getToken(currentUsername, RunClient.groupC.getGroupServerKey());
 
 		if(currToken == null){
 			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
@@ -1141,7 +1141,7 @@ public class ClientApp {
 			return;
 		}
 
-		UserToken currToken = null;// = RunClient.groupC.getToken(currentUsername);
+		UserToken currToken = RunClient.groupC.getToken(currentUsername, RunClient.groupC.getGroupServerKey());
 
 		if(currToken == null){
 			JOptionPane.showMessageDialog(
@@ -1233,7 +1233,7 @@ public class ClientApp {
 
 		if (confirm == JOptionPane.YES_OPTION) {
 
-			UserToken currToken = null;// = RunClient.groupC.getToken(currentUsername);
+			UserToken currToken = RunClient.groupC.getToken(currentUsername, RunClient.groupC.getGroupServerKey());
 
 			if(currToken == null){
 				JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
@@ -1271,7 +1271,7 @@ public class ClientApp {
 		
 		String chooseUsername = chooseUsernameField.getText();
 
-		UserToken currToken = null;// = RunClient.groupC.getToken(currentUsername);
+		UserToken currToken = RunClient.groupC.getToken(currentUsername, RunClient.groupC.getGroupServerKey());
 
 		if(currToken == null){
 			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
@@ -1312,7 +1312,7 @@ public class ClientApp {
 			return;
 		}
 
-		UserToken currToken = null;// = RunClient.groupC.getToken(currentUsername);
+		UserToken currToken = RunClient.groupC.getToken(currentUsername, RunClient.groupC.getGroupServerKey());
 
 		if(currToken == null){
 			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
@@ -1339,7 +1339,7 @@ public class ClientApp {
 			groupsPane.updateUI();
 		}
 
-		UserToken currToken = null;// = RunClient.groupC.getToken(currentUsername);
+		UserToken currToken = RunClient.groupC.getToken(currentUsername, RunClient.fileC.getFileServerKey());
 
 		if(currToken == null){
 			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
@@ -1392,7 +1392,7 @@ public class ClientApp {
 			return;
 		}
 
-		UserToken currToken = null;// = RunClient.groupC.getToken(currentUsername);
+		UserToken currToken = RunClient.groupC.getToken(currentUsername, RunClient.fileC.getFileServerKey());
 
 		if(currToken == null){
 			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
@@ -1439,7 +1439,7 @@ public class ClientApp {
 			filesPane.updateUI();
 		}
 
-		UserToken currToken = null;// = RunClient.groupC.getToken(currentUsername);
+		UserToken currToken = RunClient.groupC.getToken(currentUsername, RunClient.fileC.getFileServerKey());
 
 		if(currToken == null){
 			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
@@ -1504,7 +1504,7 @@ public class ClientApp {
 
 		File tempTest = new File(chooseFile);
 
-		UserToken currToken = null;// = RunClient.groupC.getToken(currentUsername);
+		UserToken currToken = RunClient.groupC.getToken(currentUsername, RunClient.fileC.getFileServerKey());
 
 		if(currToken == null){
 			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
@@ -1561,8 +1561,8 @@ public class ClientApp {
 			return;
 		}
 
-		UserToken currToken = null;// = RunClient.groupC.getToken(currentUsername);
-
+		UserToken currToken = RunClient.groupC.getToken(currentUsername, RunClient.fileC.getFileServerKey());
+		
 		if(currToken == null){
 			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
 			return;
@@ -1612,7 +1612,7 @@ public class ClientApp {
 		
 		String destFile = chooseFileField.getText();
 
-		UserToken currToken = null;// = RunClient.groupC.getToken(currentUsername);
+		UserToken currToken = RunClient.groupC.getToken(currentUsername, RunClient.fileC.getFileServerKey());
 		
 		ArrayList<GroupMetadata> groupsMetadata = RunClient.groupC.getGroupsMetadata(currToken);
 		GroupMetadata currGroupMetadata = null;
