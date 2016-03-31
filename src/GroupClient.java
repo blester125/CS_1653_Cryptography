@@ -513,7 +513,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			//If server indicates success, return true
 			if (response.getMessage().equals("OK")) {
 				if (response.getObjContents().get(0) != null){
-					Integer seqNum = (Integer)response.getObjContents().get(1);
+					Integer seqNum = (Integer)response.getObjContents().get(0);
 					if(seqNum == sequenceNumber + 1){
 						sequenceNumber += 2;
 						return true;
@@ -543,7 +543,6 @@ public class GroupClient extends Client implements GroupClientInterface {
 				e.printStackTrace(System.err);
 			}
 		}
-		System.out.println("DISCONNECT");
 	}
 
 
