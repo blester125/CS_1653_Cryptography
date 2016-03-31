@@ -548,7 +548,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 /*-------------------------------TEST METHODS---------------------------------*/
 
-	public UserToken wrongSequenceToken(String username) {
+	public UserToken wrongSequenceToken(String username, PublicKey serverKey) {
 		try {
 			UserToken token = null;
 			Envelope message = null, response = null;
@@ -556,7 +556,10 @@ public class GroupClient extends Client implements GroupClientInterface {
 			//Tell the server to return a token.
 			message = new Envelope("GET");
 			message.addObject(username); //Add user name string
+			message.addObject(serverKey);
 			message.addObject(sequenceNumber-1); //Add sequence number
+			System.out.println("Client Sequence Number = " + sequenceNumber);
+			System.out.println("Sequence Number Sent = " + (sequenceNumber + 1));
 			superE = Envelope.buildSuper(message, sessionKey);
 			output.writeObject(superE);
 			
@@ -568,6 +571,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 				if(response.getObjContents().get(0) != null){
 					if(response.getObjContents().get(1) != null){
 						Integer seqNum = (Integer)response.getObjContents().get(1);
+						System.out.println("Server Number Received = " + seqNum);
 						if(seqNum == sequenceNumber + 1){
 
 							token = (UserToken)response.getObjContents().get(0);

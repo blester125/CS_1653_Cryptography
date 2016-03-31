@@ -22,6 +22,10 @@ import javax.crypto.SealedObject;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
+import java.security.Security;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
 public class RSA {
 
 	static final int RSA_BIT_KEYSIZE = 2048;
@@ -132,10 +136,12 @@ public class RSA {
 
 	public static void main(String args[]){
 
+		Security.addProvider(new BouncyCastleProvider());
+
 		//generate sample user keys (carl)
 		loadRSA("alicepublic.key", "aliceprivate.key");
 		loadRSA("bobpublic.key", "bobprivate.key");
-		loadRSA("carolpublic.key", "carolpublic.key");
+		loadRSA("carolpublic.key", "carolprivate.key");
 		loadRSA("davepublic.key", "daveprivate.key");
 		loadRSA("evepublic.key", "eveprivate.key");
 		loadRSA("fredpublic.key", "fredprivate.key");
