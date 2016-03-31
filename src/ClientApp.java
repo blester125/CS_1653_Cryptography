@@ -1024,7 +1024,7 @@ public class ClientApp {
 			JButton btnEnhance) {
 		Clip clip = null;
 		try {
-			AudioInputStream audioIn = AudioSystem.getAudioInputStream(new File("../sunlight.wav"));
+			AudioInputStream audioIn = AudioSystem.getAudioInputStream(new File("enhance/sunlight.wav"));
 			clip = AudioSystem.getClip();
 			clip.open(audioIn);
 			clip.start();
@@ -1032,7 +1032,7 @@ public class ClientApp {
 			e.printStackTrace();
 		}
 		
-		ImageIcon icon = new ImageIcon("../ENHANCE-IMAGE.gif");
+		ImageIcon icon = new ImageIcon("enhance/ENHANCE-IMAGE.gif");
 		int close = JOptionPane.showConfirmDialog(null,
 				"PLEASE ENJOY \nTHE EXPERIENCE", 
 				"ENHANCE", 
