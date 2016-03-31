@@ -32,7 +32,7 @@ public abstract class Client {
 	}
 
 	public boolean isConnected() {
-		if (sock == null || !sock.isConnected()) {
+		if (sock == null || !sock.isConnected() || sock.isClosed()) {
 			return false;
 		}
 		else {

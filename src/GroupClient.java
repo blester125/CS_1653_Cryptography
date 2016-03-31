@@ -543,6 +543,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 				e.printStackTrace(System.err);
 			}
 		}
+		System.out.println("DISCONNECT");
 	}
 
 
