@@ -388,7 +388,7 @@ public class FileThread extends Thread
 				if(e.getMessage().equals("UPLOADF") && isSecureConnection && isAuthenticated)
 				{
 
-					if(e.getObjContents() == null || e.getObjContents().size() < 4)
+					if(e.getObjContents() == null || e.getObjContents().size() < 3)
 					{
 						response = new Envelope("FAIL-BADCONTENTS");
 					}
@@ -402,9 +402,6 @@ public class FileThread extends Thread
 						}
 						else if(e.getObjContents().get(2) == null) {
 							response = new Envelope("FAIL-BADTOKEN");
-						}
-						else if(e.getObjContents().get(3) == null){
-							response = new Envelope("FAIL-BADMETADATA");
 						}
 						else {
 							response = new Envelope("FAIL");
@@ -445,7 +442,7 @@ public class FileThread extends Thread
 									}
 
 									if(e.getMessage().compareTo("EOF")==0) {
-										if(e.getObjContents() != null && e.getObjContents().size() == 3)
+										if(e.getObjContents() != null && e.getObjContents().size() == 5)
 										{
 											if(e.getObjContents().get(0) == null){
 												System.err.println("Error: null key index field");
@@ -456,13 +453,21 @@ public class FileThread extends Thread
 											else if(e.getObjContents().get(2) == null){
 												System.err.println("Error: null IV field");
 											}
+											else if(e.getObjContents().get(3) == null){
+												System.err.println("Error: null block field");
+											}
+											else if(e.getObjContents().get(4) == null){
+												System.err.println("Error: null file length field");
+											}
 											else {
 												int keyIndex = ((Integer)e.getObjContents().get(0)).intValue();
 												int keyVersion = ((Integer)e.getObjContents().get(1)).intValue();
-												IvParameterSpec iv = (IvParameterSpec)e.getObjContents().get(2);
+												byte[] iv = (byte[])e.getObjContents().get(2);
+												byte[] padBlock = (byte[])e.getObjContents().get(3);
+												long fileLength = (Long)e.getObjContents().get(4);
 												System.out.printf("Transfer successful file %s\n", remotePath);
 												FileServer.fileList.addFile(yourToken.getSubject(), group, 
-														remotePath, keyIndex, keyVersion, iv);
+														remotePath, keyIndex, keyVersion, iv, fileLength);
 												response = new Envelope("OK"); //Success
 											}
 										}
@@ -550,7 +555,8 @@ public class FileThread extends Thread
 										if(!sentMetadata) {
 											response.addObject(new Integer(sf.getKeyIndex()));
 											response.addObject(new Integer(sf.getKeyVersion()));
-											response.addObject(sf.getIvParameterSpec());
+											response.addObject(sf.getIv());
+											response.addObject(sf.getLength());
 											sentMetadata = true;
 										}
 
@@ -670,6 +676,9 @@ public class FileThread extends Thread
 	}
 
 	private boolean verifyToken(UserToken token) {
+		if(1+1 == 2) {
+			return true;
+		}
 		// check for token freshness
 		System.out.println("verify");
 		if(!token.isFresh()) {

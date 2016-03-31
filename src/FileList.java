@@ -1,8 +1,7 @@
 /* T
  * his list represents the files on the server */
-import java.util.*;
-
-import javax.crypto.spec.IvParameterSpec;
+import java.util.ArrayList;
+import java.util.Collections;
 
 
 	public class FileList implements java.io.Serializable {
@@ -17,9 +16,9 @@ import javax.crypto.spec.IvParameterSpec;
 	}
 	
 	public synchronized void addFile(String owner, String group, String path, int keyIndex, 
-			int keyVersion, IvParameterSpec iv)
+			int keyVersion, byte[] iv, long length)
 	{
-		ShareFile newFile = new ShareFile(owner, group, path, keyIndex, keyVersion, iv);
+		ShareFile newFile = new ShareFile(owner, group, path, keyIndex, keyVersion, iv, length);
 		list.add(newFile);
 	}
 	
