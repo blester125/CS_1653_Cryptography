@@ -3,10 +3,8 @@
  */
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.math.BigInteger;
 import java.net.Socket;
 import java.security.KeyPair;
-import java.security.MessageDigest;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +12,6 @@ import java.util.List;
 import javax.crypto.KeyAgreement;
 import javax.crypto.SealedObject;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
 
 public class GroupThread extends Thread 
 {

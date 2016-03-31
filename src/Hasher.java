@@ -1,22 +1,15 @@
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
+import java.security.Key;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.Security;
+
 import javax.crypto.Mac;
 
-import javax.crypto.KeyAgreement;
-import javax.crypto.SealedObject;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
-
-import java.security.Key;
-import java.security.PublicKey;
-import java.security.KeyPair;
-import java.security.*;
-
-import java.io.*;
-
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
-import sun.misc.BASE64Encoder;
 
 public class Hasher {
 	public static byte[] hash(Object obj) {
