@@ -1,10 +1,19 @@
 /* Driver program for FileSharing Group Server */
 import java.security.*;
+import java.lang.reflect.Field;
+
 
 public class RunGroupServer {
 	
 	public static void main(String[] args) {
 		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+		try {
+	        Field field = Class.forName("javax.crypto.JceSecurity").getDeclaredField("isRestricted");
+	        field.setAccessible(true);
+	        field.set(null, java.lang.Boolean.FALSE);
+	    } catch (Exception ex) {
+	    	ex.printStackTrace();
+	    }
 		if (args.length> 0) {
 			try {
 				GroupServer server = new GroupServer(Integer.parseInt(args[0]));
