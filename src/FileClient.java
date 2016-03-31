@@ -203,12 +203,12 @@ public class FileClient extends Client implements FileClientInterface {
 							
 			    if(env.getMessage().compareTo("EOF")==0) {
 			    	// decrypt final padding block
-			    	try {
+			    	/*try {
 			    		byte[] paddingBlock = AESCipherDecrypt.doFinal();
 			    		fos.write(paddingBlock, 0, (int)fileLength);
 			    	} catch(Exception e) {
 			    		e.printStackTrace();
-			    	}
+			    	}*/
 					fos.close();
 					System.out.printf("\nTransfer successful file %s\n", sourceFile);
 					env = new Envelope("OK"); //Success

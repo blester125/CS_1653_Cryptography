@@ -684,7 +684,7 @@ public class FileThread extends Thread
 		}
 
 		//check token to ensure expected and actual public keys match
-		if (KeyBox.compareKey(token.getPublicKey(), rsaPair.getPublic())) {
+		if (!KeyBox.compareKey(token.getPublicKey(), rsaPair.getPublic())) {
 			return false;
 		}
 

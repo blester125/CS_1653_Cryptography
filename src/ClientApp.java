@@ -1037,7 +1037,7 @@ public class ClientApp {
 		
 		ImageIcon icon = new ImageIcon("ENHANCE-IMAGE.gif");
 		int close = JOptionPane.showConfirmDialog(null,
-				"PLEASE ENJOY THE EXPERIENCE", 
+				"PLEASE ENJOY \nTHE EXPERIENCE", 
 				"ENHANCE", 
 				JOptionPane.OK_OPTION, 
 				JOptionPane.INFORMATION_MESSAGE, 
