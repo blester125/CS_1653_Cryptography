@@ -871,7 +871,7 @@ public class ClientApp {
 		usernameField.setEnabled(false);
 		ipField.setEnabled(false);
 		portField.setEnabled(false);
-		publicPathField.setEnabled(false);
+		publicPathField.setEnabled(true);
 		btnNewUser.setEnabled(true);
 		btnDeleteUser.setEnabled(true);
 		tabbedPane.setEnabledAt(1,true);
