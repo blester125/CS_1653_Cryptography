@@ -67,9 +67,9 @@ public class DiffieHellman {
 
 		currAgreement.doPhase(currPubKey, true);
 
-		//128 bit workaround
+		//256 key bit workaround
 		byte[] secret = currAgreement.generateSecret();
-		SecretKey newSecretKey = new SecretKeySpec(secret, 0, 16, "AES");
+		SecretKey newSecretKey = new SecretKeySpec(secret, 0, 32, "AES");
 
 		return newSecretKey;
 	}

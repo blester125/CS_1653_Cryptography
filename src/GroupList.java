@@ -1,9 +1,7 @@
-import java.security.Key;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Hashtable;
 
-import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 
   public class GroupList implements java.io.Serializable {
     private static final long serialVersionUID = 8711454914678528003L;
