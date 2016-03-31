@@ -143,10 +143,6 @@ public class FileClient extends Client implements FileClientInterface {
 					
 				//receive, extract, and decrypt inner envelope
 				env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-				IvParameterSpec iv = null;
-				Key key = null;
-				Cipher AESCipherDecrypt = null;
-				long fileLength = 0;
 				// process meta-data for file and initialize decryption
 				if(env.getObjContents().size() == 6) {
 					if(env.getObjContents().get(0) == null) {
@@ -167,27 +163,19 @@ public class FileClient extends Client implements FileClientInterface {
 					else if(env.getObjContents().get(5) == null) {
 						System.err.println("Error: null file length");
 					}
-					else {
-						int keyIndex = (Integer)env.getObjContents().get(2);
-						int keyVersion = (Integer)env.getObjContents().get(3);
-						iv = new IvParameterSpec((byte[])env.getObjContents().get(4));
-						fileLength = (Long)env.getObjContents().get(5);
-						try {
-							key = groupMetadata.calculateKey(keyIndex, keyVersion);
-							AESCipherDecrypt = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");
-							AESCipherDecrypt.init(Cipher.DECRYPT_MODE, key, iv);
-						} catch (Exception e) {
-							e.printStackTrace();
-							fos.close();
-							return false;
-						}
-					}
 				}
 				else {
 					System.err.println("Error: invalid number of object contents");
 				}
+				
+				// retrieve file meta-data
+				int keyIndex = (Integer)env.getObjContents().get(2);
+				int keyVersion = (Integer)env.getObjContents().get(3);
+				IvParameterSpec iv = new IvParameterSpec((byte[])env.getObjContents().get(4));
+				long fileLength = (Long)env.getObjContents().get(5);
+				Key key = groupMetadata.calculateKey(keyIndex, keyVersion);
+				Cipher AESCipherDecrypt = CipherBox.initializeDecryptCipher(key, iv);
 				while (env.getMessage().compareTo("CHUNK")==0) {
-					
 					try {
 						// decrypt chunk and write to local file
 						byte[] buf = (byte[])env.getObjContents().get(0);
@@ -348,8 +336,7 @@ public class FileClient extends Client implements FileClientInterface {
 		 	SecretKey key = groupMetadata.getCurrentKey();
 		 	int keyIndex = groupMetadata.getCurrentKeyIndex();
 		 	int keyVersion = groupMetadata.getCurrentKeyVer();
-		 	Cipher AESCipherEncrypt = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");
-			AESCipherEncrypt.init(Cipher.ENCRYPT_MODE, key, iv);
+		 	Cipher AESCipherEncrypt = CipherBox.initializeEncryptCipher(key, iv);
 		 	do {
 				 	byte[] buf = new byte[4096];
 

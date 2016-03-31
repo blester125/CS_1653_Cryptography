@@ -676,9 +676,6 @@ public class FileThread extends Thread
 	}
 
 	private boolean verifyToken(UserToken token) {
-		if(1+1 == 2) {
-			return true;
-		}
 		// check for token freshness
 		System.out.println("verify");
 		if(!token.isFresh()) {

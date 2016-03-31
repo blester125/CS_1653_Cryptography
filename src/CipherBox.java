@@ -146,4 +146,28 @@ public class CipherBox {
 	public static String getKeyAsString(Key key) {
 		return new BASE64Encoder().encode(key.getEncoded()); 
 	}
+	
+	public static Cipher initializeEncryptCipher(Key key, IvParameterSpec iv) {
+		try {
+			AESCipherEncrypt = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");
+			AESCipherEncrypt.init(Cipher.ENCRYPT_MODE, key, iv);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+		
+		return AESCipherEncrypt;
+	}
+	
+	public static Cipher initializeDecryptCipher(Key key, IvParameterSpec iv) {
+		try {
+			AESCipherDecrypt = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");
+			AESCipherDecrypt.init(Cipher.DECRYPT_MODE, key, iv);
+		} catch(Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+		
+		return AESCipherDecrypt;
+	}
 }
