@@ -439,7 +439,7 @@ public class FileClient extends Client implements FileClientInterface {
 	  * the client and the server 
 	  * @return	boolean
 	  */
-	public SecretKey establishSessionKey() {
+	/*public SecretKey establishSessionKey() {
 		KeyPair keyPair = null;
 		KeyAgreement keyAgreement = null;
 
@@ -531,7 +531,7 @@ public class FileClient extends Client implements FileClientInterface {
 	 		return false;
 	 	}
 
-	 }
+	 }*/
 
 	public int authenticateFileServerRSA(
 					String publicKeyPath, 
