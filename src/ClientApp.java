@@ -9,9 +9,6 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
 
-import javafx.scene.media.Media;
-import javafx.scene.media.MediaPlayer;
-
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
@@ -1027,7 +1024,7 @@ public class ClientApp {
 			JButton btnEnhance) {
 		Clip clip = null;
 		try {
-			AudioInputStream audioIn = AudioSystem.getAudioInputStream(new File("sunlight.wav"));
+			AudioInputStream audioIn = AudioSystem.getAudioInputStream(new File("../sunlight.wav"));
 			clip = AudioSystem.getClip();
 			clip.open(audioIn);
 			clip.start();
@@ -1035,7 +1032,7 @@ public class ClientApp {
 			e.printStackTrace();
 		}
 		
-		ImageIcon icon = new ImageIcon("ENHANCE-IMAGE.gif");
+		ImageIcon icon = new ImageIcon("../ENHANCE-IMAGE.gif");
 		int close = JOptionPane.showConfirmDialog(null,
 				"PLEASE ENJOY \nTHE EXPERIENCE", 
 				"ENHANCE", 
@@ -1043,6 +1040,9 @@ public class ClientApp {
 				JOptionPane.INFORMATION_MESSAGE, 
 				icon);
 		if(close == JOptionPane.OK_OPTION || close == JOptionPane.OK_CANCEL_OPTION || close == JOptionPane.NO_OPTION || close == JOptionPane.CANCEL_OPTION) {
+			clip.stop();
+			clip.close();
+		} else {
 			clip.stop();
 			clip.close();
 		}
