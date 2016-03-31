@@ -1042,7 +1042,7 @@ public class ClientApp {
 				JOptionPane.OK_OPTION, 
 				JOptionPane.INFORMATION_MESSAGE, 
 				icon);
-		if(close == JOptionPane.OK_OPTION || close == JOptionPane.OK_CANCEL_OPTION) {
+		if(close == JOptionPane.OK_OPTION || close == JOptionPane.OK_CANCEL_OPTION || close == JOptionPane.NO_OPTION || close == JOptionPane.CANCEL_OPTION) {
 			clip.stop();
 			clip.close();
 		}
