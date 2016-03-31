@@ -1,20 +1,7 @@
 /* Implements the GroupClient Interface */
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.security.KeyFactory;
 import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +9,6 @@ import java.util.List;
 import javax.crypto.KeyAgreement;
 import javax.crypto.SealedObject;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
 
 public class GroupClient extends Client implements GroupClientInterface {
 	private SecretKey sessionKey;

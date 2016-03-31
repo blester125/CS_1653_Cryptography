@@ -6,22 +6,18 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 import java.math.BigInteger;
 import java.net.Socket;
-import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.MessageDigest;
 import java.security.PublicKey;
-import java.security.Security;
-import java.security.spec.X509EncodedKeySpec;
 import java.security.SecureRandom;
+import java.security.Security;
 import java.util.ArrayList;
 
 import javax.crypto.KeyAgreement;
 import javax.crypto.SealedObject;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
 
 public class FileThread extends Thread
 {
