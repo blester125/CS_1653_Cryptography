@@ -16,7 +16,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class KeyBox {
 
-	private static int size = 128;
+	private static int size = 256;
 	private static String algo = "AES";
 
 	public static SecretKey generateKey() {
