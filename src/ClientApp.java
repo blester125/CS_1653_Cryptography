@@ -9,7 +9,15 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
 
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.LineUnavailableException;
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -313,6 +321,7 @@ public class ClientApp {
 		final JButton btnRSASetup = new JButton("Update RSA");
 		final JButton btnRSA = new JButton("RSA Login");
 		final JButton btnLogout = new JButton("Logout");
+		final JButton btnEnhance = new JButton("ENHANCE");
 
 		GridBagConstraints gbc_btnLogout = new GridBagConstraints();
 		gbc_btnLogout.anchor = GridBagConstraints.NORTH;
@@ -320,7 +329,7 @@ public class ClientApp {
 		gbc_btnLogout.insets = new Insets(0, 0, 5, 0);
 		gbc_btnLogout.gridx = 3;
 		gbc_btnLogout.gridy = 6;
-
+		
 		//attempt to connect to server
 		btnLogout.addActionListener(new ActionListener() {
 
@@ -340,6 +349,33 @@ public class ClientApp {
 		);
 
 		homePage.add(btnLogout, gbc_btnLogout);
+		
+		// ENHANCE
+		GridBagConstraints gbc_btnEnhance = new GridBagConstraints();
+		gbc_btnEnhance.anchor = GridBagConstraints.NORTH;
+		gbc_btnEnhance.fill = GridBagConstraints.HORIZONTAL;
+		gbc_btnEnhance.insets = new Insets(0, 0, 5, 0);
+		gbc_btnEnhance.gridx = 4;
+		gbc_btnEnhance.gridy = 6;
+		btnEnhance.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+
+					attemptEnhance(
+						btnNewUser, 
+						tabbedPane, 
+						btnDeleteUser, 
+						btnFileServer,
+						btnRSA,
+						btnRSASetup,
+						btnLogout,
+						btnEnhance);
+				}
+			}
+		);
+
+		homePage.add(btnEnhance, gbc_btnEnhance);
 		
 		GridBagConstraints gbc_btnRSA = new GridBagConstraints();
 		gbc_btnRSA.anchor = GridBagConstraints.NORTH;
@@ -978,6 +1014,38 @@ public class ClientApp {
 		btnRSA.setEnabled(true);
 		btnRSASetup.setEnabled(false);
 		btnLogout.setEnabled(false);
+	}
+	
+	// ATTEMPTS TO ENHANCE
+	public void attemptEnhance(JButton btnNewUser, 
+			JTabbedPane tabbedPane, 
+			JButton btnDeleteUser, 
+			JButton btnFileServer, 
+			JButton btnRSA, 
+			JButton btnRSASetup, 
+			JButton btnLogout, 
+			JButton btnEnhance) {
+		Clip clip = null;
+		try {
+			AudioInputStream audioIn = AudioSystem.getAudioInputStream(new File("sunlight.wav"));
+			clip = AudioSystem.getClip();
+			clip.open(audioIn);
+			clip.start();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		ImageIcon icon = new ImageIcon("ENHANCE-IMAGE.gif");
+		int close = JOptionPane.showConfirmDialog(null,
+				"PLEASE ENJOY THE EXPERIENCE", 
+				"ENHANCE", 
+				JOptionPane.OK_OPTION, 
+				JOptionPane.INFORMATION_MESSAGE, 
+				icon);
+		if(close == JOptionPane.OK_OPTION || close == JOptionPane.OK_CANCEL_OPTION) {
+			clip.stop();
+			clip.close();
+		}
 	}
 
 	//Attempts to create a new user on the group server.
