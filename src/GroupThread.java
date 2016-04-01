@@ -252,18 +252,14 @@ public class GroupThread extends Thread
 								if (tempseq == sequenceNumber + 1){
 									// Extract Token 
 									UserToken yourToken = (UserToken)message.getObjContents().get(0);
-									
-									//check token to ensure expected and actual public keys match
-									//if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
-									//	innerResponse = new Envelope("FAIL");
-									//}
-									
-									ArrayList<GroupMetadata> gMetaData = retrieveGroupsMetadata(yourToken);
-									if(gMetaData != null) {
-										sequenceNumber += 2;
-										innerResponse = new Envelope("OK");
-										innerResponse.addObject(gMetaData);
-										innerResponse.addObject(sequenceNumber);
+									if (verifyToken(yourToken)) {
+										ArrayList<GroupMetadata> gMetaData = retrieveGroupsMetadata(yourToken);
+										if(gMetaData != null) {
+											sequenceNumber += 2;
+											innerResponse = new Envelope("OK");
+											innerResponse.addObject(gMetaData);
+											innerResponse.addObject(sequenceNumber);
+										}
 									}
 								}
 							}
@@ -291,13 +287,12 @@ public class GroupThread extends Thread
 										UserToken yourToken = (UserToken)message.getObjContents().get(2); //Extract the token
 										int tempseq = (Integer)message.getObjContents().get(3); //get sequence number
 										if (tempseq == sequenceNumber + 1) {
-											if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
-												innerResponse = new Envelope("FAIL");
-											}	
-											if (createUser(username, newUserPubKey, yourToken)) {
-												sequenceNumber += 2;
-												innerResponse = new Envelope("OK"); //Success
-												innerResponse.addObject(sequenceNumber);
+											if (verifyToken(yourToken)) {
+												if (createUser(username, newUserPubKey, yourToken)) {
+													sequenceNumber += 2;
+													innerResponse = new Envelope("OK"); //Success
+													innerResponse.addObject(sequenceNumber);
+												}
 											}
 										}
 									}
@@ -319,24 +314,19 @@ public class GroupThread extends Thread
 					}
 					else {
 						innerResponse = new Envelope("FAIL");
-						
 						if(message.getObjContents().get(0) != null){
 							if(message.getObjContents().get(1) != null){
 								if(message.getObjContents().get(2) != null){
 									String username = (String)message.getObjContents().get(0); //Extract the username
 									UserToken yourToken = (UserToken)message.getObjContents().get(1); //Extract the token
 									int tempseq = (Integer)message.getObjContents().get(2); //extract seq num
-
 									if (tempseq == sequenceNumber + 1){
-										//check token to ensure expected and actual public keys match
-										if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
-											innerResponse = new Envelope("FAIL");
-										}	
-										
-										if(deleteUser(username, yourToken)){
-											sequenceNumber += 2;
-											innerResponse = new Envelope("OK"); //Success
-											innerResponse.addObject(sequenceNumber);
+										if (verifyToken(yourToken)) {	
+											if(deleteUser(username, yourToken)){
+												sequenceNumber += 2;
+												innerResponse = new Envelope("OK"); //Success
+												innerResponse.addObject(sequenceNumber);
+											}
 										}
 									}
 								}
@@ -357,24 +347,19 @@ public class GroupThread extends Thread
 					}
 					else {
 						innerResponse = new Envelope("FAIL");
-						
 						if(message.getObjContents().get(0) != null){
 							if(message.getObjContents().get(1) != null){
 								if(message.getObjContents().get(2) != null){
 									String groupname = (String)message.getObjContents().get(0); //Extract the groupname
 									UserToken yourToken = (UserToken)message.getObjContents().get(1); //Extract the token
 									int tempseq = (Integer)message.getObjContents().get(2); //Extract sequence number
-
 									if(tempseq == sequenceNumber + 1){
-										//check token to ensure expected and actual public keys match
-										if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
-											innerResponse = new Envelope("FAIL");
-										}
-										
-										if(createGroup(groupname, yourToken)){
-											sequenceNumber += 2;
-											innerResponse = new Envelope("OK"); //Success
-											innerResponse.addObject(sequenceNumber);
+										if (verifyToken(yourToken)) {
+											if(createGroup(groupname, yourToken)){
+												sequenceNumber += 2;
+												innerResponse = new Envelope("OK"); //Success
+												innerResponse.addObject(sequenceNumber);
+											}
 										}
 									}
 								}
@@ -396,24 +381,19 @@ public class GroupThread extends Thread
 					}
 					else {
 						innerResponse = new Envelope("FAIL");
-						
 						if(message.getObjContents().get(0) != null){
 							if(message.getObjContents().get(1) != null){
 								if(message.getObjContents().get(2) != null){
 									String groupname = (String)message.getObjContents().get(0); //Extract the groupname
 									UserToken yourToken = (UserToken)message.getObjContents().get(1); //Extract the token
 									int tempseq = (Integer)message.getObjContents().get(2); //extract sequence number
-
 									if(tempseq == sequenceNumber + 1){
-										//check token to ensure expected and actual public keys match
-										if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
-											innerResponse = new Envelope("FAIL");
-										}
-										
-										if(deleteGroup(groupname, yourToken)){
-											sequenceNumber += 2;
-											innerResponse = new Envelope("OK"); //Success
-											innerResponse.addObject(sequenceNumber);
+										if (verifyToken(yourToken)) {
+											if(deleteGroup(groupname, yourToken)){
+												sequenceNumber += 2;
+												innerResponse = new Envelope("OK"); //Success
+												innerResponse.addObject(sequenceNumber);
+											}
 										}
 									}
 								}
@@ -441,19 +421,16 @@ public class GroupThread extends Thread
 									String groupName = (String)message.getObjContents().get(0);
 									UserToken yourToken = (UserToken)message.getObjContents().get(1);
 									int tempseq = (Integer)message.getObjContents().get(2);
-
 									if(tempseq == sequenceNumber + 1){
-										//check token to ensure expected and actual public keys match
-										if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
-											innerResponse = new Envelope("FAIL");
-										}
-
-										List<String> members = listMembers(groupName, yourToken);
-										if (members != null) {
-											sequenceNumber += 2;
-											innerResponse = new Envelope("OK");
-											innerResponse.addObject(members);
-											innerResponse.addObject(sequenceNumber);	
+										if (verifyToken(yourToken)) {
+											System.out.println("Token Verifited-----------------");
+											List<String> members = listMembers(groupName, yourToken);
+											if (members != null) {
+												sequenceNumber += 2;
+												innerResponse = new Envelope("OK");
+												innerResponse.addObject(members);
+												innerResponse.addObject(sequenceNumber);	
+											}
 										}
 									}
 								}
@@ -487,17 +464,13 @@ public class GroupThread extends Thread
 										String groupName = (String)message.getObjContents().get(1);
 										UserToken yourToken = (UserToken)message.getObjContents().get(2);
 										int tempseq = (Integer)message.getObjContents().get(3);
-
 										if(tempseq == sequenceNumber + 1){
-											//check token to ensure expected and actual public keys match
-											if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
-												innerResponse = new Envelope("FAIL");
-											}
-
-											if (addUserToGroup(userName, groupName, yourToken)){
-												sequenceNumber += 2;
-												innerResponse = new Envelope("OK");
-												innerResponse.addObject(sequenceNumber);
+											if (verifyToken(yourToken)) {
+												if (addUserToGroup(userName, groupName, yourToken)){
+													sequenceNumber += 2;
+													innerResponse = new Envelope("OK");
+													innerResponse.addObject(sequenceNumber);
+												}
 											}
 										}
 									}
@@ -528,17 +501,13 @@ public class GroupThread extends Thread
 										String groupName = (String)message.getObjContents().get(1);
 										UserToken yourToken = (UserToken)message.getObjContents().get(2);
 										int tempseq = (Integer)message.getObjContents().get(3);
-
 										if(tempseq == sequenceNumber + 1){
-											//check token to ensure expected and actual public keys match
-											if (KeyBox.compareKey(yourToken.getPublicKey(), rsaKeyPair.getPublic())) {
-												innerResponse = new Envelope("FAIL");
-											}
-											
-											if (deleteUserFromGroup(userName, groupName, yourToken)){
-												sequenceNumber += 2;
-												innerResponse = new Envelope("OK");
-												innerResponse.addObject(sequenceNumber);
+											if (verifyToken(yourToken)) {
+												if (deleteUserFromGroup(userName, groupName, yourToken)){
+													sequenceNumber += 2;
+													innerResponse = new Envelope("OK");
+													innerResponse.addObject(sequenceNumber);
+												}
 											}
 										}
 									}
@@ -583,32 +552,39 @@ public class GroupThread extends Thread
 
 /*-------------------------Begin Additional Functions-------------------------*/
 	
-	//Method to create tokens
-	private UserToken createToken(String username, PublicKey serverKey) 
-	{
+	/**
+	 * Method to create a token for a user destined for a specific server.
+	 * @param username: The name of the requester of the token.
+	 * @param serverKey: The public key of the server this token is to be used on.
+	 * @return UserToken on success, null on failure.
+	 */
+	private UserToken createToken(String username, PublicKey serverKey) {
 		//Check that user exists
-		if(my_gs.userList.checkUser(username))
-		{
+		if(my_gs.userList.checkUser(username)) {
 			//Add the timestamp and signage
 			//Issue a new token with server's name, user's name, and user's groups
 			UserToken yourToken = new Token(my_gs.name, username, my_gs.userList.getUserGroups(username), serverKey);
 			System.out.println(yourToken);
 			return yourToken;
 		}
-		else
-		{
+		else {
 			return null;
 		}
 	}
 	
 	
-	//Method to create a user
+	/**
+	 * Method to create a user.
+	 * @param username: The name of the user to be created.
+	 * @param userPublicKey: The public key this user will use.
+	 * @param yourToken: The token that will be used to check permissions.
+	 * @return True on success, False on failure.
+	 */
 	private boolean createUser(
 						String username, 
 						PublicKey userPublicKey, 
 						UserToken yourToken) {
 		String requester = yourToken.getSubject();
-		
 		//Check if requester exists
 		if (my_gs.userList.checkUser(requester)) {
 			//Get the user's groups
@@ -641,7 +617,7 @@ public class GroupThread extends Thread
 		}
 	}
 	
-	//Method to delete a user
+	// We need to evolve the Key.
 	private boolean deleteUser(String username, UserToken yourToken)
 	{
 		String requester = yourToken.getSubject();
@@ -764,7 +740,7 @@ public class GroupThread extends Thread
 	}
 	
 	/**
-	 * Lists the members in the specified group
+	 * Lists the members in the specified group and you are the owner of the group
 	 * @param groupName group to list the members of
 	 * @param token token of the user requesting the list
 	 * @return List of strings on success, null on failure
@@ -780,6 +756,8 @@ public class GroupThread extends Thread
 
 			// is the user authorized to be in this group?
 			// check requester is the owner of the group
+			System.out.println("Requester: " + requester);
+			System.out.println("Owner: " + my_gs.groupList.getGroupOwner(groupName));
 			if (groups.contains(groupName) && my_gs.groupList.getGroupOwner(groupName).equals(requester)){
 				// get the members of this group
 				return my_gs.groupList.getGroupUsers(groupName);
@@ -834,6 +812,7 @@ public class GroupThread extends Thread
 		}
 	}
 
+	// We need to evolve the key
 	/**
 	 * Delete specified user to specified group
 	 * @param userName user to be deleted from the group
@@ -873,11 +852,22 @@ public class GroupThread extends Thread
 		}
 	}
 
+	/**
+	 * Method to set the RSA key for a user.
+	 * @param user: The name of the user.
+	 * @param key: The key to set for the user.
+	 * @return True on success, False on failure.
+	 */
 	private boolean setRSAKey(String user, PublicKey key) {
 		my_gs.userList.setPublicKey(user, key);
 		return true;
 	}
 
+	/**
+	 * Method to look up a users RSA public key.
+	 * @param user: Name of the user to look up.
+	 * @return PublicKey on success, null on failure.
+	 */
 	private PublicKey getUserPublicKey(String user) {
 		if (!my_gs.userList.checkUser(user)) {
 			return null;
@@ -906,6 +896,33 @@ public class GroupThread extends Thread
 		return null;
 	}
 
+	/**
+	 * Method to verify the token. It checks the timestamp, the included 
+	 * public key and the signature.
+	 * @param token: The token that will be checked.
+	 * @return True on success, False on failure.
+	 */
+	private boolean verifyToken(UserToken token) {
+		// check for token freshness
+		if(!token.isFresh()) {
+			System.out.println("old token");
+			return false;
+		}
+
+		//check token to ensure expected and actual public keys match
+		if (!KeyBox.compareKey(token.getPublicKey(), rsaKeyPair.getPublic())) {
+			return false;
+		}
+		System.out.println("Keys Match");
+		//get group server public key
+		//serverPublicKey = RSA.loadServerKey(groupServerPath);
+		SealedObject recvSignedHash = token.getSignedHash();
+		byte[] recvHash = (byte[])CipherBox.decrypt(recvSignedHash, rsaKeyPair.getPublic());
+		if (!Hasher.verifyHash(recvHash, token)) {
+			return false;
+		}
+		return true;
+	}
 
 	//unused password-related elseifs
 	// Client wishes to establish a shared symmetric secret key
@@ -983,12 +1000,8 @@ public class GroupThread extends Thread
 					response = Envelope.buildSuper(innerResponse, sessionKey);
 					output.writeObject(response);
 				}*/
-
-
 	/*
-
 	// More password-related methods
-	
 	private boolean setPassword(String user, String password) {
 		BigInteger salt = Passwords.generateSalt();
 		my_gs.userList.setSalt(user, salt);
@@ -1010,7 +1023,5 @@ public class GroupThread extends Thread
 	private boolean checkFlag(String user) {
 		return my_gs.userList.getNewPassword(user);
 	}
-
-
 	*/
 }

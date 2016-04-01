@@ -673,7 +673,6 @@ public class FileThread extends Thread
 
 	private boolean verifyToken(UserToken token) {
 		// check for token freshness
-		System.out.println("verify");
 		if(!token.isFresh()) {
 			System.out.println("old token");
 			return false;
@@ -688,8 +687,7 @@ public class FileThread extends Thread
 		serverPublicKey = RSA.loadServerKey(groupServerPath);
 		SealedObject recvSignedHash = token.getSignedHash();
 		byte[] recvHash = (byte[])CipherBox.decrypt(recvSignedHash, serverPublicKey);
-		byte[] hashToken = Hasher.hash(token);
-		if (!MessageDigest.isEqual(recvHash, hashToken)) {
+		if (!Hasher.verifyHash(recvHash, token)) {
 			return false;
 		}
 		return true;

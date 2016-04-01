@@ -52,9 +52,9 @@ public interface GroupClientInterface
      * @return true if the new user was created, false otherwise
      *
      */
-    public boolean createUser(
+    public int createUser(
                     final String username,
-                    final String password, 
+                    final String publicKeyPath, 
                     final UserToken token);
 
 

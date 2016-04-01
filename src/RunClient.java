@@ -26,10 +26,6 @@ public class RunClient {
 		groupC = new GroupClient();
 		fileC = new FileClient();
 
-		if (args.length == 1) {
-			Tester.run();
-		} else {
-
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
@@ -48,6 +44,5 @@ public class RunClient {
 				}
 			}
 		});
-	}
 	}
 }

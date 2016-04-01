@@ -11,7 +11,9 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.SealedObject;
 import javax.crypto.spec.IvParameterSpec;
 
-import sun.misc.BASE64Encoder;
+//import sun.misc.BASE64Encoder;
+
+import org.apache.commons.codec.binary.Base64;
 
 
 public class CipherBox {
@@ -144,7 +146,7 @@ public class CipherBox {
 	}
 
 	public static String getKeyAsString(Key key) {
-		return new BASE64Encoder().encode(key.getEncoded()); 
+		return new String(Base64.encodeBase64(key.getEncoded())); 
 	}
 	
 	public static Cipher initializeEncryptCipher(Key key, IvParameterSpec iv) {

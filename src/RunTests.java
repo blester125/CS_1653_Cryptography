@@ -94,7 +94,7 @@ public class RunTests {
 
 		System.out.println("\n\n\n\n\n\n");
 
-		if (!groupC.createUser("carol", "carolpublic.key", currToken)) {
+		if (groupC.createUser("carol", "carolpublic.key", currToken) == 0) {
 			System.out.println("User carol could not be created.");
 			return;
 		}
