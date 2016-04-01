@@ -52,6 +52,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 	 */
 	public int shareRSA(PublicKey newKey) {
 		try {
+			// Add token to this
 			Envelope message = new Envelope("RSAKEY");
 			message.addObject(newKey);
 			message.addObject(sequenceNumber); //add sequence number
@@ -221,6 +222,8 @@ public class GroupClient extends Client implements GroupClientInterface {
 	 * @return a token on success and null on failure. 
 	 */
 	public UserToken getToken(String username, PublicKey serverKey) {
+		// Rewrite so instead of provided username it uses the saved on in group
+		// thread
 		try {
 			UserToken token = null;
 			Envelope message = null, response = null;
@@ -614,6 +617,10 @@ public class GroupClient extends Client implements GroupClientInterface {
 			e.printStackTrace(System.err);
 			return false;
 		}
+	}
+
+	public SecretKey enable2FactorAuthentication(UserToken token) {
+		return null;
 	}
 
 	/**

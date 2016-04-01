@@ -67,7 +67,7 @@ public class UserList implements java.io.Serializable {
 		list.get(user).removeOwnership(groupname);
 	}
 	
-	public synchronized void setPassword(String user, byte[] password) 
+	/*public synchronized void setPassword(String user, byte[] password) 
 	{
 		list.get(user).setPassword(password);
 	}
@@ -85,7 +85,7 @@ public class UserList implements java.io.Serializable {
 	public synchronized BigInteger getSalt(String user) 
 	{
 		return list.get(user).getSalt();
-	}
+	}*/
 
 	public synchronized void setPublicKey(String user, PublicKey publicKey)
 	{
@@ -97,13 +97,13 @@ public class UserList implements java.io.Serializable {
 		return list.get(user).getPublicKey();		
 	}
 
-	public synchronized void setNewPassword(String user, boolean in) {
+	/*public synchronized void setNewPassword(String user, boolean in) {
 		list.get(user).setNewPassword(in);
 	}
 
 	public synchronized boolean getNewPassword(String user) {
 		return list.get(user).getNewPassword();
-	}
+	}*/
 
 	public synchronized void setTwoFactorKey(String user, SecretKey twoFactorKey)
 	{
@@ -133,7 +133,8 @@ public class UserList implements java.io.Serializable {
 		{
 			groups = new ArrayList<String>();
 			ownership = new ArrayList<String>();
-			newPassword = true;
+			//newPassword = true;
+			twoFacotrKey = null;
 		}
 		
 		public ArrayList<String> getGroups()
@@ -178,7 +179,7 @@ public class UserList implements java.io.Serializable {
 			}
 		}
 	
-		public void setPassword(byte[] password) 
+		/*public void setPassword(byte[] password) 
 		{
 			this.password = password;
 		}	
@@ -196,7 +197,7 @@ public class UserList implements java.io.Serializable {
 		public BigInteger getSalt() 
 		{
 			return salt;
-		}
+		}*/
 
 		public void setPublicKey(PublicKey publicKey) 
 		{
@@ -208,13 +209,13 @@ public class UserList implements java.io.Serializable {
 			return publicKey;
 		}
 
-		public void setNewPassword(boolean in) {
+		/*public void setNewPassword(boolean in) {
 			newPassword = in;
 		}
 
 		public boolean getNewPassword() {
 			return newPassword;
-		}
+		}*/
 
 		public void setTwoFactorKey(SecretKey twoFactorKey) 
 		{
