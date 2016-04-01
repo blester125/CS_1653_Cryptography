@@ -28,48 +28,92 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 /*---------------------RSA Authentication Functions---------------------------*/
 
-	public int setUpRSA() throws Exception {
-		KeyPair keyPair = RSA.loadRSA("","");
-		return shareRSA(keyPair);
+	/**
+	 * Loads RSA public key and tries to share it with the server.
+	 * @param publicPath: The path to the file that contains the new 
+	 *                    public key.
+	 * @return -1 on failure to load the publicKey, 
+	 *          0 on success
+	 */
+	public int setUpRSA(String publicPath) {
+		PublicKey newKey = RSA.loadServerKey(publicPath);
+		if (newKey == null) {
+			return -1;
+		}
+		return shareRSA(newKey);
 	}
 
-	public int shareRSA(KeyPair keyPair) throws Exception {
-		Envelope message = new Envelope("RSAKEY");
-		message.addObject(keyPair.getPublic());
-		message.addObject(sequenceNumber); //add sequence number
-		Envelope superE = Envelope.buildSuper(message, sessionKey);
-		System.out.println(keyPair.getPublic());
-		output.writeObject(superE);
-		Envelope superResponse = (Envelope)input.readObject();
-		Envelope response = Envelope.extractInner(superResponse, sessionKey);
-		if (response.getMessage().equals("OK")) {
-			if(response.getObjContents().get(0) != null){
-				Integer seqNum = (Integer)message.getObjContents().get(0);
-				if(seqNum == sequenceNumber + 1){
-					sequenceNumber += 2;
-					return 0;
+	/**
+	 * Sends the PublicKey to the server where it is set as the RSA
+	 * key used to authenticate the logged in user.
+	 * @param newKey: The Key that will be used to authenticate the user.
+	 * @return -2 on malformed message from the server.
+	 *          0 on success
+	 */
+	public int shareRSA(PublicKey newKey) {
+		try {
+			Envelope message = new Envelope("RSAKEY");
+			message.addObject(newKey);
+			message.addObject(sequenceNumber); //add sequence number
+			Envelope superE = Envelope.buildSuper(message, sessionKey);
+			output.writeObject(superE);
+			Envelope superResponse = (Envelope)input.readObject();
+			Envelope response = Envelope.extractInner(superResponse, sessionKey);
+			System.out.println(response);
+			if (response != null) {
+				if (response.getMessage().equals("OK")) {
+					if (response.getObjContents().size() == 1) {
+						if(response.getObjContents().get(0) != null){
+							Integer seqNum = (Integer)response.getObjContents().get(0);
+							if(seqNum == sequenceNumber + 1){
+								sequenceNumber += 2;
+								return 0;
+							}
+						}
+					}
 				}
 			}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		return -1;
+		return -2;
 	}
 
-	// Login the group server with RSA
+	/**
+	 * Login to the groupserver using RSA. 
+	 * @param username: The name of the user that is loggin in
+	 * @param publicKeyPath: The filepath of the public key for this user.
+	 * @param privateKeyPath: The filepath of the private key for this user.
+	 * @return -1 on failure to load the group server key.
+	 *         -2 on failure to establish the session key.
+	 *          0 on success. 
+	 */
 	public int authenticateGroupServerRSA(
 					String username, 
 					String publicKeyPath, 
 					String privateKeyPath) {
 		KeyPair keyPair = RSA.loadRSA(publicKeyPath, privateKeyPath);
+		// This always return a keyPair even if it has to make one that is 
+		// saved into the two file paths.
 		groupServerKey = RSA.loadServerKey(groupServerKeyPath);
+		if (groupServerKey == null) {
+			return -1;
+		}
 		sessionKey = establishSessionKeyRSA(username, keyPair, groupServerKey);
 		if (sessionKey == null) {
 			// Error creating the sharedKey
-			return -1;
+			return -2;
 		}
 		return 0;
 	}
 
-	// Establish key with Signed DiffieHellman
+	/** 
+	 * Establish a session key with Signed DiffieHellman.
+	 * @param username: The name of the user attempting to log in.
+	 * @param keyPair: The public and private key that will be used by the user.
+	 * @param serverKey: The public key that will used to verify the servers messages.
+	 * @return secretKey on success and null on failure.
+	 */
 	public SecretKey establishSessionKeyRSA(
 						String username, 
 						KeyPair keyPair, 
@@ -169,7 +213,13 @@ public class GroupClient extends Client implements GroupClientInterface {
 	}
 
 /*------------------Post-Authentication Functionality-------------------------*/
- 
+	/**
+	 * Get a token from the group server that will be used on the server that 
+	 * has the private key that will has the corrisponding private key.
+	 * @param username: The name of the requester of the token.
+	 * @param serverKey: The server key that will be put into the token.
+	 * @return a token on success and null on failure. 
+	 */
 	public UserToken getToken(String username, PublicKey serverKey) {
 		try {
 			UserToken token = null;
@@ -187,15 +237,16 @@ public class GroupClient extends Client implements GroupClientInterface {
 			superResponse = (Envelope)input.readObject();
 			response = Envelope.extractInner(superResponse, sessionKey);			
 			//Successful response
-			if(response.getMessage().equals("OK")) {
-				if(response.getObjContents().get(0) != null){
-					if(response.getObjContents().get(1) != null){
-						Integer seqNum = (Integer)response.getObjContents().get(1);
-						if(seqNum == sequenceNumber + 1){
-
-							token = (UserToken)response.getObjContents().get(0);
-							sequenceNumber += 2;
-							return token;
+			if (response != null) {
+				if(response.getMessage().equals("OK")) {
+					if(response.getObjContents().get(0) != null){
+						if(response.getObjContents().get(1) != null){
+							Integer seqNum = (Integer)response.getObjContents().get(1);
+							if(seqNum == sequenceNumber + 1){
+								token = (UserToken)response.getObjContents().get(0);
+								sequenceNumber += 2;
+								return token;
+							}
 						}
 					}
 				}
@@ -214,7 +265,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 	 * i.e. old keys, current key, current key version, and the associated
 	 * group name
 	 * @param	user's token
-	 * @return	group metadata for each group
+	 * @return	group metadata for each group and null on failure.
 	 */
 	@SuppressWarnings("unchecked")
 	public ArrayList<GroupMetadata> getGroupsMetadata(UserToken	token) {
@@ -233,15 +284,16 @@ public class GroupClient extends Client implements GroupClientInterface {
 			superResponse = (Envelope)input.readObject();
 			response = Envelope.extractInner(superResponse, sessionKey);			
 			//Successful response
-			if(response.getMessage().equals("OK")){
-				if(response.getObjContents().get(0) != null){
-					if(response.getObjContents().get(1) != null){
-						Integer seqNum = (Integer)response.getObjContents().get(1);
-						if(seqNum == sequenceNumber + 1){
-
-							groupsmd = (ArrayList<GroupMetadata>)response.getObjContents().get(0);
-							sequenceNumber += 2;
-							return groupsmd;
+			if (response != null) {
+				if(response.getMessage().equals("OK")){
+					if(response.getObjContents().get(0) != null){
+						if(response.getObjContents().get(1) != null){
+							Integer seqNum = (Integer)response.getObjContents().get(1);
+							if(seqNum == sequenceNumber + 1){
+								groupsmd = (ArrayList<GroupMetadata>)response.getObjContents().get(0);
+								sequenceNumber += 2;
+								return groupsmd;
+							}
 						}
 					}
 				}
@@ -254,14 +306,26 @@ public class GroupClient extends Client implements GroupClientInterface {
 			return null;
 		}
 	}
-	 
-	public boolean createUser(
+	
+	/**
+	 * Create a user on the group server.
+	 * @param username: The name of the user that will be created.
+	 * @param publicKeypath: The path to the file that has the users public key.
+	 * @param token: The token that is used to check the requester permissions.
+	 * @return -1 on failure to load publicKey
+	 *         -2 on malformed message from the server
+	 *          0 on success.
+	 */
+	public int createUser(
 					String username, 
 					String publicKeyPath, 
 					UserToken token) {
 		try {
 			//Get only public key from file
 			PublicKey publicKey = RSA.loadServerKey(publicKeyPath);
+			if (publicKey == null) {
+				return -1;
+			}
 			//Create envelopes for transmission
 			Envelope message = null, response = null;
 			Envelope superE = null, superResponse = null;
@@ -276,25 +340,32 @@ public class GroupClient extends Client implements GroupClientInterface {
 			superResponse = (Envelope)input.readObject();
 			response = Envelope.extractInner(superResponse, sessionKey);
 			//Check sequence number and server response message
-			if (response.getObjContents().get(0) != null){
-				if (response.getMessage().equals("OK")) {
-
-					Integer seqNum = (Integer)response.getObjContents().get(0);
-					if(seqNum == sequenceNumber + 1){
-						sequenceNumber += 2;
-						return true;
+			if (response != null) {
+				if (response.getObjContents().get(0) != null){
+					if (response.getMessage().equals("OK")) {
+						Integer seqNum = (Integer)response.getObjContents().get(0);
+						if(seqNum == sequenceNumber + 1){
+							sequenceNumber += 2;
+							return 0;
+						}
 					}
 				}
 			}
-			return false;
+			return -2;
 		}
 		catch(Exception e) {
 			System.err.println("Error: " + e.getMessage());
 			e.printStackTrace(System.err);
-			return false;
+			return -2;
 		}
 	}
 	
+	/**
+	 * Delete a user from the group server.
+	 * @param username: The name of the user that is to be deleted
+	 * @param token: The token that is checked for user permissions.
+	 * @return true on success and false on failure.
+	 */
 	public boolean deleteUser(String username, UserToken token) {
 		try {
 			Envelope message = null, response = null;
@@ -306,21 +377,20 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message.addObject(sequenceNumber); //Add sequence number
 			superE = Envelope.buildSuper(message, sessionKey);
 			output.writeObject(superE);
-			
 			superResponse = (Envelope)input.readObject();
 			response = Envelope.extractInner(superResponse, sessionKey);
-	
 			//If server indicates success, return true
-			if (response.getMessage().equals("OK")) {
-				if (response.getObjContents().get(0) != null){
-					Integer seqNum = (Integer)response.getObjContents().get(0);
-					if (seqNum == sequenceNumber + 1){
-						sequenceNumber += 2;
-						return true;
+			if (response != null) {
+				if (response.getMessage().equals("OK")) {
+					if (response.getObjContents().get(0) != null){
+						Integer seqNum = (Integer)response.getObjContents().get(0);
+						if (seqNum == sequenceNumber + 1){
+							sequenceNumber += 2;
+							return true;
+						}
 					}
 				}
-			}
-				
+			}	
 			return false;
 		}
 		catch (Exception e) {
@@ -330,6 +400,12 @@ public class GroupClient extends Client implements GroupClientInterface {
 		}
 	}
 	
+	/**
+	 * Create a group on the group server.
+	 * @param groupname: The name of the group that is to be created.
+	 * @param token: The token that is checked for user permissions.
+	 * @return True on success, false on failure.
+	 */
 	public boolean createGroup(String groupname, UserToken token) {
 		try {
 			Envelope message = null, response = null;
@@ -342,21 +418,20 @@ public class GroupClient extends Client implements GroupClientInterface {
 			superE = Envelope.buildSuper(message, sessionKey);
 			output.writeObject(superE); 
 			//System.out.println("Sent: " + message);
-			
 			superResponse = (Envelope)input.readObject();
 			response = Envelope.extractInner(superResponse, sessionKey);
-
 			//If server indicates success, return true
-			if (response.getMessage().equals("OK")) {
-				if(response.getObjContents().get(0) != null){
-					Integer seqNum = (Integer)response.getObjContents().get(0);
-					if(seqNum == sequenceNumber + 1){
-						sequenceNumber += 2;
-						return true;
+			if (response != null) {
+				if (response.getMessage().equals("OK")) {
+					if(response.getObjContents().get(0) != null){
+						Integer seqNum = (Integer)response.getObjContents().get(0);
+						if(seqNum == sequenceNumber + 1){
+							sequenceNumber += 2;
+							return true;
+						}
 					}
 				}
 			}
-				
 			return false;
 		}
 		catch(Exception e) {
@@ -366,6 +441,12 @@ public class GroupClient extends Client implements GroupClientInterface {
 		}
 	}
 
+	/**
+	 * Delete a group on the group server, if you are the owner.
+	 * @param groupname: The name of the group that is to be delete.
+	 * @param token: The token that is checked for user permissions.
+	 * @return True on success, false on failure.
+	 */
 	public boolean deleteGroup(String groupname, UserToken token) {
 		try {
 			Envelope message = null, response = null;
@@ -377,20 +458,20 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message.addObject(sequenceNumber); //add sequence number
 			superE = Envelope.buildSuper(message, sessionKey);
 			output.writeObject(superE); 
-			
 			superResponse = (Envelope)input.readObject();
 			response = Envelope.extractInner(superResponse, sessionKey);
 			//If server indicates success, return true
-			if (response.getMessage().equals("OK")) {
-				if(response.getObjContents().get(0) != null){
-					Integer seqNum = (Integer)response.getObjContents().get(0);
-					if(seqNum == sequenceNumber + 1){
-						sequenceNumber += 2;
-						return true;
+			if (response != null) {
+				if (response.getMessage().equals("OK")) {
+					if(response.getObjContents().get(0) != null){
+						Integer seqNum = (Integer)response.getObjContents().get(0);
+						if(seqNum == sequenceNumber + 1){
+							sequenceNumber += 2;
+							return true;
+						}
 					}
 				}
-			}
-				
+			}	
 			return false;
 		}
 		catch (Exception e) {
@@ -400,12 +481,17 @@ public class GroupClient extends Client implements GroupClientInterface {
 		}
 	}
 
+	/**
+	 * List the members in a group if you are the owner.
+	 * @param group: The name of the group to list.
+	 * @param token: The token that is used to check user permissions.
+	 * @return a list of Strings on success, null on failure
+	 */
 	@SuppressWarnings("unchecked")
 	public List<String> listMembers(String group, UserToken token) {
 		try {
 		 	output.flush();
 		 	output.reset();
-
 			Envelope message = null, response = null;
 			Envelope superE = null, superResponse = null;
 			//Tell the server to return the member list
@@ -415,22 +501,22 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message.addObject(sequenceNumber); //Add seq num
 			superE = Envelope.buildSuper(message, sessionKey);
 			output.writeObject(superE); 
-			 
 			superResponse = (Envelope)input.readObject();
 			response = Envelope.extractInner(superResponse, sessionKey);
-
 			//If server indicates success, return the m)ember list
-			if (response.getMessage().equals("OK")) { 
-				if(response.getObjContents().get(0) != null){
-					if(response.getObjContents().get(1) != null){
-						Integer seqNum = (Integer)response.getObjContents().get(1);
-						if(seqNum == sequenceNumber + 1){
-							sequenceNumber += 2;
-							return (List<String>)response.getObjContents().get(0); //This cast creates compiler warnings
+			if (response != null) {
+				if (response.getMessage().equals("OK")) { 
+					if(response.getObjContents().get(0) != null){
+						if(response.getObjContents().get(1) != null){
+							Integer seqNum = (Integer)response.getObjContents().get(1);
+							if(seqNum == sequenceNumber + 1){
+								sequenceNumber += 2;
+								return (List<String>)response.getObjContents().get(0); //This cast creates compiler warnings
+							}
 						}
 					}
 				}
-			}	
+			}
 			return null;
 		}
 		catch (Exception e) {
@@ -440,6 +526,13 @@ public class GroupClient extends Client implements GroupClientInterface {
 		}
 	}
 
+	/**
+	 * Add a user to the group if you are the owner of the group.
+	 * @param username: The name of the user to be added.
+	 * @param groupname: The name of the group to add the user to.
+	 * @param token: The token used to check premissions.
+	 * @return True on Success, False on failure.
+	 */
 	public boolean addUserToGroup(
 					String username, 
 					String groupname, 
@@ -455,20 +548,20 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message.addObject(sequenceNumber); //add seq num
 			superE = Envelope.buildSuper(message, sessionKey);
 			output.writeObject(superE); 
-			
 			superResponse = (Envelope)input.readObject();
 			response = Envelope.extractInner(superResponse, sessionKey);
 			//If server indicates success, return true
-			if (response.getMessage().equals("OK")) {
-				if (response.getObjContents().get(0) != null){
-					Integer seqNum = (Integer)response.getObjContents().get(1);
-					if(seqNum == sequenceNumber + 1){
-						sequenceNumber += 2;
-						return true;
+			if (response != null) {
+				if (response.getMessage().equals("OK")) {
+					if (response.getObjContents().get(0) != null){
+						Integer seqNum = (Integer)response.getObjContents().get(1);
+						if(seqNum == sequenceNumber + 1){
+							sequenceNumber += 2;
+							return true;
+						}
 					}
 				}
 			}
-			
 			return false;
 		}
 		catch (Exception e) {
@@ -478,6 +571,13 @@ public class GroupClient extends Client implements GroupClientInterface {
 		}
 	}
 	
+	/**
+	 * Delete a user to the group if you are the owner of the group.
+	 * @param username: The name of the user to be deleted.
+	 * @param groupname: The name of the group to delete the user from.
+	 * @param token: The token used to check premissions.
+	 * @return True on Success, False on failure.
+	 */
 	public boolean deleteUserFromGroup(
 						String username, 
 	 					String groupname, 
@@ -493,20 +593,20 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message.addObject(sequenceNumber); //add seq num
 			superE = Envelope.buildSuper(message, sessionKey);
 			output.writeObject(superE);
-			
 			superResponse = (Envelope)input.readObject();
 			response = Envelope.extractInner(superResponse, sessionKey);
 			//If server indicates success, return true
-			if (response.getMessage().equals("OK")) {
-				if (response.getObjContents().get(0) != null){
-					Integer seqNum = (Integer)response.getObjContents().get(0);
-					if(seqNum == sequenceNumber + 1){
-						sequenceNumber += 2;
-						return true;
+			if (response != null) {
+				if (response.getMessage().equals("OK")) {
+					if (response.getObjContents().get(0) != null){
+						Integer seqNum = (Integer)response.getObjContents().get(0);
+						if(seqNum == sequenceNumber + 1){
+							sequenceNumber += 2;
+							return true;
+						}
 					}
 				}
 			}
-				
 			return false;
 		}
 		catch (Exception e) {
@@ -516,6 +616,9 @@ public class GroupClient extends Client implements GroupClientInterface {
 		}
 	}
 
+	/**
+	* Disconnect from the connected server.
+	*/
 	public void disconnect() {
 		if (isConnected()) {
 			try {
@@ -579,8 +682,8 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 /*-------------------------OLD PASSWORD CODE----------------------------------*/
 	/*
-	
-		public int authenticateGroupServer(String username, String password) throws Exception {
+	// Old suthentication protocol	
+	public int authenticateGroupServer(String username, String password) throws Exception {
 		sessionKey = establishSessionKey();
 		if (sessionKey == null) {
 			// Unable to make the sessionKey();
@@ -589,6 +692,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 		return login(username, password);
 	}
 
+	// Old login protocol unneded with new RSA code
 	public int login(String username, String password) throws Exception 
 	{
 		Envelope contents = new Envelope("LOGIN");
@@ -611,6 +715,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 		}
  	}
 
+	// Old password update function, unneeded now that we only use RSA
  	public boolean newPassword(String password) {
  		try {
 	 		Envelope contents = new Envelope("CHANGEPASSWORD");
@@ -629,6 +734,7 @@ public class GroupClient extends Client implements GroupClientInterface {
  		}
  	}
 	
+	// Old DiffieHellman. Can get Man in the Middled
 	public SecretKey establishSessionKey() {
 		KeyPair keyPair = null;
 		KeyAgreement keyAgreement = null;

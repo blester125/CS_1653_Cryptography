@@ -40,7 +40,7 @@ public abstract class Client {
 		}
 	}
 
-	public void disconnect()	 {
+	public void disconnect() {
 		if (isConnected()) {
 			try
 			{

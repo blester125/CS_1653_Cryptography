@@ -73,7 +73,7 @@ public class GroupThread extends Thread
 					output.writeObject(response);
 				}
 				
-				System.out.println("Request received: " + message.getMessage());
+				System.out.println("\nRequest received: " + message.getMessage());
 				
 /*---------------------------------"RSALOGIN"---------------------------------*/	
 				if (message.getMessage().equals("RSALOGIN")) {
@@ -88,7 +88,6 @@ public class GroupThread extends Thread
 									SealedObject sealedHash = (SealedObject)message.getObjContents().get(1);
 									PublicKey recvdKey = (PublicKey)message.getObjContents().get(2);
 									PublicKey userPublicKey = getUserPublicKey(user);
-									//System.out.println(userPublicKey);
 									System.out.println("Seaching for User Public Key");
 									if (userPublicKey != null) {
 										System.out.println("Found User Public Key");
@@ -191,6 +190,7 @@ public class GroupThread extends Thread
 											sequenceNumber += 2;
 											innerResponse = new Envelope("OK");
 											innerResponse.addObject(sequenceNumber);
+											System.out.println(innerResponse);
 										}
 									}
 								}

@@ -410,7 +410,7 @@ public class ClientApp {
 		btnRSASetup.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				attemptRSASetup(usernameField);
+				attemptRSASetup(usernameField, publicPathField);
 			}
 		});
 		homePage.add(btnRSASetup, gbc_btnRSASetup);
@@ -839,17 +839,16 @@ public class ClientApp {
 			// Establish secure connection with Diffie-Hellman Protocol
 			try {
 				int result = RunClient.groupC.authenticateGroupServerRSA(username, publicPath, privatePath);
-				/*if (result == -2) {
-					// Error sending response
+				if (result == -1) {
+					// Error getting the group server key
 					JOptionPane.showMessageDialog(
 									null, 
-									"Unable to send Success response.", 
-									"Protocol Failure", 
+									"Unable to find the server public key.", 
+									"Key Failure", 
 									JOptionPane.OK_CANCEL_OPTION);
 					return;
 				} 
-				else*/ 
-				if (result == -1) {
+				if (result == -2) {
 					// Error getting session key
 					JOptionPane.showMessageDialog(
 									null, 
@@ -880,14 +879,31 @@ public class ClientApp {
 		currentUsername = username;
 	}
 
-	public void attemptRSASetup(JTextField usernameField) {
+	public void attemptRSASetup(
+					JTextField usernameField,
+					JTextField publicPathField) {
 		try {
-			int result = RunClient.groupC.setUpRSA();
+			String publicPath = publicPathField.getText();
+			int result = RunClient.groupC.setUpRSA(publicPath);
 			if (result == 0) {
 				JOptionPane.showMessageDialog(
 						null, 
 						"RSA Key sucessfully updated.", 
 						"Success", 
+						JOptionPane.OK_CANCEL_OPTION);
+			}
+			else if (result == -1) {
+				JOptionPane.showMessageDialog(
+						null, 
+						"Failed to load Key from the specified file.", 
+						"Failed", 
+						JOptionPane.OK_CANCEL_OPTION);
+			}
+			else if (result == -2) {
+				JOptionPane.showMessageDialog(
+						null, 
+						"Failed update the RSA key.", 
+						"Failed", 
 						JOptionPane.OK_CANCEL_OPTION);
 			}
 		} catch (Exception e) {
@@ -1094,10 +1110,19 @@ public class ClientApp {
 		if (dialogue == 0 && newUsername.length() > 0) {
 			// Create new user with currently logged in user token. 
 			// If fail, report and return
-			if (!RunClient.groupC.createUser(
-									newUsername, 
-									newPubKeyPath, 
-									currToken)) {
+			int result = RunClient.groupC.createUser(
+											newUsername, 
+											newPubKeyPath, 
+											currToken);
+			if (result == -1) {
+				JOptionPane.showMessageDialog(
+								null, 
+								"Could not Load User Key.", 
+								"User Creation Failure", 
+								JOptionPane.OK_CANCEL_OPTION);
+				return;
+			}
+			if (result == -2) {
 				JOptionPane.showMessageDialog(
 								null, 
 								"The user could not be created.", 
