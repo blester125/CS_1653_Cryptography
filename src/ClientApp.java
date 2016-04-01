@@ -1114,15 +1114,13 @@ public class ClientApp {
 
 		UserToken currToken = RunClient.groupC.getToken(currentUsername, RunClient.groupC.getGroupServerKey());
 
-		SecretKey result = RunClient.groupC.enable2FactorAuthentication(currToken);
+		String result = RunClient.groupC.enable2FactorAuthentication(currToken);
 
-		if (result != null) {
-			byte[] keyarr = result.getEncoded();
-			String rep = new String(keyarr); 
+		if (result != null) { 
 
 			JOptionPane.showMessageDialog(
 					null, 
-					"Enter the following key into Google Authneticator: " + rep, 
+					"Enter the following key into Google Authneticator: " + result, 
 					"Success", 
 					JOptionPane.OK_CANCEL_OPTION);
 		}

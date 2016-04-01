@@ -10,10 +10,12 @@ import org.apache.commons.codec.binary.Base32;
 public class GAuthEx {
 
 	public static void main(String main[]) throws Exception {
-		System.out.println("Use this key with Google Authenticator.");
-		String key = generateKey();
-		System.out.println(key);
+		//System.out.println("Use this key with Google Authenticator.");
+		//String key = generateKey();
+		//System.out.println(key);
 		BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+    System.out.print("Enter you key: ");
+    String key = in.readLine();
 		// Check codes.
 		while (true) {
 			long t = new Date().getTime() / TimeUnit.SECONDS.toMillis(30);
@@ -34,6 +36,10 @@ public class GAuthEx {
 		return new String(bEncodedKey);
 	}
 
+  public static long getT() {
+    return new Date().getTime() / TimeUnit.SECONDS.toMillis(30);
+  }
+
 	private static boolean check_code(
   String secret,
   long code,
@@ -45,7 +51,7 @@ public class GAuthEx {
 
   // Window is used to check codes generated in the near past.
   // You can use this value to tune how far you're willing to go. 
-  int window = 3;
+  int window = 0;
   for (int i = -window; i <= window; ++i) {
     long hash = verify_code(decodedKey, t + i);
 

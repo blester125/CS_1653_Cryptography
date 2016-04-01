@@ -105,12 +105,12 @@ public class UserList implements java.io.Serializable {
 		return list.get(user).getNewPassword();
 	}*/
 
-	public synchronized void setTwoFactorKey(String user, SecretKey twoFactorKey)
+	public synchronized void setTwoFactorKey(String user, String twoFactorKey)
 	{
 		list.get(user).setTwoFactorKey(twoFactorKey);
 	}
 
-	public synchronized SecretKey getTwoFactorKey(String user)
+	public synchronized String getTwoFactorKey(String user)
 	{
 		return list.get(user).getTwoFactorKey();		
 	}
@@ -127,14 +127,14 @@ public class UserList implements java.io.Serializable {
 		private BigInteger salt;
 		private byte[] password;
 		private boolean newPassword;
-		private SecretKey twoFactorKey;
+		private String twoFactorKey;
 
 		public User()
 		{
 			groups = new ArrayList<String>();
 			ownership = new ArrayList<String>();
 			//newPassword = true;
-			twoFacotrKey = null;
+			twoFactorKey = null;
 		}
 		
 		public ArrayList<String> getGroups()
@@ -217,12 +217,12 @@ public class UserList implements java.io.Serializable {
 			return newPassword;
 		}*/
 
-		public void setTwoFactorKey(SecretKey twoFactorKey) 
+		public void setTwoFactorKey(String twoFactorKey) 
 		{
 			this.twoFactorKey = twoFactorKey;
 		}
 
-		public SecretKey getTwoFactorKey() 
+		public String getTwoFactorKey() 
 		{
 			return twoFactorKey;
 		}

@@ -131,9 +131,6 @@ public class GroupThread extends Thread
 																	System.out.println("Verify that the Succes Hash matches");
 																	if (Hasher.verifyHash(recvHashWord, keyPlusWord)) {
 																		System.out.println("Hashes Match");
-																		isSecureConnection = true;
-																		isAuthenticated = true;
-																		username = user;
 																		Integer seqNum = (Integer)message3.getObjContents().get(1);
 																		sequenceNumber = seqNum.intValue();
 																		System.out.println("Inital Sequence Number set to: " + sequenceNumber);
@@ -150,7 +147,18 @@ public class GroupThread extends Thread
 																		System.out.println("Sending: ");
 																		System.out.println(message4 + "\n");
 																		response = Envelope.buildSuper(message4, sessionKey);
-																		System.out.println("Secure and Authenticated connection with Group Client Established.");
+																		if (checkForTwoFactor(user)) {
+																			System.out.println("YOU NEED TO DO TWO FACOTR AUTH");
+																			// For now lol
+																			isSecureConnection = true;
+																			isAuthenticated = true;
+																			username = user;
+																		} else {
+																			isSecureConnection = true;
+																			isAuthenticated = true;
+																			username = user;
+																			System.out.println("Secure and Authenticated connection with Group Client Established.");
+																		}
 																	}
 																}
 															}
@@ -200,6 +208,76 @@ public class GroupThread extends Thread
 					response = Envelope.buildSuper(innerResponse, sessionKey);
 					output.writeObject(response);
 				}
+				/*else if (message.getMessage().equals("ENABLE-TWO-FACTOR")
+							&& isSecureConnection
+							&& isAuthenticated) {
+					innerResponse = new Envelope("FAIL");
+					KeyPair twoFactorkeyPair = null;
+					KeyAgreement twoFactorkeyAgreement = null;
+					if (message.getObjContents().size() == 3) {
+						if (message.getObjContents().get(0) != null) {
+							if (message.getObjContents().get(1) != null) {
+								if (message.getObjContents().get(2) != null) {
+									int tempseq = (Integer)message.getObjContents().get(2);
+									if (tempseq == sequenceNumber + 1) {
+										sequenceNumber += 2;
+										PublicKey twoFactorPublicKey = (PublicKey)message.getObjContents().get(0); 
+										UserToken token = (UserToken)message.getObjContents().get(1);
+										if (token != null) {
+											if (verifyToken(token)) {
+												System.out.println("Token was verified");
+												try {
+													twoFactorkeyPair = DiffieHellman.genKeyPair();
+													twoFactorkeyAgreement = DiffieHellman.genKeyAgreement(twoFactorkeyPair);
+													SecretKey twoFactorKey = DiffieHellman.generateSecretKey(twoFactorPublicKey, twoFactorkeyAgreement);
+													innerResponse = new Envelope("ENABLE-TWO-FACTOR-2");
+													innerResponse.addObject(twoFactorkeyPair.getPublic());
+													innerResponse.addObject(sequenceNumber);
+													System.out.println(innerResponse);
+													my_gs.userList.setTwoFactorKey(token.getSubject(), twoFactorKey);
+												} catch (Exception e) {
+													e.printStackTrace();
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					response = Envelope.buildSuper(innerResponse, sessionKey);
+					output.writeObject(response);
+				} */
+				else if (message.getMessage().equals("ENABLE-TWO-FACTOR")
+							&& isSecureConnection
+							&& isAuthenticated) {
+					innerResponse = new Envelope("FAIL");
+					KeyPair twoFactorkeyPair = null;
+					KeyAgreement twoFactorkeyAgreement = null;
+					if (message.getObjContents().size() == 2) {
+						if (message.getObjContents().get(0) != null) {
+							if (message.getObjContents().get(1) != null) {
+								int tempseq = (Integer)message.getObjContents().get(1);
+								if (tempseq == sequenceNumber + 1) {
+									sequenceNumber += 2;
+									UserToken token = (UserToken)message.getObjContents().get(0);
+									if (token != null) {
+										if (verifyToken(token)) {
+											String key = GAuthEx.generateKey();
+											innerResponse = new Envelope("ENABLE-TWO-FACTOR-2");
+											innerResponse.addObject(key);
+											innerResponse.addObject(sequenceNumber);
+											System.out.println(innerResponse);
+											my_gs.userList.setTwoFactorKey(token.getSubject(), key);
+										}
+									}
+								}
+							}
+						}
+					}
+					response = Envelope.buildSuper(innerResponse, sessionKey);
+					output.writeObject(response);
+				}
 /*----------------------------------"GET"-------------------------------------*/
 				else if (message.getMessage().equals("GET") 
 							&& isSecureConnection
@@ -210,18 +288,20 @@ public class GroupThread extends Thread
 							if (message.getObjContents().get(1) != null){
 								if (message.getObjContents().get(2) != null){
 									String user = (String)message.getObjContents().get(0); //Get the username
-									PublicKey targetKey = (PublicKey)message.getObjContents().get(1);
-									int tempseq = (Integer)message.getObjContents().get(2); //get sequence number
-									if (tempseq == sequenceNumber + 1) {
-										UserToken yourToken = createToken(username, targetKey); //Create a token
-										//Respond to the client. On error, the client will receive a null token
-										if (yourToken != null) {
-											// Sign token
-											if (yourToken.signToken(rsaKeyPair.getPrivate())) {
-												sequenceNumber += 2;
-												innerResponse = new Envelope("OK");
-												innerResponse.addObject(yourToken);
-												innerResponse.addObject(sequenceNumber);
+									if (username.equals(user)) {
+										PublicKey targetKey = (PublicKey)message.getObjContents().get(1);
+										int tempseq = (Integer)message.getObjContents().get(2); //get sequence number
+										if (tempseq == sequenceNumber + 1) {
+											UserToken yourToken = createToken(username, targetKey); //Create a token
+											//Respond to the client. On error, the client will receive a null token
+											if (yourToken != null) {
+												// Sign token
+												if (yourToken.signToken(rsaKeyPair.getPrivate())) {
+													sequenceNumber += 2;
+													innerResponse = new Envelope("OK");
+													innerResponse.addObject(yourToken);
+													innerResponse.addObject(sequenceNumber);
+												}
 											}
 										}
 									}
@@ -926,6 +1006,15 @@ public class GroupThread extends Thread
 			return false;
 		}
 		return true;
+	}
+
+	private boolean checkForTwoFactor(String username) {
+		if (my_gs.userList.checkUser(username)) {
+			if (my_gs.userList.getTwoFactorKey(username) != null) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	//unused password-related elseifs

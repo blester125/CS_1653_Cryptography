@@ -10,6 +10,8 @@ import javax.crypto.KeyAgreement;
 import javax.crypto.SealedObject;
 import javax.crypto.SecretKey;
 
+import org.apache.commons.codec.binary.Base32;
+
 public class GroupClient extends Client implements GroupClientInterface {
 	private SecretKey sessionKey;
 	private int sequenceNumber;
@@ -174,6 +176,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 									System.out.println("-----SIGNED-DIFFIE-HELLMAN - Receiving the Success Hash-----");
 									System.out.println("Received: ");
 									System.out.println(message4 + "\n");
+									// Figure out what to return for two factor.
 									if (message4 != null) {
 										if (message4.getMessage().equals("SUCCESS")) {
 											if (message4.getObjContents().size() == 2) {
@@ -619,8 +622,57 @@ public class GroupClient extends Client implements GroupClientInterface {
 		}
 	}
 
-	public SecretKey enable2FactorAuthentication(UserToken token) {
-		return null;
+	public String enable2FactorAuthentication(UserToken token) {
+		KeyPair twoFactorkeyPair = null;
+		KeyAgreement twoFactorkeyAgreement = null;
+		try {
+			twoFactorkeyPair = DiffieHellman.genKeyPair();
+			twoFactorkeyAgreement = DiffieHellman.genKeyAgreement(twoFactorkeyPair);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+		try {
+			Envelope message = null, response = null;
+			message = new Envelope("ENABLE-TWO-FACTOR");
+			//message.addObject(twoFactorkeyPair.getPublic()); // add public value to envelope
+			message.addObject(token);
+			message.addObject(sequenceNumber);
+			Envelope superE = Envelope.buildSuper(message, sessionKey);
+			output.writeObject(superE); 
+			Envelope superResponse = (Envelope)input.readObject();
+			response = Envelope.extractInner(superResponse, sessionKey);
+			System.out.println(response);
+			if (response != null) {
+				//If server indicates success, return true
+				if (response.getMessage().equals("ENABLE-TWO-FACTOR-2")) {
+					if (response.getObjContents().size() == 2) {
+						if (response.getObjContents().get(0) != null) {
+							if (response.getObjContents().get(1) != null) {
+								Integer seqNum = (Integer)response.getObjContents().get(1);
+								if (seqNum == sequenceNumber + 1) {
+									sequenceNumber += 2;
+									//retrieve the group server's public value
+									//PublicKey groupServerPK = (PublicKey)response.getObjContents().get(0);
+									// generate the shared secret key
+									//SecretKey secretKey = DiffieHellman.generateSecretKey(groupServerPK, twoFactorkeyAgreement);
+									//byte[] bSecretKey = secretKey.getEncoded();
+									//Base32 codec = new Base32();
+									//byte[] bEncodedKey = codec.encode(bSecretKey);
+									return (String)response.getObjContents().get(0);
+								}
+							}
+						}
+					}
+				}
+			}		
+			return null;
+		}
+		catch (Exception e) {
+			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace(System.err);
+			return null;
+		}
 	}
 
 	/**
