@@ -2,6 +2,7 @@
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.PublicKey;
+import javax.crypto.SecretKey;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
@@ -104,6 +105,16 @@ public class UserList implements java.io.Serializable {
 		return list.get(user).getNewPassword();
 	}
 
+	public synchronized void setTwoFactorKey(String user, SecretKey twoFactorKey)
+	{
+		list.get(user).setTwoFactorKey(twoFactorKey);
+	}
+
+	public synchronized SecretKey getTwoFactorKey(String user)
+	{
+		return list.get(user).getTwoFactorKey();		
+	}
+
 	class User implements java.io.Serializable {
 
 		/**
@@ -116,6 +127,7 @@ public class UserList implements java.io.Serializable {
 		private BigInteger salt;
 		private byte[] password;
 		private boolean newPassword;
+		private SecretKey twoFactorKey;
 
 		public User()
 		{
@@ -202,6 +214,16 @@ public class UserList implements java.io.Serializable {
 
 		public boolean getNewPassword() {
 			return newPassword;
+		}
+
+		public void setTwoFactorKey(SecretKey twoFactorKey) 
+		{
+			this.twoFactorKey = twoFactorKey;
+		}
+
+		public SecretKey getTwoFactorKey() 
+		{
+			return twoFactorKey;
 		}
 	}
 }	
