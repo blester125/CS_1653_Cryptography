@@ -40,7 +40,7 @@ public class GAuthEx {
     return new Date().getTime() / TimeUnit.SECONDS.toMillis(30);
   }
 
-	private static boolean check_code(
+	public static boolean check_code(
   String secret,
   long code,
   long t)

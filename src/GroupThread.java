@@ -137,8 +137,13 @@ public class GroupThread extends Thread
 																		// Client expects sequenceNumber + 1
 																		sequenceNumber++;
 																		// Send 4th message
+																		Envelope message4 = null;
 																		System.out.println("-----SIGNED-DIFFIE-HELLMAN - Sending my Success Hash-----");
-																		Envelope message4 = new Envelope("SUCCESS");
+																		if (checkForTwoFactor(user)) {
+																			message4 = new Envelope("TWO-FACTOR");
+																		} else {
+																			message4 = new Envelope("SUCCESS");
+																		}
 																		keyPlusWord = CipherBox.getKeyAsString(sessionKey);
 																		keyPlusWord = keyPlusWord + "groupserver";
 																		byte[] hashResponse = Hasher.hash(keyPlusWord);
@@ -148,10 +153,7 @@ public class GroupThread extends Thread
 																		System.out.println(message4 + "\n");
 																		response = Envelope.buildSuper(message4, sessionKey);
 																		if (checkForTwoFactor(user)) {
-																			System.out.println("YOU NEED TO DO TWO FACOTR AUTH");
-																			// For now lol
 																			isSecureConnection = true;
-																			isAuthenticated = true;
 																			username = user;
 																		} else {
 																			isSecureConnection = true;
@@ -178,6 +180,36 @@ public class GroupThread extends Thread
 						}
 					}
 					output.writeObject(response);
+				}
+				else if (message.getMessage().equals("TWO-FACTOR")
+							&& username != null) {
+					innerResponse = new Envelope("FAIL");
+					if (message.getObjContents().size() == 3) {
+						if (message.getObjContents().get(0) != null) {
+							if (message.getObjContents().get(1) != null) {
+								if (message.getObjContents().get(2) != null) {
+									int tempSeq = (Integer)message.getObjContents().get(2);
+									if (tempSeq == sequenceNumber + 1) {
+										String user = (String)message.getObjContents().get(0);
+										if (username.equals(user)) {
+											String codeString = (String)message.getObjContents().get(1);
+											long code = Integer.parseInt(codeString);
+											String key = my_gs.userList.getTwoFactorKey(user);
+											long t = GAuthEx.getT();
+											if (GAuthEx.check_code(key, code, t)) {
+												innerResponse = new Envelope("OK");
+												sequenceNumber += 2;
+												innerResponse.addObject(sequenceNumber);
+												isAuthenticated = true;
+												System.out.println("Secure and Authenticated connection with Group Client Established.");
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					output.writeObject(Envelope.buildSuper(innerResponse, sessionKey));
 				}
 /*---------------------------------"RSAKEY"-----------------------------------*/
 				else if (message.getMessage().equals("RSAKEY")

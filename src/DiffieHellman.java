@@ -44,34 +44,43 @@ public class DiffieHellman {
 
 	}
 
-	public static KeyPair genKeyPair() throws Exception {
-
-		DHParameterSpec pspec = new DHParameterSpec(modulus, base);
-
-		KeyPairGenerator keyGen = KeyPairGenerator.getInstance("DH", "BC");
-		keyGen.initialize(pspec);
-		KeyPair newPair = keyGen.generateKeyPair();
-
-		return newPair;
+	public static KeyPair genKeyPair() {
+		try {
+			DHParameterSpec pspec = new DHParameterSpec(modulus, base);
+			KeyPairGenerator keyGen = KeyPairGenerator.getInstance("DH", "BC");
+			keyGen.initialize(pspec);
+			KeyPair newPair = keyGen.generateKeyPair();
+			return newPair;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 
-	public static KeyAgreement genKeyAgreement(KeyPair currPair) throws Exception {
-
-		KeyAgreement newAgreement = KeyAgreement.getInstance("DH", "BC");
-		newAgreement.init(currPair.getPrivate());
-
-		return newAgreement;
+	public static KeyAgreement genKeyAgreement(KeyPair currPair) {
+		try {
+			KeyAgreement newAgreement = KeyAgreement.getInstance("DH", "BC");
+			newAgreement.init(currPair.getPrivate());
+			return newAgreement;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 
-	public static SecretKey generateSecretKey(PublicKey currPubKey, KeyAgreement currAgreement) throws Exception {
-
-		currAgreement.doPhase(currPubKey, true);
-
-		//256 key bit workaround
-		byte[] secret = currAgreement.generateSecret();
-		SecretKey newSecretKey = new SecretKeySpec(secret, 0, 32, "AES");
-
-		return newSecretKey;
+	public static SecretKey generateSecretKey(
+								PublicKey currPubKey, 
+								KeyAgreement currAgreement) {
+		try {
+			currAgreement.doPhase(currPubKey, true);
+			//256 key bit workaround
+			byte[] secret = currAgreement.generateSecret();
+			SecretKey newSecretKey = new SecretKeySpec(secret, 0, 32, "AES");
+			return newSecretKey;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 
 
