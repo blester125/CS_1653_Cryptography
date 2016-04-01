@@ -247,12 +247,16 @@ public class GroupThread extends Thread
 						// If there is no groupName
 						//If there is no Token
 						if (message.getObjContents().get(0) != null){
+							innerResponse = new Envelope("FAIL - NULL OBJ 1");
 							if (message.getObjContents().get(1) != null) {
+								innerResponse = new Envelope("FAIL - WRONG SEQ NUM");
 								int tempseq = (Integer)message.getObjContents().get(1);
 								if (tempseq == sequenceNumber + 1){
+									innerResponse = new Envelope("FAIL - VERIFY TOKEN");
 									// Extract Token 
 									UserToken yourToken = (UserToken)message.getObjContents().get(0);
 									if (verifyToken(yourToken)) {
+										innerResponse = new Envelope("FAIL - NULL GMDATA");
 										ArrayList<GroupMetadata> gMetaData = retrieveGroupsMetadata(yourToken);
 										if(gMetaData != null) {
 											sequenceNumber += 2;

@@ -433,7 +433,7 @@ public class FileThread extends Thread
 				}
 				else if (e.getMessage().equals("DOWNLOADF") && isSecureConnection && isAuthenticated) 
 				{
-
+					int dSuccessFlag = 0;
 					String remotePath = (String)e.getObjContents().get(0);
 					Token t = (Token)e.getObjContents().get(1);
 					if(e.getObjContents() == null || e.getObjContents().size() < 2) {
@@ -524,6 +524,7 @@ public class FileThread extends Thread
 										e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
 										if(e.getMessage().compareTo("OK")==0) {
 											System.out.printf("File data download successful\n");
+											dSuccessFlag = 1;
 										}
 										else {
 											System.out.printf("Upload failed: %s\n", e.getMessage());
@@ -548,8 +549,10 @@ public class FileThread extends Thread
 						}
 					}
 					
-					output.writeObject(Envelope.buildSuper(response, sessionKey));
-					System.out.println("SENT from UPLOADF: " + response);
+					if(dSuccessFlag == 0){
+						output.writeObject(Envelope.buildSuper(response, sessionKey));
+					}
+					System.out.println("SENT from DOWNLOADF (NO WRITEOUT): " + response);
 				}
 				else if (e.getMessage().compareTo("DELETEF")==0 && isSecureConnection && isAuthenticated) {
 					if(e.getObjContents() == null || e.getObjContents().size() < 2) {

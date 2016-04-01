@@ -1595,7 +1595,8 @@ public class ClientApp {
 
 		File tempTest = new File(chooseFile);
 
-		UserToken currToken = RunClient.groupC.getToken(currentUsername, RunClient.fileC.getFileServerKey());
+		//"destination" here is group server, so it needs groupserver's key
+		UserToken currToken = RunClient.groupC.getToken(currentUsername, RunClient.groupC.getGroupServerKey());
 
 		if(currToken == null){
 			JOptionPane.showMessageDialog(null, "Fatal token error.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
@@ -1603,7 +1604,7 @@ public class ClientApp {
 		}
 		ArrayList<GroupMetadata> userGroupsMetadata = RunClient.groupC.getGroupsMetadata(currToken);
 		if(userGroupsMetadata == null) {
-			JOptionPane.showMessageDialog(null, "Fatal group meta-data error.", "Group Meta-data Error", JOptionPane.OK_CANCEL_OPTION);
+			JOptionPane.showMessageDialog(null, "Fatal group meta-data error. 1", "Group Meta-data Error", JOptionPane.OK_CANCEL_OPTION);
 			return;
 		}
 		// find the group meta-data for the current group
@@ -1614,9 +1615,12 @@ public class ClientApp {
 			}
 		}
 		if(currGroupMetadata == null){
-			JOptionPane.showMessageDialog(null, "Fatal group meta-data error.", "Group Meta-data Error", JOptionPane.OK_CANCEL_OPTION);
+			JOptionPane.showMessageDialog(null, "Fatal group meta-data error. 2", "Group Meta-data Error", JOptionPane.OK_CANCEL_OPTION);
 			return;
 		}
+
+		currToken = RunClient.groupC.getToken(currentUsername, RunClient.fileC.getFileServerKey());
+
 		if(dialogue == 0 && chooseFile.length() > 0 && tempTest.exists()){
 
 			if(!RunClient.fileC.upload(chooseFile, destFile, currGroup, currToken, currGroupMetadata)){
@@ -1703,7 +1707,7 @@ public class ClientApp {
 		
 		String destFile = chooseFileField.getText();
 
-		UserToken currToken = RunClient.groupC.getToken(currentUsername, RunClient.fileC.getFileServerKey());
+		UserToken currToken = RunClient.groupC.getToken(currentUsername, RunClient.groupC.getGroupServerKey());
 		
 		ArrayList<GroupMetadata> groupsMetadata = RunClient.groupC.getGroupsMetadata(currToken);
 		GroupMetadata currGroupMetadata = null;
@@ -1723,6 +1727,8 @@ public class ClientApp {
 			return;
 		}
 
+		currToken = RunClient.groupC.getToken(currentUsername, RunClient.fileC.getFileServerKey());
+
 		if(currFile.length() > 0){
 
 			if(!RunClient.fileC.download(currFile, destFile, currGroup, currToken, currGroupMetadata)){
@@ -1730,7 +1736,7 @@ public class ClientApp {
 				return;
 			}
 
-			viewAllFiles(filesPane);
+			//viewAllFiles(filesPane);
 			
 		}
 	}
