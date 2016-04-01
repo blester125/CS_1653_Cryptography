@@ -37,6 +37,7 @@ public class ClientApp {
 	private JTextField publicPathField;
 	private JTextField privatePathField;
 	private String currentUsername;
+	private JButton btnEnableTwoFactor;
 	JList loadedGroups;
 	JList loadedUsers;
 	JList loadedFileGroups;
@@ -201,6 +202,28 @@ public class ClientApp {
 		);
 
 		homePage.add(btnDeleteUser, gbc_btnDeleteUser);
+
+		btnEnableTwoFactor = new JButton("Setup Two Factor");
+		GridBagConstraints gbc_btnEnableTwoFactor = new GridBagConstraints();
+		gbc_btnEnableTwoFactor.anchor = GridBagConstraints.NORTH;
+		gbc_btnEnableTwoFactor.fill = GridBagConstraints.HORIZONTAL;
+		gbc_btnEnableTwoFactor.insets = new Insets(0, 0, 5, 5);
+		gbc_btnEnableTwoFactor.gridx = 4;
+		gbc_btnEnableTwoFactor.gridy = 2;
+
+		btnEnableTwoFactor.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+
+				attemptEnableTwoFactor();
+			}
+
+		}
+
+		);
+
+		homePage.add(btnEnableTwoFactor, gbc_btnEnableTwoFactor);
 		
 		//IP Address Label
 		JLabel lblIpAddress = new JLabel("Group Address");
@@ -807,6 +830,7 @@ public class ClientApp {
 		btnFileServer.setEnabled(false);
 		btnLogout.setEnabled(false);
 		btnRSASetup.setEnabled(false);
+		btnEnableTwoFactor.setEnabled(false);
 	}
 
 	public void attemptRSALogin(
@@ -868,7 +892,8 @@ public class ClientApp {
 		usernameField.setEnabled(false);
 		ipField.setEnabled(false);
 		portField.setEnabled(false);
-		publicPathField.setEnabled(true);
+		publicPathField.setEnabled(false);
+		privatePathField.setEnabled(false);
 		btnNewUser.setEnabled(true);
 		btnDeleteUser.setEnabled(true);
 		tabbedPane.setEnabledAt(1,true);
@@ -876,6 +901,7 @@ public class ClientApp {
 		btnLogout.setEnabled(true);
 		btnRSA.setEnabled(false);
 		btnRSASetup.setEnabled(true);
+		btnEnableTwoFactor.setEnabled(true);
 		currentUsername = username;
 	}
 
@@ -883,7 +909,26 @@ public class ClientApp {
 					JTextField usernameField,
 					JTextField publicPathField) {
 		try {
-			String publicPath = publicPathField.getText();
+
+			//Construct a dialogue box to capture user input and do so.
+			JPanel newUserDialogue = new JPanel();
+			JTextField newPathField = new JTextField(20);
+			JLabel newPathDialogueLabel = new JLabel("Please enter new RSA Public Key Path: ");
+
+			newUserDialogue.add(newPathDialogueLabel);
+			newUserDialogue.add(newPathField);
+
+			int dialogue = JOptionPane.showOptionDialog(
+											null, 
+											newUserDialogue, 
+											"Update RSA Public Key", 
+											JOptionPane.OK_CANCEL_OPTION, 
+											JOptionPane.PLAIN_MESSAGE, 
+											null, 
+											null, 
+											null);
+
+			String publicPath = newPathField.getText();
 			int result = RunClient.groupC.setUpRSA(publicPath);
 			if (result == 0) {
 				JOptionPane.showMessageDialog(
@@ -1016,6 +1061,7 @@ public class ClientApp {
 		ipField.setEnabled(true);
 		portField.setEnabled(true);
 		publicPathField.setEnabled(true);
+		privatePathField.setEnabled(true);
 
 		tabbedPane.setEnabledAt(1, false);
 		tabbedPane.setEnabledAt(2, false);
@@ -1025,6 +1071,7 @@ public class ClientApp {
 		btnRSA.setEnabled(true);
 		btnRSASetup.setEnabled(false);
 		btnLogout.setEnabled(false);
+		btnEnableTwoFactor.setEnabled(false);
 	}
 	
 	// ATTEMPTS TO ENHANCE
@@ -1059,6 +1106,32 @@ public class ClientApp {
 		} else {
 			clip.stop();
 			clip.close();
+		}
+	}
+
+	//Attempts to enable two factor authentication
+	public void attemptEnableTwoFactor(){
+
+		UserToken currToken = RunClient.groupC.getToken(currentUsername, RunClient.groupC.getGroupServerKey());
+
+		SecretKey result = RunClient.groupC.enable2FactorAuthentication(currToken);
+
+		if (result != null) {
+			byte[] keyarr = result.getEncoded();
+			String rep = new String(keyarr); 
+
+			JOptionPane.showMessageDialog(
+					null, 
+					"Enter the following key into Google Authneticator: " + rep, 
+					"Success", 
+					JOptionPane.OK_CANCEL_OPTION);
+		}
+		else {
+			JOptionPane.showMessageDialog(
+					null, 
+					"Failed to enable two factor authentication for this user.", 
+					"Failed", 
+					JOptionPane.OK_CANCEL_OPTION);
 		}
 	}
 
@@ -1736,7 +1809,7 @@ public class ClientApp {
 				return;
 			}
 
-			//viewAllFiles(filesPane);
+			viewAllFiles(filesPane);
 			
 		}
 	}
