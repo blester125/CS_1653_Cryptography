@@ -1083,7 +1083,8 @@ public class ClientApp {
 			JButton btnRSASetup, 
 			JButton btnLogout, 
 			JButton btnEnhance) {
-		Clip clip = null;
+		// does not work on linux
+		/*Clip clip = null;
 		try {
 			AudioInputStream audioIn = AudioSystem.getAudioInputStream(new File("enhance/sunlight.wav"));
 			clip = AudioSystem.getClip();
@@ -1091,7 +1092,10 @@ public class ClientApp {
 			clip.start();
 		} catch (Exception e) {
 			e.printStackTrace();
-		}
+		}*/
+		
+		MP3 mp3 = new MP3("enhance/sunlight.mp3");
+        mp3.play();
 		
 		ImageIcon icon = new ImageIcon("enhance/ENHANCE-IMAGE.gif");
 		int close = JOptionPane.showConfirmDialog(null,
@@ -1101,11 +1105,9 @@ public class ClientApp {
 				JOptionPane.INFORMATION_MESSAGE, 
 				icon);
 		if(close == JOptionPane.OK_OPTION || close == JOptionPane.OK_CANCEL_OPTION || close == JOptionPane.NO_OPTION || close == JOptionPane.CANCEL_OPTION) {
-			clip.stop();
-			clip.close();
+			mp3.close();
 		} else {
-			clip.stop();
-			clip.close();
+			mp3.close();
 		}
 	}
 
