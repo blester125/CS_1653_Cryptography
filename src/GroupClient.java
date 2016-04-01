@@ -10,6 +10,7 @@ import javax.crypto.KeyAgreement;
 import javax.crypto.SealedObject;
 import javax.crypto.SecretKey;
 
+import java.io.*;
 import org.apache.commons.codec.binary.Base32;
 
 public class GroupClient extends Client implements GroupClientInterface {
@@ -94,7 +95,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 	public int authenticateGroupServerRSA(
 					String username, 
 					String publicKeyPath, 
-					String privateKeyPath) {
+					String privateKeyPath) throws TwoFactorException {
 		KeyPair keyPair = RSA.loadRSA(publicKeyPath, privateKeyPath);
 		// This always return a keyPair even if it has to make one that is 
 		// saved into the two file paths.
@@ -102,10 +103,14 @@ public class GroupClient extends Client implements GroupClientInterface {
 		if (groupServerKey == null) {
 			return -1;
 		}
-		sessionKey = establishSessionKeyRSA(username, keyPair, groupServerKey);
-		if (sessionKey == null) {
-			// Error creating the sharedKey
-			return -2;
+		try {
+			boolean check = establishSessionKeyRSA(username, keyPair, groupServerKey);
+			if (check == false) {
+				// Error creating the sharedKey
+				return -2;
+			}
+		} catch (TwoFactorException e) {
+			throw e;
 		}
 		return 0;
 	}
@@ -117,10 +122,10 @@ public class GroupClient extends Client implements GroupClientInterface {
 	 * @param serverKey: The public key that will used to verify the servers messages.
 	 * @return secretKey on success and null on failure.
 	 */
-	public SecretKey establishSessionKeyRSA(
+	public boolean establishSessionKeyRSA(
 						String username, 
 						KeyPair keyPair, 
-						PublicKey serverKey) {
+						PublicKey serverKey) throws TwoFactorException {
 		KeyPair DHKeyPair = null;
 		KeyAgreement keyAgreement = null;
 		try {
@@ -154,7 +159,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 								System.out.println("Verify the signed hash matchs the generated hash");
 								if (Hasher.verifyHash(recvHash, DHServerKey)) {
 									System.out.println("Hashes Match");
-									SecretKey sessionKey = DiffieHellman.generateSecretKey(DHServerKey, keyAgreement);
+									sessionKey = DiffieHellman.generateSecretKey(DHServerKey, keyAgreement);
 									System.out.println("Generated Session Key: " + sessionKey);
 									// Send Message 3
 									System.out.println("-----SIGNED-DIFFIE-HELLMAN - Sending Success Hash and Inital Sequence Number-----");
@@ -178,7 +183,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 									System.out.println(message4 + "\n");
 									// Figure out what to return for two factor.
 									if (message4 != null) {
-										if (message4.getMessage().equals("SUCCESS")) {
+										if (message4.getMessage().equals("SUCCESS") || message4.getMessage().equals("TWO-FACTOR")) {
 											if (message4.getObjContents().size() == 2) {
 												if (message4.getObjContents().get(0) != null) {
 													if (message4.getObjContents().get(1) != null) {
@@ -194,8 +199,12 @@ public class GroupClient extends Client implements GroupClientInterface {
 																System.out.println("Sequence Number is correct.");
 																sequenceNumber += 2;
 																System.out.println("Sequence Number set to: " + sequenceNumber);
-																System.out.println("\nSecure and Authenticated connection with group server Established.");
-																return sessionKey;
+																if (message4.getMessage().equals("SUCCESS")) {
+																	System.out.println("\nSecure and Authenticated connection with group server Established.");
+																	return true;
+																} else {
+																	throw new TwoFactorException();
+																}
 															}
 														}
 													}
@@ -209,11 +218,46 @@ public class GroupClient extends Client implements GroupClientInterface {
 					}
 				}
 			}
-			return null;
-		} catch (Exception e) {
+			return false;
+		} catch (IOException e) {
 			e.printStackTrace();
-			return null;
+			return false;
 		}
+		catch (ClassNotFoundException e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+
+	public boolean twoFactor(String username, String code) {
+		Envelope message = new Envelope("TWO-FACTOR");
+		message.addObject(username);
+		message.addObject(code);
+		message.addObject(sequenceNumber);
+		Envelope superE = Envelope.buildSuper(message, sessionKey);
+		Envelope superR = null;
+		try {
+			output.writeObject(superE);
+			superR = (Envelope)input.readObject(); 
+		} catch (Exception e) {
+			return false;
+		}
+		Envelope response = Envelope.extractInner(superR, sessionKey);
+		if (response != null) {
+			if (response.getMessage().equals("OK")) {
+				if (response.getObjContents().size() == 1) {
+					if (response.getObjContents().get(0) != null) {
+						int temp = (Integer)response.getObjContents().get(0);
+						if (temp == sequenceNumber + 1) {
+							sequenceNumber += 2;
+							System.out.println("\nSecure and Authenticated connection with group server Established.");
+							return true;
+						}
+					}
+				}
+			}
+		}
+		return false;
 	}
 
 /*------------------Post-Authentication Functionality-------------------------*/

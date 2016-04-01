@@ -882,8 +882,34 @@ public class ClientApp {
 					return;
 				}
 			}
-			catch (Exception e) {
-				e.printStackTrace();
+			catch (TwoFactorException e) {
+				JPanel codeDialogue = new JPanel();
+				JTextField codeField = new JTextField(6);
+				JLabel codeDialogueLabel = new JLabel("Please enter the code: ");
+
+				codeDialogue.add(codeDialogueLabel);
+				codeDialogue.add(codeField);
+
+				int dialogue = JOptionPane.showOptionDialog(
+										null, 
+										codeDialogue, 
+										"Two Factor Authentication", 
+										JOptionPane.OK_CANCEL_OPTION, 
+										JOptionPane.PLAIN_MESSAGE, 
+										null, 
+										null, 
+										null);
+				String code = codeField.getText();
+				if (!RunClient.groupC.twoFactor(username, code)) {
+					JOptionPane.showMessageDialog(
+									null, 
+									"Wrong Code.", 
+									"Session Key Failure", 
+									JOptionPane.OK_CANCEL_OPTION);
+				}
+			} 
+			catch (Exception e1) {
+				e1.printStackTrace();
 				return;
 			}
 		}
