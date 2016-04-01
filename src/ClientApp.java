@@ -85,7 +85,7 @@ public class ClientApp {
 		frmBrcSafeshare.setTitle("BRC SafeShare");
 		frmBrcSafeshare.setBounds(100, 100, 450, 300);
 		frmBrcSafeshare.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frmBrcSafeshare.setSize(500,330);
+		frmBrcSafeshare.setSize(500,330);//550x300
 		
 		final JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
 		frmBrcSafeshare.getContentPane().add(tabbedPane, BorderLayout.NORTH);
@@ -209,7 +209,7 @@ public class ClientApp {
 		gbc_btnEnableTwoFactor.fill = GridBagConstraints.HORIZONTAL;
 		gbc_btnEnableTwoFactor.insets = new Insets(0, 0, 5, 5);
 		gbc_btnEnableTwoFactor.gridx = 4;
-		gbc_btnEnableTwoFactor.gridy = 2;
+		gbc_btnEnableTwoFactor.gridy = 6;
 
 		btnEnableTwoFactor.addActionListener(new ActionListener() {
 
@@ -374,7 +374,7 @@ public class ClientApp {
 		gbc_btnEnhance.fill = GridBagConstraints.HORIZONTAL;
 		gbc_btnEnhance.insets = new Insets(0, 0, 5, 0);
 		gbc_btnEnhance.gridx = 4;
-		gbc_btnEnhance.gridy = 6;
+		gbc_btnEnhance.gridy = 7;
 		btnEnhance.addActionListener(new ActionListener() {
 
 				@Override
