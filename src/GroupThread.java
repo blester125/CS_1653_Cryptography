@@ -109,7 +109,7 @@ public class GroupThread extends Thread
 												Envelope message2 = new Envelope("RSALOGINOK");
 												byte[] hashedPublicKey = Hasher.hash(keyPair.getPublic());
 												SealedObject sealedKey;
-												sealedKey = CipherBox.encrypt(hashedPublicKey, my_gs.keyPair.getPrivate());
+												sealedKey = CipherBox.encrypt(hashedPublicKey, rsaKeyPair.getPrivate());
 												message2.addObject(sealedKey);
 												message2.addObject(keyPair.getPublic());
 												System.out.println("Sending: ");
@@ -217,7 +217,7 @@ public class GroupThread extends Thread
 										//Respond to the client. On error, the client will receive a null token
 										if (yourToken != null) {
 											// Sign token
-											if (yourToken.signToken(my_gs.keyPair.getPrivate())) {
+											if (yourToken.signToken(rsaKeyPair.getPrivate())) {
 												sequenceNumber += 2;
 												innerResponse = new Envelope("OK");
 												innerResponse.addObject(yourToken);

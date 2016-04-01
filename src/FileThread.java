@@ -29,8 +29,6 @@ public class FileThread extends Thread
 	// Group Server Public Key
 	public PublicKey serverPublicKey = null;
 	private String groupServerPath = "groupserverpublic.key";
-	private String fileServerPublicPath = "fileserverpublic.key";
-	private String fileServerPrivatePath = "fileserverprivate.key";
 	private int sequenceNumber;
 
 	public FileThread (Socket _socket, KeyPair _rsaPair) {
@@ -40,23 +38,6 @@ public class FileThread extends Thread
 		isAuthenticated = false;
 		
 	}
-
-	//buildSuper and extractInner are now static functions within Envelope
-
-	// public Envelope buildSuper (Envelope env) {
-	// 	IvParameterSpec ivspec = CipherBox.generateRandomIV();			
-	// 	Envelope superEnv = new Envelope("SUPER");
-	// 	superEnv.addObject(CipherBox.encrypt(env, secretKey, ivspec));
-	// 	superEnv.addObject(ivspec.getIV());
-	// 	return superEnv;
-	// }
-
-	// public Envelope extractInner(Envelope superInputEnv){
-	// 	SealedObject innerEnv = (SealedObject)superInputEnv.getObjContents().get(0);
-	// 	IvParameterSpec decIVSpec = new IvParameterSpec((byte[])superInputEnv.getObjContents().get(1));
-	// 	Envelope env = (Envelope)CipherBox.decrypt(innerEnv, secretKey, decIVSpec);
-	// 	return env;
-	// }
 
 	public void run()
 	{
@@ -99,37 +80,7 @@ public class FileThread extends Thread
 				}
 
 				System.out.println("Request received: " + e.getMessage());
-
-				// Client wishes to establish a shared symmetric secret key
-				/*if(e.getMessage().equals("SESSIONKEY") && e.getObjContents() != null && e.getObjContents().get(0) != null) {
-
-					// Retrieve Client's public key
-					PublicKey clientPK = (PublicKey)e.getObjContents().get(0);
-					KeyPair keypair = null;
-					KeyAgreement keyAgreement = null;
-
-					// generate secret key and send back public key
-					try {
-
-						keypair = DiffieHellman.genKeyPair();
-						keyAgreement = DiffieHellman.genKeyAgreement(keypair);
-						sessionKey = DiffieHellman.generateSecretKey(clientPK, keyAgreement);
-
-						response = new Envelope("OK");
-						response.addObject(keypair.getPublic());
-						response.addObject(rsaPair.getPublic());
-						output.writeObject(response);
-						isSecureConnection = true;
-						System.out.println("Client and server set up secure communication via DH.");
-					} catch(Exception exception) {
-						exception.printStackTrace();
-						response = new Envelope("FAIL");
-						response.addObject(response);
-						output.writeObject(response);
-					}
-				}*/
 				if (e.getMessage().equals("REQUEST")) {
-					rsaPair = RSA.loadRSA(fileServerPublicPath, fileServerPrivatePath);
 					response = new Envelope("REQ-RESPONSE");
 					response.addObject(rsaPair.getPublic());
 					System.out.println("-----REQUEST - Sending my Public Key to User-----");
@@ -137,7 +88,6 @@ public class FileThread extends Thread
 					System.out.println(response + "\n");
 					output.writeObject(response);
 				}
-				// TODO add send Fails
 				else if (e.getMessage().equals("SIGNED-DIFFIE-HELLMAN")) {
 					response = new Envelope("Fail");
 					System.out.println("-----SIGENED-DIFFIE-HELLMAN - User Sends Public Key-----");
@@ -713,4 +663,33 @@ public class FileThread extends Thread
 			}
 		}
 	}
+
+					// Client wishes to establish a shared symmetric secret key
+				/*if(e.getMessage().equals("SESSIONKEY") && e.getObjContents() != null && e.getObjContents().get(0) != null) {
+
+					// Retrieve Client's public key
+					PublicKey clientPK = (PublicKey)e.getObjContents().get(0);
+					KeyPair keypair = null;
+					KeyAgreement keyAgreement = null;
+
+					// generate secret key and send back public key
+					try {
+
+						keypair = DiffieHellman.genKeyPair();
+						keyAgreement = DiffieHellman.genKeyAgreement(keypair);
+						sessionKey = DiffieHellman.generateSecretKey(clientPK, keyAgreement);
+
+						response = new Envelope("OK");
+						response.addObject(keypair.getPublic());
+						response.addObject(rsaPair.getPublic());
+						output.writeObject(response);
+						isSecureConnection = true;
+						System.out.println("Client and server set up secure communication via DH.");
+					} catch(Exception exception) {
+						exception.printStackTrace();
+						response = new Envelope("FAIL");
+						response.addObject(response);
+						output.writeObject(response);
+					}
+				}*/
 }
