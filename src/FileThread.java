@@ -196,40 +196,6 @@ public class FileThread extends Thread
 						}
 					} 
 				}
-				// Client sends server the challenge, server will decrypt and respond
-				/*else if(e.getMessage().equals("CHALLENGE") && isSecureConnection){
-					try {
-						// null checks
-						if(e.getObjContents() == null || e.getObjContents().size() < 1) {
-					    	response = new Envelope("FAIL-BADCONTENTS");
-						}
-						else if(e.getObjContents().get(0) == null) {
-							response = new Envelope("FAIL");
-						}
-						//Recover sealedobject of challenge from envelope, then decrypt
-						SealedObject encRSA_R1 = (SealedObject)e.getObjContents().get(0);
-						BigInteger r1 = (BigInteger)CipherBox.decrypt(encRSA_R1, rsaPair.getPrivate());
-
-						//build envelope
-						response = new Envelope("CH_RESPONSE");
-						response.addObject(r1);
-
-						//send it back
-						output.writeObject(Envelope.buildSuper(response, sessionKey));
-						System.out.println("SENT from CHALLENGE: " + response);
-					} catch (Exception exception) {
-						exception.printStackTrace();
-						response = new Envelope("FAIL");
-						response.addObject(response);
-						output.writeObject(Envelope.buildSuper(response, sessionKey));
-					}
-
-				}
-				// If successful, set your flag and carry on
-				else if(e.getMessage().equals("AUTH_SUCCESS") && isSecureConnection) {
-					isAuthenticated = true;
-					System.out.println("Client authenticated the file server!");
-				}*/
 				// Handler to list files that this user is allowed to see
 				else if(e.getMessage().equals("LFILES") && isSecureConnection && isAuthenticated)
 				{
@@ -700,5 +666,40 @@ public class FileThread extends Thread
 						response.addObject(response);
 						output.writeObject(response);
 					}
+				}*/
+
+	// Client sends server the challenge, server will decrypt and respond
+				/*else if(e.getMessage().equals("CHALLENGE") && isSecureConnection){
+					try {
+						// null checks
+						if(e.getObjContents() == null || e.getObjContents().size() < 1) {
+					    	response = new Envelope("FAIL-BADCONTENTS");
+						}
+						else if(e.getObjContents().get(0) == null) {
+							response = new Envelope("FAIL");
+						}
+						//Recover sealedobject of challenge from envelope, then decrypt
+						SealedObject encRSA_R1 = (SealedObject)e.getObjContents().get(0);
+						BigInteger r1 = (BigInteger)CipherBox.decrypt(encRSA_R1, rsaPair.getPrivate());
+
+						//build envelope
+						response = new Envelope("CH_RESPONSE");
+						response.addObject(r1);
+
+						//send it back
+						output.writeObject(Envelope.buildSuper(response, sessionKey));
+						System.out.println("SENT from CHALLENGE: " + response);
+					} catch (Exception exception) {
+						exception.printStackTrace();
+						response = new Envelope("FAIL");
+						response.addObject(response);
+						output.writeObject(Envelope.buildSuper(response, sessionKey));
+					}
+
+				}
+				// If successful, set your flag and carry on
+				else if(e.getMessage().equals("AUTH_SUCCESS") && isSecureConnection) {
+					isAuthenticated = true;
+					System.out.println("Client authenticated the file server!");
 				}*/
 }

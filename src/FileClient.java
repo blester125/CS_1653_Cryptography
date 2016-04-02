@@ -35,489 +35,6 @@ public class FileClient extends Client implements FileClientInterface {
 		return serverPublicKey;
 	}
 
-	//buildSuper and extractInner are now static functions within Envelope
-
-	// public Envelope buildSuper(Envelope env){
-	// 	IvParameterSpec ivspec = CipherBox.generateRandomIV();			
-	// 	Envelope superEnv = new Envelope("SUPER");
-	// 	superEnv.addObject(CipherBox.encrypt(env, secretKey, ivspec));
-	// 	superEnv.addObject(ivspec.getIV());
-
-	// 	return superEnv;
-	// }
-	
-	// public PublicKey getCachedPublicKey() {
-	// 	return this.cachedPublicKey;
-	// }
-
-	// public Envelope extractInner(Envelope superInputEnv){
-
-	// 	SealedObject innerEnv = (SealedObject)superInputEnv.getObjContents().get(0);
-	// 	IvParameterSpec decIVSpec = new IvParameterSpec((byte[])superInputEnv.getObjContents().get(1));
-	// 	Envelope env = (Envelope)CipherBox.decrypt(innerEnv, secretKey, decIVSpec);
-
-	// 	return env;
-	// }
-
-	public void disconnect()	 {
-		if (isConnected()) {
-			try {
-				Envelope message = new Envelope("DISCONNECT");
-				Envelope superE = Envelope.buildSuper(message, sessionKey);
-				output.writeObject(superE);
-				sock.close(); //close the socket
-			}
-			catch(Exception e) {
-				System.err.println("Error: " + e.getMessage());
-				e.printStackTrace(System.err);
-			}
-		}
-	}
-
-	public boolean delete(String filename, String group, UserToken token) {
-
-		String remotePath;
-
-		if (filename.charAt(0)=='/') {
-			remotePath = filename.substring(1);
-		}
-		else {
-			remotePath = filename;
-		}
-
-		remotePath = remotePath + group;
-
-		Envelope env = new Envelope("DELETEF"); //Success
-		env.addObject(remotePath);
-		env.addObject(token);
-
-		try {
-
-			//build nested envelope, encrypt, and send
-			Envelope superEnv = Envelope.buildSuper(env, sessionKey);
-			output.writeObject(superEnv);
-
-			//receive, extract, and decrypt inner envelope
-			env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-		   
-			if (env.getMessage().compareTo("OK")==0) {
-
-				System.out.printf("File %s deleted successfully\n", filename);				
-			}
-			else {
-
-				System.out.printf("Error deleting file %s (%s)\n", filename, env.getMessage());
-				return false;
-			}			
-		} catch (IOException e1) {
-
-			e1.printStackTrace();
-		} catch (ClassNotFoundException e1) {
-
-			e1.printStackTrace();
-		}  	
-		return true;
-	}
-
-	public boolean download(String sourceFile, String destFile, String group, UserToken token, 
-			GroupMetadata groupMetadata) {
-		if (sourceFile.charAt(0)=='/') {
-			sourceFile = sourceFile.substring(1);
-		}
-		sourceFile = sourceFile + group;			
-		File file = new File(destFile);
-    	try {		
-			if (!file.exists()) {
-				file.createNewFile();
-				FileOutputStream fos = new FileOutputStream(file);
-					    
-				Envelope env = new Envelope("DOWNLOADF"); //Success
-				env.addObject(sourceFile);
-				env.addObject(token);
-	
-				//build nested envelope, encrypt, and send
-				Envelope superEnv = Envelope.buildSuper(env, sessionKey);
-				output.writeObject(superEnv);
-					
-				//receive, extract, and decrypt inner envelope
-				env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-				// process meta-data for file and initialize decryption
-				if(env.getObjContents().size() == 6) {
-					if(env.getObjContents().get(0) == null) {
-						System.err.println("Error: null text");
-					}
-					else if(env.getObjContents().get(1) == null) {
-						System.err.println("Error: null length");
-					}
-					else if(env.getObjContents().get(2) == null) {
-						System.err.println("Error: null key index");
-					}
-					else if(env.getObjContents().get(3) == null) {
-						System.err.println("Error: null key version");
-					}
-					else if(env.getObjContents().get(4) == null) {
-						System.err.println("Error: null IV");
-					}
-					else if(env.getObjContents().get(5) == null) {
-						System.err.println("Error: null file length");
-					}
-				}
-				else {
-					System.err.println("Error: invalid number of object contents");
-				}
-				
-				// retrieve file meta-data
-				int keyIndex = (Integer)env.getObjContents().get(2);
-				int keyVersion = (Integer)env.getObjContents().get(3);
-				IvParameterSpec iv = new IvParameterSpec((byte[])env.getObjContents().get(4));
-				long fileLength = (Long)env.getObjContents().get(5);
-				Key key = groupMetadata.calculateKey(keyIndex, keyVersion);
-				Cipher AESCipherDecrypt = CipherBox.initializeDecryptCipher(key, iv);
-				while (env.getMessage().compareTo("CHUNK")==0) {
-					try {
-						// decrypt chunk and write to local file
-						byte[] buf = (byte[])env.getObjContents().get(0);
-						byte[] decryptedBuf = AESCipherDecrypt.update(buf);
-						if(fileLength - decryptedBuf.length >= 0) {
-							fos.write(decryptedBuf, 0, decryptedBuf.length);
-							fileLength = fileLength - decryptedBuf.length;
-						}
-						else {
-							fos.write(decryptedBuf, 0, (int)fileLength);
-							fileLength = 0;
-						}
-						System.out.printf(".");
-					} catch (Exception e) {
-						e.printStackTrace();
-						fos.close();
-						return false;
-					}
-	
-					env = new Envelope("DOWNLOADF"); //Success
-					output.writeObject(Envelope.buildSuper(env, sessionKey));
-					env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);									
-				}										
-				
-							
-			    if(env.getMessage().compareTo("EOF")==0) {
-			    	// decrypt final padding block
-			    	/*try {
-			    		byte[] paddingBlock = AESCipherDecrypt.doFinal();
-			    		fos.write(paddingBlock, 0, (int)fileLength);
-			    	} catch(Exception e) {
-			    		e.printStackTrace();
-			    	}*/
-					fos.close();
-					System.out.printf("\nTransfer successful file %s\n", sourceFile);
-					env = new Envelope("OK"); //Success
-					output.writeObject(Envelope.buildSuper(env, sessionKey));
-			    }
-				else {
-						System.out.printf("Error reading file %s (%s)\n", sourceFile, env.getMessage());
-						file.delete();
-						fos.close();
-						return false;								
-				}
-			    fos.close();
-		    }    
-		    else {
-				System.out.printf("Error couldn't create file %s\n", destFile);
-				return false;
-		    }
-	    } catch (IOException e1) {
-	    	
-	    	System.out.printf("Error couldn't create file %s\n", destFile);
-	    	return false;
-		}
-	    catch (ClassNotFoundException e1) {
-			e1.printStackTrace();
-		}
-    	return true;
-	}
-
-	@SuppressWarnings("unchecked")
-	public List<String> listFiles(UserToken token) {
-		 try
-		 {
-			 Envelope message = null, e = null;
-			 //Tell the server to return the member list
-			 message = new Envelope("LFILES");
-			 message.addObject(token); //Add requester's token
-			 output.writeObject(Envelope.buildSuper(message, sessionKey)); 
-			 
-			 e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-			 
-			 //If server indicates success, return the member list
-			 if(e.getMessage().equals("OK"))
-			 { 
-				return (List<String>)e.getObjContents().get(0); //This cast creates compiler warnings. Sorry.
-			 }
-				
-			 return null;
-			 
-		 }
-		 catch(Exception e)
-			{
-				System.err.println("Error: " + e.getMessage());
-				e.printStackTrace(System.err);
-				return null;
-			}
-	}
-	@SuppressWarnings("unchecked")
-	public List<String> listFiles(String groupName, UserToken token) {
-		 try
-		 {
-			 Envelope message = null, e = null;
-			 //Tell the server to return the member list
-			 message = new Envelope("LFILESG");
-			 message.addObject(groupName); // add groupname
-			 message.addObject(token); //Add requester's token
-			 output.writeObject(Envelope.buildSuper(message, sessionKey)); 
-			 
-			 e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-			 
-			 //If server indicates success, return the member list
-			 if(e.getMessage().equals("OK"))
-			 { 
-				return (List<String>)e.getObjContents().get(0); //This cast creates compiler warnings. Sorry.
-			 }
-				
-			 return null;
-			 
-		 }
-		 catch(Exception e)
-			{
-				System.err.println("Error: " + e.getMessage());
-				e.printStackTrace(System.err);
-				return null;
-			}
-	}
-
-	public boolean upload(String sourceFile, String destFile, String group,
-			UserToken token, GroupMetadata groupMetadata) {
-			
-		if (destFile.charAt(0)!='/') {
-			 destFile = "/" + destFile;
-		 }
-		
-		try
-		 {
-			 Envelope message = null, env = null;
-			 //Tell the server to return the member list
-			 message = new Envelope("UPLOADF");
-			 message.addObject(destFile);
-			 message.addObject(group);
-			 message.addObject(token); //Add requester's token
-			 output.writeObject(Envelope.buildSuper(message, sessionKey));
-			
-			 
-			 FileInputStream fis = new FileInputStream(sourceFile);
-			 
-			 
-			 env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-			 
-			 //If server indicates success, return the member list
-			 if(env.getMessage().equals("READY"))
-			 { 
-				System.out.printf("Meta data upload successful\n");
-				
-			}
-			 else {
-				
-				 System.out.printf("Upload failed: %s\n", env.getMessage());
-				 fis.close();
-				 return false;
-			 }
-			
-			// retrieve/generate meta-data for file encryption
-		 	IvParameterSpec iv = CipherBox.generateRandomIV();
-		 	SecretKey key = groupMetadata.getCurrentKey();
-		 	int keyIndex = groupMetadata.getCurrentKeyIndex();
-		 	int keyVersion = groupMetadata.getCurrentKeyVer();
-		 	Cipher AESCipherEncrypt = CipherBox.initializeEncryptCipher(key, iv);
-		 	do {
-				 	byte[] buf = new byte[4096];
-
-				 	if (env.getMessage().compareTo("READY")!=0) {
-				 		System.out.printf("Server error: %s\n", env.getMessage());
-				 		fis.close();
-				 		return false;
-				 	}
-				 	message = new Envelope("CHUNK");
-					int n = fis.read(buf); //can throw an IOException
-					byte[] block = AESCipherEncrypt.update(buf);
-
-					if (n > 0) {
-						System.out.printf(".");
-					} else if (n < 0) {
-						System.out.println("Read error");
-						fis.close();
-						return false;
-					}
-					// encrypt with key and IV
-					message.addObject(block);
-					message.addObject(new Integer(block.length));
-					
-					output.writeObject(Envelope.buildSuper(message, sessionKey));
-					
-					env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-			 }
-			 while (fis.available()>0);
-			 fis.close();
-			 if(env.getMessage().compareTo("READY")==0)
-			 {
-
-				 File f = new File(sourceFile);
-				 long fileLength = f.length();
-				//finish last block of encryption
-				byte[] block = AESCipherEncrypt.doFinal();
-				message = new Envelope("EOF");
-				// send the file length, key index, key version, and IV used to encrypt the file
-				message.addObject(new Integer(keyIndex));
-				message.addObject(new Integer(keyVersion));
-				message.addObject(iv.getIV());
-				message.addObject(block);
-				message.addObject(fileLength);
-				output.writeObject(Envelope.buildSuper(message, sessionKey));
-				
-				env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-				if(env.getMessage().compareTo("OK")==0) {
-					System.out.printf("\nFile data upload successful\n");
-				}
-				else {
-					
-					 System.out.printf("\nUpload failed: %s\n", env.getMessage());
-					 return false;
-				 }
-			}
-			 else {
-				 System.out.printf("Upload failed: %s\n", env.getMessage());
-				 return false;
-			 }
-		 }catch(Exception e1)
-			{
-				System.err.println("Error: " + e1.getMessage());
-				e1.printStackTrace(System.err);
-				return false;
-				}
-		 return true;
-	}
-	
-	/**
-	 * attempts to securely establish a session with the file server
-	 * @return true on success, false on failure
-	 */
-	public boolean establishSession() {
-		// send the user's public symmetric key value to the file server
-		// and establish a shared secret symmetric key upon receiving the file server's
-		// public value
-		//establishSessionKey();
-		// authenticates the server by checking the server's public key
-		// against the cached registry of hostname:ip to public keys
-		//authenticateServer();
-		
-		return false;
-	}
-
-	/**
-	  * establishes a shared session key by generating a shared symmetric key between
-	  * the client and the server 
-	  * @return	boolean
-	  */
-	/*public SecretKey establishSessionKey() {
-		KeyPair keyPair = null;
-		KeyAgreement keyAgreement = null;
-
-		try {
-			keyPair = DiffieHellman.genKeyPair();
-			keyAgreement = DiffieHellman.genKeyAgreement(keyPair);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
-
-		try {
-			Envelope message = null, response = null;
-
-			//Tell the server to delete a group
-			message = new Envelope("SESSIONKEY");
-			message.addObject(keyPair.getPublic()); // add public value to envelope
-			output.writeObject(message); 
-		
-			response = (Envelope)input.readObject();
-
-			//If server indicates success, return true
-			if(response.getMessage().equals("OK"))
-			{
-				//retrieve the file server's public value
-				PublicKey fileServerPK = (PublicKey)response.getObjContents().get(0);
-
-				// generate the shared secret key
-				sessionKey = DiffieHellman.generateSecretKey(fileServerPK, keyAgreement);
-
-				// get the server public key
-				serverPublicKey = (PublicKey)response.getObjContents().get(1);
-	
-				return sessionKey;
-			}
-			
-			return null;
-		}
-		catch(Exception e)
-		{
-			System.err.println("Error: " + e.getMessage());
-			e.printStackTrace(System.err);
-			return null;
-		}
-	 }
-
-
-	 public boolean issueChallenge(){
-
-	 	try{
-
-		 	Envelope response = null;
-
-		 	//Generate random long to use as r1
-		 	SecureRandom srand = new SecureRandom();
-		 	BigInteger r1 = new BigInteger(256, srand);
-
-		 	//Encrypt with server's public RSA key
-		 	SealedObject encRSA_R1 = CipherBox.encrypt(r1, serverPublicKey);
-
-		 	//Build an envelope with the challenge
-		 	Envelope env = new Envelope("CHALLENGE");
-		 	env.addObject(encRSA_R1);
-
-		 	System.out.println("challenge env:" + env);
-
-		 	//Send the challenge (encrypted with the session key) to server
-		 	output.writeObject(Envelope.buildSuper(env, sessionKey));
-
-		 	response = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-
-		 	if(response.getMessage().equals("CH_RESPONSE")){
-
-		 		BigInteger challengeAnswer = (BigInteger)response.getObjContents().get(0);
-
-		 		if(challengeAnswer.equals(r1)){
-
-		 			Envelope success = new Envelope("AUTH_SUCCESS");
-		 			output.writeObject(Envelope.buildSuper(success, sessionKey));
-
-		 			return true;
-		 		}
-
-		 		return false;
-		 	}
-		 	return false;
-	 	} catch (Exception exception){
-
-	 		return false;
-	 	}
-
-	 }*/
-
 	public int authenticateFileServerRSA(
 					String publicKeyPath, 
 					String privateKeyPath) {
@@ -754,5 +271,465 @@ public class FileClient extends Client implements FileClientInterface {
 			return null;
 		}
 	}
+
+	@SuppressWarnings("unchecked")
+	public List<String> listFiles(UserToken token) {
+		 try
+		 {
+			 Envelope message = null, e = null;
+			 //Tell the server to return the member list
+			 message = new Envelope("LFILES");
+			 message.addObject(token); //Add requester's token
+			 output.writeObject(Envelope.buildSuper(message, sessionKey)); 
+			 
+			 e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+			 
+			 //If server indicates success, return the member list
+			 if(e.getMessage().equals("OK"))
+			 { 
+				return (List<String>)e.getObjContents().get(0); //This cast creates compiler warnings. Sorry.
+			 }
+				
+			 return null;
+			 
+		 }
+		 catch(Exception e)
+			{
+				System.err.println("Error: " + e.getMessage());
+				e.printStackTrace(System.err);
+				return null;
+			}
+	}
+	@SuppressWarnings("unchecked")
+	public List<String> listFiles(String groupName, UserToken token) {
+		 try
+		 {
+			 Envelope message = null, e = null;
+			 //Tell the server to return the member list
+			 message = new Envelope("LFILESG");
+			 message.addObject(groupName); // add groupname
+			 message.addObject(token); //Add requester's token
+			 output.writeObject(Envelope.buildSuper(message, sessionKey)); 
+			 
+			 e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+			 
+			 //If server indicates success, return the member list
+			 if(e.getMessage().equals("OK"))
+			 { 
+				return (List<String>)e.getObjContents().get(0); //This cast creates compiler warnings. Sorry.
+			 }
+				
+			 return null;
+			 
+		 }
+		 catch(Exception e)
+			{
+				System.err.println("Error: " + e.getMessage());
+				e.printStackTrace(System.err);
+				return null;
+			}
+	}
+
+	public boolean upload(String sourceFile, String destFile, String group,
+			UserToken token, GroupMetadata groupMetadata) {
+			
+		if (destFile.charAt(0)!='/') {
+			 destFile = "/" + destFile;
+		 }
+		
+		try
+		 {
+			 Envelope message = null, env = null;
+			 //Tell the server to return the member list
+			 message = new Envelope("UPLOADF");
+			 message.addObject(destFile);
+			 message.addObject(group);
+			 message.addObject(token); //Add requester's token
+			 output.writeObject(Envelope.buildSuper(message, sessionKey));
+			
+			 
+			 FileInputStream fis = new FileInputStream(sourceFile);
+			 
+			 
+			 env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+			 
+			 //If server indicates success, return the member list
+			 if(env.getMessage().equals("READY"))
+			 { 
+				System.out.printf("Meta data upload successful\n");
+				
+			}
+			 else {
+				
+				 System.out.printf("Upload failed: %s\n", env.getMessage());
+				 fis.close();
+				 return false;
+			 }
+			
+			// retrieve/generate meta-data for file encryption
+		 	IvParameterSpec iv = CipherBox.generateRandomIV();
+		 	SecretKey key = groupMetadata.getCurrentKey();
+		 	int keyIndex = groupMetadata.getCurrentKeyIndex();
+		 	int keyVersion = groupMetadata.getCurrentKeyVer();
+		 	Cipher AESCipherEncrypt = CipherBox.initializeEncryptCipher(key, iv);
+		 	do {
+				 	byte[] buf = new byte[4096];
+
+				 	if (env.getMessage().compareTo("READY")!=0) {
+				 		System.out.printf("Server error: %s\n", env.getMessage());
+				 		fis.close();
+				 		return false;
+				 	}
+				 	message = new Envelope("CHUNK");
+					int n = fis.read(buf); //can throw an IOException
+					byte[] block = AESCipherEncrypt.update(buf);
+
+					if (n > 0) {
+						System.out.printf(".");
+					} else if (n < 0) {
+						System.out.println("Read error");
+						fis.close();
+						return false;
+					}
+					// encrypt with key and IV
+					message.addObject(block);
+					message.addObject(new Integer(block.length));
+					
+					output.writeObject(Envelope.buildSuper(message, sessionKey));
+					
+					env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+			 }
+			 while (fis.available()>0);
+			 fis.close();
+			 if(env.getMessage().compareTo("READY")==0)
+			 {
+
+				 File f = new File(sourceFile);
+				 long fileLength = f.length();
+				//finish last block of encryption
+				byte[] block = AESCipherEncrypt.doFinal();
+				message = new Envelope("EOF");
+				// send the file length, key index, key version, and IV used to encrypt the file
+				message.addObject(new Integer(keyIndex));
+				message.addObject(new Integer(keyVersion));
+				message.addObject(iv.getIV());
+				message.addObject(block);
+				message.addObject(fileLength);
+				output.writeObject(Envelope.buildSuper(message, sessionKey));
+				
+				env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+				if(env.getMessage().compareTo("OK")==0) {
+					System.out.printf("\nFile data upload successful\n");
+				}
+				else {
+					
+					 System.out.printf("\nUpload failed: %s\n", env.getMessage());
+					 return false;
+				 }
+			}
+			 else {
+				 System.out.printf("Upload failed: %s\n", env.getMessage());
+				 return false;
+			 }
+		 }catch(Exception e1)
+			{
+				System.err.println("Error: " + e1.getMessage());
+				e1.printStackTrace(System.err);
+				return false;
+				}
+		 return true;
+	}
+
+	public boolean download(String sourceFile, String destFile, String group, UserToken token, 
+			GroupMetadata groupMetadata) {
+		if (sourceFile.charAt(0)=='/') {
+			sourceFile = sourceFile.substring(1);
+		}
+		sourceFile = sourceFile + group;			
+		File file = new File(destFile);
+    	try {		
+			if (!file.exists()) {
+				file.createNewFile();
+				FileOutputStream fos = new FileOutputStream(file);
+					    
+				Envelope env = new Envelope("DOWNLOADF"); //Success
+				env.addObject(sourceFile);
+				env.addObject(token);
+	
+				//build nested envelope, encrypt, and send
+				Envelope superEnv = Envelope.buildSuper(env, sessionKey);
+				output.writeObject(superEnv);
+					
+				//receive, extract, and decrypt inner envelope
+				env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+				// process meta-data for file and initialize decryption
+				if(env.getObjContents().size() == 6) {
+					if(env.getObjContents().get(0) == null) {
+						System.err.println("Error: null text");
+					}
+					else if(env.getObjContents().get(1) == null) {
+						System.err.println("Error: null length");
+					}
+					else if(env.getObjContents().get(2) == null) {
+						System.err.println("Error: null key index");
+					}
+					else if(env.getObjContents().get(3) == null) {
+						System.err.println("Error: null key version");
+					}
+					else if(env.getObjContents().get(4) == null) {
+						System.err.println("Error: null IV");
+					}
+					else if(env.getObjContents().get(5) == null) {
+						System.err.println("Error: null file length");
+					}
+				}
+				else {
+					System.err.println("Error: invalid number of object contents");
+				}
+				
+				// retrieve file meta-data
+				int keyIndex = (Integer)env.getObjContents().get(2);
+				int keyVersion = (Integer)env.getObjContents().get(3);
+				IvParameterSpec iv = new IvParameterSpec((byte[])env.getObjContents().get(4));
+				long fileLength = (Long)env.getObjContents().get(5);
+				Key key = groupMetadata.calculateKey(keyIndex, keyVersion);
+				Cipher AESCipherDecrypt = CipherBox.initializeDecryptCipher(key, iv);
+				while (env.getMessage().compareTo("CHUNK")==0) {
+					try {
+						// decrypt chunk and write to local file
+						byte[] buf = (byte[])env.getObjContents().get(0);
+						byte[] decryptedBuf = AESCipherDecrypt.update(buf);
+						if(fileLength - decryptedBuf.length >= 0) {
+							fos.write(decryptedBuf, 0, decryptedBuf.length);
+							fileLength = fileLength - decryptedBuf.length;
+						}
+						else {
+							fos.write(decryptedBuf, 0, (int)fileLength);
+							fileLength = 0;
+						}
+						System.out.printf(".");
+					} catch (Exception e) {
+						e.printStackTrace();
+						fos.close();
+						return false;
+					}
+	
+					env = new Envelope("DOWNLOADF"); //Success
+					output.writeObject(Envelope.buildSuper(env, sessionKey));
+					env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);									
+				}										
+				
+							
+			    if(env.getMessage().compareTo("EOF")==0) {
+			    	// decrypt final padding block
+			    	/*try {
+			    		byte[] paddingBlock = AESCipherDecrypt.doFinal();
+			    		fos.write(paddingBlock, 0, (int)fileLength);
+			    	} catch(Exception e) {
+			    		e.printStackTrace();
+			    	}*/
+					fos.close();
+					System.out.printf("\nTransfer successful file %s\n", sourceFile);
+					env = new Envelope("OK"); //Success
+					output.writeObject(Envelope.buildSuper(env, sessionKey));
+			    }
+				else {
+						System.out.printf("Error reading file %s (%s)\n", sourceFile, env.getMessage());
+						file.delete();
+						fos.close();
+						return false;								
+				}
+			    fos.close();
+		    }    
+		    else {
+				System.out.printf("Error couldn't create file %s\n", destFile);
+				return false;
+		    }
+	    } catch (IOException e1) {
+	    	
+	    	System.out.printf("Error couldn't create file %s\n", destFile);
+	    	return false;
+		}
+	    catch (ClassNotFoundException e1) {
+			e1.printStackTrace();
+		}
+    	return true;
+	}
+
+	public boolean delete(String filename, String group, UserToken token) {
+
+		String remotePath;
+
+		if (filename.charAt(0)=='/') {
+			remotePath = filename.substring(1);
+		}
+		else {
+			remotePath = filename;
+		}
+
+		remotePath = remotePath + group;
+
+		Envelope env = new Envelope("DELETEF"); //Success
+		env.addObject(remotePath);
+		env.addObject(token);
+
+		try {
+
+			//build nested envelope, encrypt, and send
+			Envelope superEnv = Envelope.buildSuper(env, sessionKey);
+			output.writeObject(superEnv);
+
+			//receive, extract, and decrypt inner envelope
+			env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+		   
+			if (env.getMessage().compareTo("OK")==0) {
+
+				System.out.printf("File %s deleted successfully\n", filename);				
+			}
+			else {
+
+				System.out.printf("Error deleting file %s (%s)\n", filename, env.getMessage());
+				return false;
+			}			
+		} catch (IOException e1) {
+
+			e1.printStackTrace();
+		} catch (ClassNotFoundException e1) {
+
+			e1.printStackTrace();
+		}  	
+		return true;
+	}
+
+	public void disconnect()	 {
+		if (isConnected()) {
+			try {
+				Envelope message = new Envelope("DISCONNECT");
+				Envelope superE = Envelope.buildSuper(message, sessionKey);
+				output.writeObject(superE);
+				sock.close(); //close the socket
+			}
+			catch(Exception e) {
+				System.err.println("Error: " + e.getMessage());
+				e.printStackTrace(System.err);
+			}
+		}
+	}
+
+
+	/**
+	 * attempts to securely establish a session with the file server
+	 * @return true on success, false on failure
+	 */
+	//public boolean establishSession() {
+		// send the user's public symmetric key value to the file server
+		// and establish a shared secret symmetric key upon receiving the file server's
+		// public value
+		//establishSessionKey();
+		// authenticates the server by checking the server's public key
+		// against the cached registry of hostname:ip to public keys
+		//authenticateServer();
+		
+		//return false;
+	//}
+
+	/**
+	  * establishes a shared session key by generating a shared symmetric key between
+	  * the client and the server 
+	  * @return	boolean
+	  */
+	/*public SecretKey establishSessionKey() {
+		KeyPair keyPair = null;
+		KeyAgreement keyAgreement = null;
+
+		try {
+			keyPair = DiffieHellman.genKeyPair();
+			keyAgreement = DiffieHellman.genKeyAgreement(keyPair);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+
+		try {
+			Envelope message = null, response = null;
+
+			//Tell the server to delete a group
+			message = new Envelope("SESSIONKEY");
+			message.addObject(keyPair.getPublic()); // add public value to envelope
+			output.writeObject(message); 
+		
+			response = (Envelope)input.readObject();
+
+			//If server indicates success, return true
+			if(response.getMessage().equals("OK"))
+			{
+				//retrieve the file server's public value
+				PublicKey fileServerPK = (PublicKey)response.getObjContents().get(0);
+
+				// generate the shared secret key
+				sessionKey = DiffieHellman.generateSecretKey(fileServerPK, keyAgreement);
+
+				// get the server public key
+				serverPublicKey = (PublicKey)response.getObjContents().get(1);
+	
+				return sessionKey;
+			}
+			
+			return null;
+		}
+		catch(Exception e)
+		{
+			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace(System.err);
+			return null;
+		}
+	 }
+
+
+	 public boolean issueChallenge(){
+
+	 	try{
+
+		 	Envelope response = null;
+
+		 	//Generate random long to use as r1
+		 	SecureRandom srand = new SecureRandom();
+		 	BigInteger r1 = new BigInteger(256, srand);
+
+		 	//Encrypt with server's public RSA key
+		 	SealedObject encRSA_R1 = CipherBox.encrypt(r1, serverPublicKey);
+
+		 	//Build an envelope with the challenge
+		 	Envelope env = new Envelope("CHALLENGE");
+		 	env.addObject(encRSA_R1);
+
+		 	System.out.println("challenge env:" + env);
+
+		 	//Send the challenge (encrypted with the session key) to server
+		 	output.writeObject(Envelope.buildSuper(env, sessionKey));
+
+		 	response = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+
+		 	if(response.getMessage().equals("CH_RESPONSE")){
+
+		 		BigInteger challengeAnswer = (BigInteger)response.getObjContents().get(0);
+
+		 		if(challengeAnswer.equals(r1)){
+
+		 			Envelope success = new Envelope("AUTH_SUCCESS");
+		 			output.writeObject(Envelope.buildSuper(success, sessionKey));
+
+		 			return true;
+		 		}
+
+		 		return false;
+		 	}
+		 	return false;
+	 	} catch (Exception exception){
+
+	 		return false;
+	 	}
+
+	 }*/
 }
 
