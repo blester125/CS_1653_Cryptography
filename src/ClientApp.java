@@ -1195,7 +1195,7 @@ public class ClientApp {
 		String newUsername = newUsernameField.getText();
 		String newPubKeyPath = newPathField.getText();
 
-		if (dialogue != 0){
+		if (dialogue == JOptionPane.CANCEL_OPTION){
 			return;
 		}
 
