@@ -899,6 +899,11 @@ public class ClientApp {
 										null, 
 										null, 
 										null);
+
+				if (dialogue == JOptionPane.CANCEL_OPTION){
+					return;
+				}
+
 				String code = codeField.getText();
 				if (!RunClient.groupC.twoFactor(username, code)) {
 					JOptionPane.showMessageDialog(
@@ -954,6 +959,10 @@ public class ClientApp {
 											null, 
 											null, 
 											null);
+
+			if (dialogue == JOptionPane.CANCEL_OPTION){
+				return;
+			}
 
 			String publicPath = newPathField.getText();
 			int result = RunClient.groupC.setUpRSA(publicPath);
@@ -1038,7 +1047,6 @@ public class ClientApp {
 
 
 			int dialogue = JOptionPane.showOptionDialog(null, alertServerDialog, "Public Key Not Found", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, null, null);
-
 
 			if(dialogue == 0){
 
@@ -1256,6 +1264,10 @@ public class ClientApp {
 
 		int dialogue = JOptionPane.showOptionDialog(null, deleteUserDialogue, "Delete User", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, null, null);
 		
+		if (dialogue == JOptionPane.CANCEL_OPTION){
+			return;
+		}
+
 		String delUsername = delUsernameField.getText();
 
 		UserToken currToken = RunClient.groupC.getToken(currentUsername, RunClient.groupC.getGroupServerKey());
@@ -1395,6 +1407,10 @@ public class ClientApp {
 
 		int dialogue = JOptionPane.showOptionDialog(null, newGroupDialogue, "New Group Creation", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, null, null);
 		
+		if (dialogue == JOptionPane.CANCEL_OPTION){
+			return;
+		}
+
 		String newGroup = newGroupField.getText();
 
 		UserToken currToken = RunClient.groupC.getToken(currentUsername, RunClient.groupC.getGroupServerKey());
@@ -1464,6 +1480,10 @@ public class ClientApp {
 
 		int dialogue = JOptionPane.showOptionDialog(null, chooseUserDialogue, "Choose User", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, null, null);
 		
+		if (dialogue == JOptionPane.CANCEL_OPTION){
+			return;
+		}
+
 		String chooseUsername = chooseUsernameField.getText();
 
 		UserToken currToken = RunClient.groupC.getToken(currentUsername, RunClient.groupC.getGroupServerKey());
@@ -1693,6 +1713,10 @@ public class ClientApp {
 
 		int dialogue = JOptionPane.showOptionDialog(null, chooseFileDialogue, "Choose File", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, null, null);
 		
+		if (dialogue == JOptionPane.CANCEL_OPTION){
+			return;
+		}
+
 		String chooseFile = chooseFileField.getText();
 		int tempSplit = chooseFile.lastIndexOf("/");
 		String destFile = chooseFile.substring(tempSplit + 1);
@@ -1808,6 +1832,10 @@ public class ClientApp {
 		chooseFileDialogue.add(chooseFileField);
 
 		int dialogue = JOptionPane.showOptionDialog(null, chooseFileDialogue, "Save File", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, null, null);
+		
+		if (dialogue == JOptionPane.CANCEL_OPTION){
+			return;
+		}
 		
 		String destFile = chooseFileField.getText();
 
