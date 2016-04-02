@@ -90,11 +90,11 @@ The Attacker could also mess with the system by modifying the messages that are 
 <p>
 <b>Group Server Authentication</b><br>
 We stop this attack using public key cryptography and signed Diffie-Hellman key exchange. There are two communications that needs to be protected this way. The first is the communication between the groupserver and the client. When a user account is created it will be the ADMIN of the groupserver's responsibility to get the users public key that they will use to log into the system with. This public key will be stored in the User object on the groupserver. It will the User's responsibility to get the groupserver's public key when they are configuring their client application. This is similar to the way ssh works. Once each party has each others public keys they can use signed Diffie-Hellman to exchange a symmetric key. The fact that this Diffie-Hellman is signed authenticates the user and the groupserver to one another. The exchanged key is used to encrypt all further messages. <br><br>
-<img src="images/signeddh.png" class="image">
+<img src="images/phase4-gsauthentication.png" class="image">
 <br><br><b>File Server Authentication</b><br>
 The second communication that needs to be protected is the communication between the user and the fileserver. There are too many fileservers to the client to be expected to know them all therefore the fileserver's public key must be exchanged. This is done by the user connecting to the fileserver and requesting the fileservers public key. This is then sent to the user who must verify it out of band like in SSH. Once the user has verified the key the user will send their key encrypted with the fileservers public key. This encryption will stop an attacker from modifying the user's public key. Once the public keys are exchanged then the user and the fileserver preform Diffie-Hellman to establish a shared key that is used to encrypt the rest of the messages between the targets.
 <br><br>
-<img src="images/fileserversigneddh.png" class="image">
+<img src="images/phase4-fsauthentication.png" class="image">
 </p>
 <h4>Mechanism: HMAC for integrity checking</h4>
 <p>
@@ -313,6 +313,9 @@ off your hard work!</p>
 
 <h3>Our protocols still defend from threats 1 through 4</h3>
 <h4>Threat 1: Unauthorized Token Issuance</h4>
+<p>
+When users first log on they are authenticated using something that only they know. In this case this is they RSA public key which is verified during signed Diffie-Hellman by the fact that the included public key matches the signed one. Once a user is authenticated they can only obtain tokens that are for them with their permissions. This means that as long as users keep their RSA private keys safe (which is a reasonable assumption because if they are security conscious enough to have a RSA private key they should be able to keep it self) they are the only one who can log in so sending them their own token means that they cannot obtain someone else's token.
+</p>
 <h4>Threat 2: Token Modification/Forgery</h4>
 <p>
 Tokens still include a signed hash of their contents (minus this hash) as one of their fields. Once a fileserver receives this token they can verify they token by comparing the hash of the token with the signed version. The fileserver has the groupserver's public key, this is a reasonable assumption because there is only one group server. Any modification to the token would result in the hashes mismatching and due to second preimage resistance it would be infeasible for the user to create a token that hashes to the same value. This means that any token that has its hashes match is unmodified. A user who creates a token would not be able to sign it with the groupserver's public key because that is a secret that only the groupserver knows. This means that the hashes will not match when the fileserver tries to unsign the signed hash with the group servers public key. This will cause the hashes to not match. Signing the token prevents a modified or forged token from being accepted.
@@ -329,10 +332,11 @@ After authentication all communication is encrypted with a shared secret between
 <h3>Extra Credit: Two Factor Authentication</h3>
 <p>
 For extra credit our group used the Time-based One-time Password (TOTP) password Algorithm specified in RFC 6238 to implement two factor authentication. This is preformed by creating a shared secret between the user and the server. The user then enters this key into an application that implements TOTP such as the google authenticator app that will generate codes based on the key and the time. This exchange will occur like so:<br><br>
-<img src="tf" class="image">
+<img src="images/phase4-2factorsetup.png" class="image">
 <br><br>
 This sharing takes place after authentication so we know that a passive or active attacker could not obtain the key. This key is chosen only by the group server but in our threat model the group server is entirely trustworthy so not including a user contributed source of randomness is acceptable. The groupserver is trusted to not use the same key for every user.<br>
 Once two factor authentication is set up for a user account then once they log back in using RSA signed Diffie-Hellman they will be prompted to enter a 6 digit code. This code is generated by the TOTP algorithm (implemented however they chose to and using the shared secret as the key). This code is sent to the groupserver which verifies it using its own implementation of TOTP. This process can be seen here. <br><br>
+<img src="images/phase4-2factorauth.png" class="image">
 </p>
 
 
