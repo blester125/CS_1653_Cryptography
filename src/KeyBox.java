@@ -4,6 +4,8 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.apache.commons.codec.binary.Base64;
+
 public class KeyBox {
 
 	private static int size = 256;
@@ -45,5 +47,29 @@ public class KeyBox {
 			return true;
 		
 		return false;
+	}
+
+	public static SecretKey generateConfidentialityKey(SecretKey inputKey){
+
+		String temp = getKeyAsString(inputKey) + "Confidentiality";
+		byte[] hash = Hasher.hash(temp);
+
+		SecretKey key = new SecretKeySpec(hash, 0, hash.length, "AES");
+
+		return key;
+	}
+
+	public static SecretKey generateIntegrityKey(SecretKey inputKey){
+
+		String temp = getKeyAsString(inputKey) + "Integrity";
+		byte[] hash = Hasher.hash(temp);
+
+		SecretKey key = new SecretKeySpec(hash, 0, hash.length, "AES");
+
+		return key;
+	}
+
+	public static String getKeyAsString(Key key) {
+		return new String(Base64.encodeBase64(key.getEncoded())); 
 	}
 }
