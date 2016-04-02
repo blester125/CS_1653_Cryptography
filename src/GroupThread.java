@@ -193,15 +193,17 @@ public class GroupThread extends Thread
 										String user = (String)message.getObjContents().get(0);
 										if (username.equals(user)) {
 											String codeString = (String)message.getObjContents().get(1);
-											long code = Integer.parseInt(codeString);
-											String key = my_gs.userList.getTwoFactorKey(user);
-											long t = GAuthBox.getT();
-											if (GAuthBox.check_code(key, code, t)) {
-												innerResponse = new Envelope("OK");
-												sequenceNumber += 2;
-												innerResponse.addObject(sequenceNumber);
-												isAuthenticated = true;
-												System.out.println("Secure and Authenticated connection with Group Client Established.");
+											if (codeString.length() > 0) {
+												long code = Integer.parseInt(codeString);
+												String key = my_gs.userList.getTwoFactorKey(user);
+												long t = GAuthBox.getT();
+												if (GAuthBox.check_code(key, code, t)) {
+													innerResponse = new Envelope("OK");
+													sequenceNumber += 2;
+													innerResponse.addObject(sequenceNumber);
+													isAuthenticated = true;
+													System.out.println("Secure and Authenticated connection with Group Client Established.");
+												}
 											}
 										}
 									}

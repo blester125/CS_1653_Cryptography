@@ -90,6 +90,7 @@ public class Envelope implements java.io.Serializable {
 								IvParameterSpec iv, 
 								byte[] recvHMAC) {
 		byte[] madeHMAC = generateIntegrityCheck(k, so, iv);
+		System.out.println("\n-------------------------------------");
 		System.out.println("Integrity Check on the SUPER envelope");
 		System.out.println(new String(recvHMAC));
 		System.out.println(new String(madeHMAC));

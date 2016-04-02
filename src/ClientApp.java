@@ -906,6 +906,7 @@ public class ClientApp {
 									"Wrong Code.", 
 									"Session Key Failure", 
 									JOptionPane.OK_CANCEL_OPTION);
+					return;
 				}
 			} 
 			catch (Exception e1) {

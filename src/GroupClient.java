@@ -160,11 +160,15 @@ public class GroupClient extends Client implements GroupClientInterface {
 								if (Hasher.verifyHash(recvHash, DHServerKey)) {
 									System.out.println("Hashes Match");
 									sessionKey = DiffieHellman.generateSecretKey(DHServerKey, keyAgreement);
-									System.out.println("Generated Session Key: " + sessionKey);
+									SecretKey confidentialityKey = KeyBox.generateConfidentialityKey(sessionKey);
+									SecretKey integrityKey = KeyBox.generateIntegrityKey(sessionKey);
+									System.out.println("Generated Session Key: " + KeyBox.getKeyAsString(sessionKey));
+									System.out.println("Generated Confidentiality Key: " + KeyBox.getKeyAsString(confidentialityKey));
+									System.out.println("Generated Integrity Key: " + KeyBox.getKeyAsString(integrityKey));
 									// Send Message 3
 									System.out.println("-----SIGNED-DIFFIE-HELLMAN - Sending Success Hash and Inital Sequence Number-----");
 									Envelope message3 = new Envelope("SUCCESS");
-									String keyPlusName = CipherBox.getKeyAsString(sessionKey);
+									String keyPlusName = KeyBox.getKeyAsString(sessionKey);
 									keyPlusName = keyPlusName + username;
 									byte[] hashSuccess = Hasher.hash(keyPlusName);
 									message3.addObject(hashSuccess);
@@ -189,7 +193,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 													if (message4.getObjContents().get(1) != null) {
 														recvHash = (byte[])message4.getObjContents().get(0);
 														Integer seqNum = (Integer)message4.getObjContents().get(1);
-														String keyPlusWord = CipherBox.getKeyAsString(sessionKey);
+														String keyPlusWord = KeyBox.getKeyAsString(sessionKey);
 														keyPlusWord = keyPlusWord + "groupserver";
 														System.out.println("Verify that the Success Hashs matchs");
 														if (Hasher.verifyHash(recvHash, keyPlusWord)) {
@@ -243,6 +247,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			return false;
 		}
 		Envelope response = Envelope.extractInner(superR, sessionKey);
+		System.out.println(response);
 		if (response != null) {
 			if (response.getMessage().equals("OK")) {
 				if (response.getObjContents().size() == 1) {
