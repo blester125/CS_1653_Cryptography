@@ -137,7 +137,7 @@ public class FileThread extends Thread
 														System.out.println(sessionKey);
 														System.out.println("-----SIGNED-DIFFIE-HELLMAN - Sending the Success Hash and Inital Sequence Number-----");
 														Envelope message3 = new Envelope("SUCCESS");
-														String keyPlusWord = CipherBox.getKeyAsString(sessionKey);
+														String keyPlusWord = KeyBox.getKeyAsString(sessionKey);
 														keyPlusWord = keyPlusWord + "fileserver";
 														byte[] hashResponse = Hasher.hash(keyPlusWord);
 														message3.addObject(hashResponse);
@@ -161,7 +161,7 @@ public class FileThread extends Thread
 																	if (message4.getObjContents().get(0) != null) {
 																		if (message4.getObjContents().get(1) != null) {
 																			byte[] recvHashWord = (byte[])message4.getObjContents().get(0);
-																			keyPlusWord = CipherBox.getKeyAsString(sessionKey);
+																			keyPlusWord = KeyBox.getKeyAsString(sessionKey);
 																			keyPlusWord = keyPlusWord + "client";
 																			System.out.println("Verify the received hash matches the hash of the sessionKey plus \"client\"");
 																			if (Hasher.verifyHash(recvHashWord, keyPlusWord)) {

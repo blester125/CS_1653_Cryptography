@@ -715,7 +715,7 @@ public class FileClient extends Client implements FileClientInterface {
 														Integer seqNumber = (Integer)message4.getObjContents().get(1);
 														sequenceNumber = seqNumber.intValue();
 														System.out.println("Inital Sequence Number set to: " + sequenceNumber);
-														String keyPlusServer = CipherBox.getKeyAsString(sessionKey);
+														String keyPlusServer = KeyBox.getKeyAsString(sessionKey);
 														keyPlusServer = keyPlusServer + "fileserver";
 														System.out.println("Verifying the received Succes hash");
 														if (Hasher.verifyHash(recvHash, keyPlusServer)) {
@@ -723,7 +723,7 @@ public class FileClient extends Client implements FileClientInterface {
 															// Send Message 5
 															System.out.println("\n-----SIGNED-DIFFIE-HELLMAN - Sending my Success Hash-----");
 															Envelope message5 = new Envelope("SUCCESS");
-															String keyPlusName = CipherBox.getKeyAsString(sessionKey);
+															String keyPlusName = KeyBox.getKeyAsString(sessionKey);
 															keyPlusName = keyPlusName + "client";
 															byte[] hashSuccess = Hasher.hash(keyPlusName);
 															message5.addObject(hashSuccess);

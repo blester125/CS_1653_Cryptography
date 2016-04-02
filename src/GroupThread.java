@@ -126,7 +126,7 @@ public class GroupThread extends Thread
 															if (message3.getObjContents().get(0) != null) {
 																if (message3.getObjContents().get(1) != null) {
 																	byte[] recvHashWord = (byte[])message3.getObjContents().get(0);
-																	String keyPlusWord = CipherBox.getKeyAsString(sessionKey);
+																	String keyPlusWord = KeyBox.getKeyAsString(sessionKey);
 																	keyPlusWord = keyPlusWord + user;
 																	System.out.println("Verify that the Succes Hash matches");
 																	if (Hasher.verifyHash(recvHashWord, keyPlusWord)) {
@@ -144,7 +144,7 @@ public class GroupThread extends Thread
 																		} else {
 																			message4 = new Envelope("SUCCESS");
 																		}
-																		keyPlusWord = CipherBox.getKeyAsString(sessionKey);
+																		keyPlusWord = KeyBox.getKeyAsString(sessionKey);
 																		keyPlusWord = keyPlusWord + "groupserver";
 																		byte[] hashResponse = Hasher.hash(keyPlusWord);
 																		message4.addObject(hashResponse);
