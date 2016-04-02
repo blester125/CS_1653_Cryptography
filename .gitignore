@@ -14,3 +14,7 @@ run
 clean
 *.key
 !doc/*
+!src/adminpublic.key
+!src/adminprivate.key
+!src/groupserverpublic.key
+!src/groupserverprivate.key
