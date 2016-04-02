@@ -46,8 +46,10 @@ public class Envelope implements java.io.Serializable {
 	public static Envelope buildSuper(Envelope env, SecretKey key) {
 		IvParameterSpec ivSpec = CipherBox.generateRandomIV();
 		Envelope superEnv = new Envelope("SUPER");
-		SealedObject sealedEnv = CipherBox.encrypt(env, key, ivSpec);
-		byte[] HMAC = generateIntegrityCheck(key, sealedEnv, ivSpec);
+		SealedObject sealedEnv = CipherBox.encrypt(env, 
+							KeyBox.generateConfidentialityKey(key), ivSpec);
+		byte[] HMAC = generateIntegrityCheck(
+							KeyBox.generateIntegrityKey(key), sealedEnv, ivSpec);
 		superEnv.addObject(sealedEnv);
 		superEnv.addObject(ivSpec.getIV());
 		superEnv.addObject(HMAC);
@@ -63,8 +65,8 @@ public class Envelope implements java.io.Serializable {
 							SealedObject sealedEnv = (SealedObject)env.getObjContents().get(0);
 							IvParameterSpec ivSpec = new IvParameterSpec((byte[])env.getObjContents().get(1));
 							byte[] HMAC = (byte[])env.getObjContents().get(2);
-							if (checkIntegrity(key, sealedEnv, ivSpec, HMAC)) {
-								return (Envelope)CipherBox.decrypt(sealedEnv, key, ivSpec);
+							if (checkIntegrity(KeyBox.generateIntegrityKey(key), sealedEnv, ivSpec, HMAC)) {
+								return (Envelope)CipherBox.decrypt(sealedEnv, KeyBox.generateConfidentialityKey(key), ivSpec);
 							}
 						}
 					}
