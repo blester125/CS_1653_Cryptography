@@ -702,6 +702,9 @@ public class GroupThread extends Thread
 						String username, 
 						PublicKey userPublicKey, 
 						UserToken yourToken) {
+		if (username.equals("")) {
+			return false;
+		}
 		String requester = yourToken.getSubject();
 		//Check if requester exists
 		if (my_gs.userList.checkUser(requester)) {
@@ -738,6 +741,9 @@ public class GroupThread extends Thread
 	// We need to evolve the Key.
 	private boolean deleteUser(String username, UserToken yourToken)
 	{
+		if (username.equals("")) {
+			return false;
+		}
 		String requester = yourToken.getSubject();
 
 		//can't delete yourself
@@ -810,7 +816,9 @@ public class GroupThread extends Thread
 	 */
 	private boolean createGroup(String groupName, UserToken token) {
 		String requester = token.getSubject();
-		
+		if (groupName.equals("")) {
+			return false;
+		}
 		// Check if group does not exist
 		// this assumes all group names must be unique, regardless of owner
 		if(!my_gs.groupList.checkGroup(groupName)){
@@ -836,10 +844,12 @@ public class GroupThread extends Thread
 	 */
 	private boolean deleteGroup(String groupName, UserToken token) {
 		String requester = token.getSubject();
-		
-		if(groupName.equals("ADMIN"))
+		if (groupName.equals("")) {
 			return false;
-
+		}
+		if (groupName.equals("ADMIN")) {
+			return false;
+		}
 		// check if group exists
 		if(my_gs.groupList.checkGroup(groupName)){
 			// check if requester is the group's owner
@@ -865,6 +875,9 @@ public class GroupThread extends Thread
 	 */
 	private List<String> listMembers(String groupName, UserToken token)
 	{
+		if (groupName.equals("")) {
+			return null;
+		}
 		//Get the requester
 		String requester = token.getSubject();
 		// Does the requester exist?
@@ -900,6 +913,9 @@ public class GroupThread extends Thread
 	 */
 	private boolean addUserToGroup(String userName, String groupName, UserToken token)
 	{
+		if (userName.equals("") || groupName.equals("")) {
+			return false;
+		}
 		String requester = token.getSubject();
 		if (my_gs.userList.checkUser(requester)){
 			ArrayList<String> owns = my_gs.userList.getUserOwnership(requester);
@@ -940,6 +956,9 @@ public class GroupThread extends Thread
 	 */
 	private boolean deleteUserFromGroup(String userName, String groupName, UserToken token)
 	{
+		if (userName.equals("") || groupName.equals("")) {
+			return false;
+		}
 		String requester = token.getSubject();
 		if (my_gs.userList.checkUser(requester)){
 			ArrayList<String> owns = my_gs.userList.getUserOwnership(requester);
@@ -977,6 +996,9 @@ public class GroupThread extends Thread
 	 * @return True on success, False on failure.
 	 */
 	private boolean setRSAKey(String user, PublicKey key) {
+		if (!my_gs.userList.checkUser(user)) {
+			return false;
+		}
 		my_gs.userList.setPublicKey(user, key);
 		return true;
 	}
@@ -1043,6 +1065,9 @@ public class GroupThread extends Thread
 	}
 
 	private boolean checkForTwoFactor(String username) {
+		if (username.equals("")) {
+			return false;
+		}
 		if (my_gs.userList.checkUser(username)) {
 			if (my_gs.userList.getTwoFactorKey(username) != null) {
 				return true;

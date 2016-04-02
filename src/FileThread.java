@@ -197,7 +197,7 @@ public class FileThread extends Thread
 					} 
 				}
 				// Client sends server the challenge, server will decrypt and respond
-				else if(e.getMessage().equals("CHALLENGE") && isSecureConnection){
+				/*else if(e.getMessage().equals("CHALLENGE") && isSecureConnection){
 					try {
 						// null checks
 						if(e.getObjContents() == null || e.getObjContents().size() < 1) {
@@ -229,7 +229,7 @@ public class FileThread extends Thread
 				else if(e.getMessage().equals("AUTH_SUCCESS") && isSecureConnection) {
 					isAuthenticated = true;
 					System.out.println("Client authenticated the file server!");
-				}
+				}*/
 				// Handler to list files that this user is allowed to see
 				else if(e.getMessage().equals("LFILES") && isSecureConnection && isAuthenticated)
 				{
@@ -299,33 +299,35 @@ public class FileThread extends Thread
 						    ArrayList<String> finalFiles = new ArrayList<String>();
 						    ArrayList<ShareFile> filteredFiles = new ArrayList<ShareFile>();
 						    String groupName = (String)e.getObjContents().get(0);
-						    UserToken tok = (UserToken)e.getObjContents().get(1);
-						    if (verifyToken(tok)) {
+						    if (!groupName.equals("")) {
+							    UserToken tok = (UserToken)e.getObjContents().get(1);
+							    if (verifyToken(tok)) {
 
-							    //Get all files from the FileServer
-							    ArrayList<ShareFile> all = FileServer.fileList.getFiles();
+								    //Get all files from the FileServer
+								    ArrayList<ShareFile> all = FileServer.fileList.getFiles();
 
-							    //Go through all files in the server, filter for only those in the right group
-							    for(ShareFile f : all)
-							    {
-								    	if(tok.getGroups().contains(f.getGroup()))
-							    		filteredFiles.add(f);
+								    //Go through all files in the server, filter for only those in the right group
+								    for(ShareFile f : all)
+								    {
+									    	if(tok.getGroups().contains(f.getGroup()))
+								    		filteredFiles.add(f);
+							    	}
+							    	//Go through all filtered files, only return one group's
+								    for(ShareFile f : filteredFiles)
+								    {
+								    	if(f.getGroup().equals(groupName))
+								    	{
+								    		String path = f.getPath();
+								    		path = path.substring(0, path.length() - groupName.length());
+								    		finalFiles.add(path);
+							    		}
+							    	}
+							  
+						    		//form response, write it
+						    		response = new Envelope("OK");
+						    		response.addObject(finalFiles);
 						    	}
-						    	//Go through all filtered files, only return one group's
-							    for(ShareFile f : filteredFiles)
-							    {
-							    	if(f.getGroup().equals(groupName))
-							    	{
-							    		String path = f.getPath();
-							    		path = path.substring(0, path.length() - groupName.length());
-							    		finalFiles.add(path);
-						    		}
-						    	}
-						  
-					    		//form response, write it
-					    		response = new Envelope("OK");
-					    		response.addObject(finalFiles);
-					    	}
+						    }
 					    }
 					}
 					output.writeObject(Envelope.buildSuper(response, sessionKey));
@@ -353,76 +355,78 @@ public class FileThread extends Thread
 							response = new Envelope("FAIL");
 							String remotePath = (String)e.getObjContents().get(0);
 							String group = (String)e.getObjContents().get(1);
-							remotePath = remotePath + group;
-							UserToken yourToken = (UserToken)e.getObjContents().get(2); //Extract token
-							if (verifyToken(yourToken)) {
-								if (FileServer.fileList.checkFile(remotePath)) {
-									System.out.printf("Error: file already exists at %s\n", remotePath);
-									response = new Envelope("FAIL-FILEEXISTS"); //Success
-									System.out.println("SENT from UPLOADF - FAIL-FILEEXISTS: " + response);
-								}
-								else if (!yourToken.getGroups().contains(group)) {
-									System.out.printf("Error: user missing valid token for group %s\n", group);
-									response = new Envelope("FAIL-UNAUTHORIZED"); //Success
-									System.out.println("SENT from UPLOADF - FAIL-UNAUTHORIZED: " + response);
-								}
-								else  {
-									File file;
-									FileOutputStream fos;
-									file = new File("shared_files/"+remotePath.replace('/', '_'));
-									file.createNewFile();
-									fos = new FileOutputStream(file);
-									System.out.printf("Successfully created file %s\n", remotePath.replace('/', '_'));
+							if (!group.equals("") && !remotePath.equals("")) {
+								remotePath = remotePath + group;
+								UserToken yourToken = (UserToken)e.getObjContents().get(2); //Extract token
+								if (verifyToken(yourToken)) {
+									if (FileServer.fileList.checkFile(remotePath)) {
+										System.out.printf("Error: file already exists at %s\n", remotePath);
+										response = new Envelope("FAIL-FILEEXISTS"); //Success
+										System.out.println("SENT from UPLOADF - FAIL-FILEEXISTS: " + response);
+									}
+									else if (!yourToken.getGroups().contains(group)) {
+										System.out.printf("Error: user missing valid token for group %s\n", group);
+										response = new Envelope("FAIL-UNAUTHORIZED"); //Success
+										System.out.println("SENT from UPLOADF - FAIL-UNAUTHORIZED: " + response);
+									}
+									else  {
+										File file;
+										FileOutputStream fos;
+										file = new File("shared_files/"+remotePath.replace('/', '_'));
+										file.createNewFile();
+										fos = new FileOutputStream(file);
+										System.out.printf("Successfully created file %s\n", remotePath.replace('/', '_'));
 
-									response = new Envelope("READY"); //Success
-									output.writeObject(Envelope.buildSuper(response, sessionKey));
-									System.out.println("SENT from UPLOADF - READY: " + response);
-
-									e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-									while (e.getMessage().compareTo("CHUNK")==0) {
-										fos.write(((byte[])e.getObjContents().get(0)), 0, (Integer)e.getObjContents().get(1));
 										response = new Envelope("READY"); //Success
 										output.writeObject(Envelope.buildSuper(response, sessionKey));
-										System.out.println("SENT from UPLOADF - READYCHUNK: " + response);
-										e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-									}
+										System.out.println("SENT from UPLOADF - READY: " + response);
 
-									if(e.getMessage().compareTo("EOF")==0) {
-										if(e.getObjContents() != null && e.getObjContents().size() == 5)
-										{
-											if(e.getObjContents().get(0) == null){
-												System.err.println("Error: null key index field");
-											}
-											else if(e.getObjContents().get(1) == null){
-												System.err.println("Error: null key version field");
-											}
-											else if(e.getObjContents().get(2) == null){
-												System.err.println("Error: null IV field");
-											}
-											else if(e.getObjContents().get(3) == null){
-												System.err.println("Error: null block field");
-											}
-											else if(e.getObjContents().get(4) == null){
-												System.err.println("Error: null file length field");
-											}
-											else {
-												int keyIndex = ((Integer)e.getObjContents().get(0)).intValue();
-												int keyVersion = ((Integer)e.getObjContents().get(1)).intValue();
-												byte[] iv = (byte[])e.getObjContents().get(2);
-												byte[] padBlock = (byte[])e.getObjContents().get(3);
-												long fileLength = (Long)e.getObjContents().get(4);
-												System.out.printf("Transfer successful file %s\n", remotePath);
-												FileServer.fileList.addFile(yourToken.getSubject(), group, 
-														remotePath, keyIndex, keyVersion, iv, fileLength);
-												response = new Envelope("OK"); //Success
+										e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+										while (e.getMessage().compareTo("CHUNK")==0) {
+											fos.write(((byte[])e.getObjContents().get(0)), 0, (Integer)e.getObjContents().get(1));
+											response = new Envelope("READY"); //Success
+											output.writeObject(Envelope.buildSuper(response, sessionKey));
+											System.out.println("SENT from UPLOADF - READYCHUNK: " + response);
+											e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+										}
+
+										if(e.getMessage().compareTo("EOF")==0) {
+											if(e.getObjContents() != null && e.getObjContents().size() == 5)
+											{
+												if(e.getObjContents().get(0) == null){
+													System.err.println("Error: null key index field");
+												}
+												else if(e.getObjContents().get(1) == null){
+													System.err.println("Error: null key version field");
+												}
+												else if(e.getObjContents().get(2) == null){
+													System.err.println("Error: null IV field");
+												}
+												else if(e.getObjContents().get(3) == null){
+													System.err.println("Error: null block field");
+												}
+												else if(e.getObjContents().get(4) == null){
+													System.err.println("Error: null file length field");
+												}
+												else {
+													int keyIndex = ((Integer)e.getObjContents().get(0)).intValue();
+													int keyVersion = ((Integer)e.getObjContents().get(1)).intValue();
+													byte[] iv = (byte[])e.getObjContents().get(2);
+													byte[] padBlock = (byte[])e.getObjContents().get(3);
+													long fileLength = (Long)e.getObjContents().get(4);
+													System.out.printf("Transfer successful file %s\n", remotePath);
+													FileServer.fileList.addFile(yourToken.getSubject(), group, 
+															remotePath, keyIndex, keyVersion, iv, fileLength);
+													response = new Envelope("OK"); //Success
+												}
 											}
 										}
+										else {
+											System.out.printf("Error reading file %s from client\n", remotePath);
+											response = new Envelope("ERROR-TRANSFER"); //Success
+										}
+										fos.close();
 									}
-									else {
-										System.out.printf("Error reading file %s from client\n", remotePath);
-										response = new Envelope("ERROR-TRANSFER"); //Success
-									}
-									fos.close();
 								}
 							}
 						}
@@ -435,116 +439,118 @@ public class FileThread extends Thread
 				{
 					int dSuccessFlag = 0;
 					String remotePath = (String)e.getObjContents().get(0);
-					Token t = (Token)e.getObjContents().get(1);
-					if(e.getObjContents() == null || e.getObjContents().size() < 2) {
-						response = new Envelope("FAIL-BADCONTENTS");
-					}
-					else if(e.getObjContents().get(0) == null) {
-						response = new Envelope("FAIL-BADPATH");
-					}
-					else if(e.getObjContents().get(1) == null) {
-						response = new Envelope("FAIL-BADTOKEN");
-					}
-					else if (verifyToken(t)) {
-						ShareFile sf = FileServer.fileList.getFile("/"+remotePath);
-
-						if (sf == null) 
-						{
-							System.out.printf("Error: File %s doesn't exist\n", remotePath);
-							response = new Envelope("ERROR_FILEMISSING");
-							System.out.println("SENT from DOWNLOADF - ERROR_FILEMISSING: " + e);
-
-						}	
-						else if (!t.getGroups().contains(sf.getGroup()))
-						{
-							System.out.printf("Error user %s doesn't have permission\n", t.getSubject());
-							response = new Envelope("ERROR_PERMISSION");
-							System.out.println("SENT from DOWNLOADF - ERROR_PERMISSION: " + response);
+					if (!remotePath.equals("")) {
+						Token t = (Token)e.getObjContents().get(1);
+						if(e.getObjContents() == null || e.getObjContents().size() < 2) {
+							response = new Envelope("FAIL-BADCONTENTS");
 						}
-						else {
+						else if(e.getObjContents().get(0) == null) {
+							response = new Envelope("FAIL-BADPATH");
+						}
+						else if(e.getObjContents().get(1) == null) {
+							response = new Envelope("FAIL-BADTOKEN");
+						}
+						else if (verifyToken(t)) {
+							ShareFile sf = FileServer.fileList.getFile("/"+remotePath);
 
-							try
+							if (sf == null) 
 							{
-								File f = new File("shared_files/_"+remotePath.replace('/', '_'));
-								if (!f.exists()) 
+								System.out.printf("Error: File %s doesn't exist\n", remotePath);
+								response = new Envelope("ERROR_FILEMISSING");
+								System.out.println("SENT from DOWNLOADF - ERROR_FILEMISSING: " + e);
+
+							}	
+							else if (!t.getGroups().contains(sf.getGroup()))
+							{
+								System.out.printf("Error user %s doesn't have permission\n", t.getSubject());
+								response = new Envelope("ERROR_PERMISSION");
+								System.out.println("SENT from DOWNLOADF - ERROR_PERMISSION: " + response);
+							}
+							else {
+
+								try
 								{
-									System.out.printf("Error file %s missing from disk\n", "_"+remotePath.replace('/', '_'));
-									response = new Envelope("ERROR_NOTONDISK");
-									System.out.println("SENT from DOWNLOADF - ERROR_NOTONDISK: " + response);
-								}
-								else 
-								{
-									FileInputStream fis = new FileInputStream(f);
-									boolean sentMetadata = false;
-									do {
-										byte[] buf = new byte[4096];
-										if (e.getMessage().compareTo("DOWNLOADF")!=0) 
-										{
-											System.out.printf("Server error: %s\n", e.getMessage());
-											break;
-										}
-										response = new Envelope("CHUNK");
-										int n = fis.read(buf); //can throw an IOException
-										if (n > 0) 
-										{
-											System.out.printf(".");
-										} 
-										else if (n < 0) 
-										{
-											System.out.println("Read error");
-											sendFail(response, output);
-										}
-
-										response.addObject(buf);
-										response.addObject(new Integer(n));
-										// send meta-data along with the first chunk of the file
-										if(!sentMetadata) {
-											response.addObject(new Integer(sf.getKeyIndex()));
-											response.addObject(new Integer(sf.getKeyVersion()));
-											response.addObject(sf.getIv());
-											response.addObject(sf.getLength());
-											sentMetadata = true;
-										}
-
-										output.writeObject(Envelope.buildSuper(response, sessionKey));
-										System.out.println("SENT from DOWNLOADF: " + response);
-
-										e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-									}
-									while (fis.available()>0);
-
-									//If server indicates success, return the member list
-									if(e != null && e.getMessage().compareTo("DOWNLOADF")==0 && isSecureConnection  && isAuthenticated)
+									File f = new File("shared_files/_"+remotePath.replace('/', '_'));
+									if (!f.exists()) 
 									{
+										System.out.printf("Error file %s missing from disk\n", "_"+remotePath.replace('/', '_'));
+										response = new Envelope("ERROR_NOTONDISK");
+										System.out.println("SENT from DOWNLOADF - ERROR_NOTONDISK: " + response);
+									}
+									else 
+									{
+										FileInputStream fis = new FileInputStream(f);
+										boolean sentMetadata = false;
+										do {
+											byte[] buf = new byte[4096];
+											if (e.getMessage().compareTo("DOWNLOADF")!=0) 
+											{
+												System.out.printf("Server error: %s\n", e.getMessage());
+												break;
+											}
+											response = new Envelope("CHUNK");
+											int n = fis.read(buf); //can throw an IOException
+											if (n > 0) 
+											{
+												System.out.printf(".");
+											} 
+											else if (n < 0) 
+											{
+												System.out.println("Read error");
+												sendFail(response, output);
+											}
 
-										response = new Envelope("EOF");
-										output.writeObject(Envelope.buildSuper(response, sessionKey));
-										System.out.println("SENT from DOWNLOADF - EOF: " + response);
+											response.addObject(buf);
+											response.addObject(new Integer(n));
+											// send meta-data along with the first chunk of the file
+											if(!sentMetadata) {
+												response.addObject(new Integer(sf.getKeyIndex()));
+												response.addObject(new Integer(sf.getKeyVersion()));
+												response.addObject(sf.getIv());
+												response.addObject(sf.getLength());
+												sentMetadata = true;
+											}
 
-										e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-										if(e.getMessage().compareTo("OK")==0) {
-											System.out.printf("File data download successful\n");
-											dSuccessFlag = 1;
+											output.writeObject(Envelope.buildSuper(response, sessionKey));
+											System.out.println("SENT from DOWNLOADF: " + response);
+
+											e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+										}
+										while (fis.available()>0);
+
+										//If server indicates success, return the member list
+										if(e != null && e.getMessage().compareTo("DOWNLOADF")==0 && isSecureConnection  && isAuthenticated)
+										{
+
+											response = new Envelope("EOF");
+											output.writeObject(Envelope.buildSuper(response, sessionKey));
+											System.out.println("SENT from DOWNLOADF - EOF: " + response);
+
+											e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+											if(e.getMessage().compareTo("OK")==0) {
+												System.out.printf("File data download successful\n");
+												dSuccessFlag = 1;
+											}
+											else {
+												System.out.printf("Upload failed: %s\n", e.getMessage());
+												sendFail(response, output);
+											}
 										}
 										else {
+
 											System.out.printf("Upload failed: %s\n", e.getMessage());
 											sendFail(response, output);
 										}
-									}
-									else {
 
-										System.out.printf("Upload failed: %s\n", e.getMessage());
-										sendFail(response, output);
+										fis.close();
 									}
-
-									fis.close();
 								}
-							}
-							catch(Exception e1)
-							{
-								System.err.println("Error: " + e.getMessage());
-								e1.printStackTrace(System.err);
-								sendFail(response, output);
+								catch(Exception e1)
+								{
+									System.err.println("Error: " + e.getMessage());
+									e1.printStackTrace(System.err);
+									sendFail(response, output);
+								}
 							}
 						}
 					}
