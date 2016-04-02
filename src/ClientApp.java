@@ -853,6 +853,11 @@ public class ClientApp {
 		String ipAddr = ipField.getText();
 		int port = Integer.parseInt(portField.getText());
 
+		if(username.equals("") || publicPath.equals("") || privatePath.equals("") || ipAddr.equals("") || port == null){
+			JOptionPane.showMessageDialog(null, "Null or empty input error.", "Input Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+
 		//Attempt to connect to group server
 		//If fail, alert of failure
 		if (!RunClient.groupC.connect(ipAddr, port)) {
@@ -1003,6 +1008,12 @@ public class ClientApp {
 		int port = Integer.parseInt(filePortField.getText());
 		String publicPath = publicPathField.getText();
 		String privatePath = privatePathField.getText();
+
+		if(publicPath.equals("") || privatePath.equals("") || ipAddr.equals("") || port == null){
+			JOptionPane.showMessageDialog(null, "Null or empty input error.", "Input Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+
 		if(RunClient.fileC.isConnected()) {
 			RunClient.fileC.disconnect();
 		}
@@ -1207,6 +1218,11 @@ public class ClientApp {
 			return;
 		}
 
+		if(newUsername.equals("") || newPubKeyPath.equals("")){
+			JOptionPane.showMessageDialog(null, "Null or empty input error.", "Input Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+
 		UserToken currToken = RunClient.groupC.getToken(currentUsername, RunClient.groupC.getGroupServerKey());
 		
 		if (newUsername.contains(Token.sentinal)) {
@@ -1269,6 +1285,11 @@ public class ClientApp {
 		}
 
 		String delUsername = delUsernameField.getText();
+
+		if(delUsername.equals("")){
+			JOptionPane.showMessageDialog(null, "Null or empty input error.", "Input Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
 
 		UserToken currToken = RunClient.groupC.getToken(currentUsername, RunClient.groupC.getGroupServerKey());
 
@@ -1413,6 +1434,11 @@ public class ClientApp {
 
 		String newGroup = newGroupField.getText();
 
+		if(newGroup.equals("")){
+			JOptionPane.showMessageDialog(null, "Null or empty input error.", "Input Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+
 		UserToken currToken = RunClient.groupC.getToken(currentUsername, RunClient.groupC.getGroupServerKey());
 
 		if(dialogue == 0 && newGroup.length() > 0){
@@ -1440,7 +1466,6 @@ public class ClientApp {
 		}
 
 		int confirm = JOptionPane.showConfirmDialog(null, "Delete group " + currGroup + "?","Really?", JOptionPane.YES_NO_OPTION);
-		
 
 		if (confirm == JOptionPane.YES_OPTION) {
 
@@ -1485,6 +1510,11 @@ public class ClientApp {
 		}
 
 		String chooseUsername = chooseUsernameField.getText();
+
+		if(chooseUsername.equals("")){
+			JOptionPane.showMessageDialog(null, "Null or empty input error.", "Input Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
 
 		UserToken currToken = RunClient.groupC.getToken(currentUsername, RunClient.groupC.getGroupServerKey());
 
@@ -1721,6 +1751,11 @@ public class ClientApp {
 		int tempSplit = chooseFile.lastIndexOf("/");
 		String destFile = chooseFile.substring(tempSplit + 1);
 
+		if(chooseFile.equals("")){
+			JOptionPane.showMessageDialog(null, "Null or empty input error.", "Input Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
+
 		File tempTest = new File(chooseFile);
 
 		//"destination" here is group server, so it needs groupserver's key
@@ -1838,6 +1873,11 @@ public class ClientApp {
 		}
 		
 		String destFile = chooseFileField.getText();
+
+		if(destFile.equals("")){
+			JOptionPane.showMessageDialog(null, "Null or empty input error.", "Input Error", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
 
 		UserToken currToken = RunClient.groupC.getToken(currentUsername, RunClient.groupC.getGroupServerKey());
 		
