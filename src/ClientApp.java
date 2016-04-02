@@ -853,7 +853,7 @@ public class ClientApp {
 		String ipAddr = ipField.getText();
 		int port = Integer.parseInt(portField.getText());
 
-		if(username.equals("") || publicPath.equals("") || privatePath.equals("") || ipAddr.equals("") || port == null){
+		if(username.equals("") || publicPath.equals("") || privatePath.equals("") || ipAddr.equals("") || portField.getText().equals("")){
 			JOptionPane.showMessageDialog(null, "Null or empty input error.", "Input Error", JOptionPane.OK_CANCEL_OPTION);
 			return;
 		}
@@ -1009,7 +1009,7 @@ public class ClientApp {
 		String publicPath = publicPathField.getText();
 		String privatePath = privatePathField.getText();
 
-		if(publicPath.equals("") || privatePath.equals("") || ipAddr.equals("") || port == null){
+		if(publicPath.equals("") || privatePath.equals("") || ipAddr.equals("") || filePortField.getText().equals("")){
 			JOptionPane.showMessageDialog(null, "Null or empty input error.", "Input Error", JOptionPane.OK_CANCEL_OPTION);
 			return;
 		}
