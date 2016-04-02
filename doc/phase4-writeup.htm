@@ -11,6 +11,12 @@ header {
   text-align: center;
 }
 
+img.image {
+  display: block;
+  margin-left: auto;
+  margin-right: auto; }
+}
+
 /* END CHANGES HERE */
   </style>
   <body>
@@ -59,31 +65,52 @@ correctness of your approach, as well as its overall security. For example, if
 your mechanism involves a key agreement or key exchange protocol, you should
 argue that both parties agree on the same key (correctnes) and that no other
 party can figure out the key (security).</p> -->
+<h3>Manifestation of the threat</h3>
 <p>
-Threat 5 is the threat of Message Reorder, Replay, or Modification by an attacker on the system. These kind of attacks often manifest as a Man in the Middle attack where each of the non malicious entities believe they are talking to each other when really they are talking to the Man in the Middle. This can lead to them disclosing sensitive information to the attacker. This threat could easily be realized in our current implementation. For example, during user authentication the user preforms Diffie-Hellman key exchange with the groupserver to create a shared secret <b>k</b>. The user then sends their username and password encrypted with <b>k</b>. The problem is what if the user is not talking to the groupserver? The user would then establish a shared key <b>k'</b> with the attacker (because the g and q in Diffie-Hellman are public knowledge an attacker could easily implement a Diffie-Hellman protocol that would work with ours). The user then sends their username and password encrypted with <b>k'</b>. This means that the attack now has the users username and password and could log on to the server as the user.
-<br>
+Threat 5 is the threat of Message Reorder, Replay, or Modification by an attacker on the system. 
+<h4>Sub-threat: Man In The Middle</h4>
+<p>
+These kind of attacks often manifest as a Man in the Middle attack where each of the non malicious entities believe they are talking to each other when really they are talking to the Man in the Middle. This can lead to them disclosing sensitive information to the attacker. This threat could easily be realized in our current implementation. For example, during user authentication the user preforms Diffie-Hellman key exchange with the groupserver to create a shared secret <b>k</b>. The user then sends their username and password encrypted with <b>k</b>. The problem is what if the user is not talking to the groupserver? The user would then establish a shared key <b>k'</b> with the attacker (because the g and q in Diffie-Hellman are public knowledge an attacker could easily implement a Diffie-Hellman protocol that would work with ours). The user then sends their username and password encrypted with <b>k'</b>. This means that the attack now has the users username and password and could log on to the server as the user.
+</p>
+<h4>Sub-threat: Message Recording</h4>
+<p>
 In the case of reordering attacks this could manifest as the attacker sending the wrong message to try to mess with the system hoping to cause an error when the system is presented with unexpected input. This would be prevalent if the attackers were to send the later messages in our handshake protocol to try to get the server to an authenticated state without actually authenticating with it.
-<br>
+</p>
+<h4>Sub-threat: Message Replay</h4>
+<p>
 Replay attacks can also be used to try to game the system with out know what the messages say. For example if the attacker is recording messages and sees a small encrypted message followed by a large message going from the client to the fileserver they might guess that this is a message that deletes a file from the server and then reuploads the file with the large message. So if the attack were to resend the small message they would be able to delete the file off the system.
-<br>
+</p>
+<h4>Sub-threat: Message Modification</h4>
+<p>
 The Attacker could also mess with the system by modifying the messages that are send. Even though the messages are encrypted with a shared secret key the attack can still change the messages, he just won't know what he is changing. For example if there is a larger message it is most likely a file upload so if the attacker changes the message at random (probably near the end because metadata and control messages are often at the front) he will corrupt the file. The lack of integrity checks in our current implementation makes this very possible.  
 </p>
 
+<h3>Implementation to combat the threat</h3>
+<h4>Mechanism: Secure Authentication Protocols</h4> 
 <p>
+<b>Group Server Authentication</b><br>
 We stop this attack using public key cryptography and signed Diffie-Hellman key exchange. There are two communications that needs to be protected this way. The first is the communication between the groupserver and the client. When a user account is created it will be the ADMIN of the groupserver's responsibility to get the users public key that they will use to log into the system with. This public key will be stored in the User object on the groupserver. It will the User's responsibility to get the groupserver's public key when they are configuring their client application. This is similar to the way ssh works. Once each party has each others public keys they can use signed Diffie-Hellman to exchange a symmetric key. The fact that this Diffie-Hellman is signed authenticates the user and the groupserver to one another. The exchanged key is used to encrypt all further messages. <br><br>
-<img src="images/signeddh.png">
-<br>
-<br>
+<img src="images/signeddh.png" class="image">
+<br><br><b>File Server Authentication</b><br>
 The second communication that needs to be protected is the communication between the user and the fileserver. There are too many fileservers to the client to be expected to know them all therefore the fileserver's public key must be exchanged. This is done by the user connecting to the fileserver and requesting the fileservers public key. This is then sent to the user who must verify it out of band like in SSH. Once the user has verified the key the user will send their key encrypted with the fileservers public key. This encryption will stop an attacker from modifying the user's public key. Once the public keys are exchanged then the user and the fileserver preform Diffie-Hellman to establish a shared key that is used to encrypt the rest of the messages between the targets.
 <br><br>
-<img src="images/fileserversigneddh.png">
-<br>
-<br>
-Message reordering will be defended against by having checks in the servers that gracefully handle the wrong message rather than having some sort of software crash that could compromise the system. 
+<img src="images/fileserversigneddh.png" class="image">
 </p>
-
+<h4>Mechanism: HMAC for integrity checking</h4>
 <p>
-These defenses are sufficient to stop the threat. Signed Diffie-Hellmen defeats the Man in the Middle attack because the g<sup>x</sup>mod q's are digitally signed. This means that while an attacker could unsign the message but they could not modify it then resign it because they do not know the private key used to sign the message. This means that the message must be coming from the party that it is supposed to be coming from. 
+HMAC stuff
+</p>
+<h4>Mechanism: Sequence Numbers</h4>
+<p>
+Sequence nUmber stuff.
+</p>
+<h3>Correctness of mechanism</h3>
+<h4>Man in the Middle defense</h4>
+<h4>Replay defense</h4>
+<h4>Reordering defense</h4>
+<h4>Modification defense</h4>
+<p>
+These defenses are sufficient to stop the threat. Signed Diffie-Hellman defeats the Man in the Middle attack because the g<sup>x</sup>mod q's are digitally signed. This means that while an attacker could un-sign the message but they could not modify it then resign it because they do not know the private key used to sign the message. This means that the message must be coming from the party that it is supposed to be coming from. 
 <br>
 The key verification out of band is used to stop an attacker from swapping their key with the server's key. If they managed to do this then the user could assume that the signed message is from the server but it is really signed with the attackers private key. This cannot happen because the user verifies the key out of band so they always verify that the keys are correct.
 <br>
@@ -118,7 +145,7 @@ In order to protect against this threat, the primary mechanism we will employ is
 Leslie-Lamport one-time password scheme. What this scheme does is allow for a password
 to be modified a chosen number of times to create a new password by continually hashing it.
 How this works is by starting with a kind of "root" password, which will then be hashed an x
-amount of times. Everytime a new password is required, which in the case of our group file sharing system
+amount of times. Every time a new password is required, which in the case of our group file sharing system
 being when a member of a group leaves, the root password is hashed one less time than what was previously being
 used and is used to encrypt/decrypt all files from the time after the group member left the group.
 What this means is that at a time t<sub>i</sub>, with group members g and key k<sub>i</sub>,
@@ -146,7 +173,7 @@ is SHA-2 with a 256 bit digest. The key that will be generated from
 this one-time password scheme will be a 128-bit AES key. The files will be encrypted/decrypted with CBC mode, PKCS5 padding scheme, 
 and a unique IV for each file.
 <br><br>
-<img src="images/file_leakge.png">
+<img src="images/file_leakage.png" class="image">
 <br><br>
 </p>
 <p>
@@ -155,7 +182,7 @@ a group member is authorized to decrypt is encrypted with a key that is either t
 a past key version of this key which is obtained by hashing the current key the necessary amount of times, or an old key which hash
 used all of its versions and this old key which is hashed zero times can be hashed the necessary number of times to compute an old key
 version from a key which has been expended due to group membership changes. It can be said to be secure due to our other mechanisms in place
-which are said to be secure under the present threat model. What this means is that only an authorized user for thaat user's authorized groups
+which are said to be secure under the present threat model. What this means is that only an authorized user for that user's authorized groups
 can obtain the present keys and the list of old keys for their groups. It cannot be prevent that once a user is removed from a group
 that they can no longer view the files that were uploaded to the file server prior to their
 removal from the group due to the user storing them on their local machine, however, they will be unable to decrypt files uploaded
@@ -169,7 +196,7 @@ There are 100 versions of a key per root key including the root key, meaning the
 99 times. This is thought to be a reasonable number, as the cost of decrypting a file will almost always eclipse the cost of these hashes
 for all but the smallest of files. This value also allows for 100 group members to leave a group before a new key is needed. It is doubtful
 that such a group will exist such that the group server will need to maintain a lengthy list of old keys. Forward secrecy is a concern,
-but is less prioiritized over the group server storage (which should be fairly sparse) as the system is thought to be secure under the
+but is less prioritized over the group server storage (which should be fairly sparse) as the system is thought to be secure under the
 current threat model, making the event of a key leak to be extremely unlikely. A unique IV is associated with each IV so that no
 sort of codebook can be built up, leading to malicious file insertions or detections of the semantics or semantic changes within files.
 A proper padding scheme is used to maintain the security of the encryption and bring the file size to the correct bit multiple. Symmetric key
@@ -213,12 +240,12 @@ impossible to utilize the token after the window of network tolerance expires (1
 seconds in our implementation). An attacker cannot modify the timestamp, as the 
 timestamp is included in the hash of the token. As previously outlined in Phase 3, 
 the agreed-upon serialization of the token is a concatenation of the issuer, subject, 
-group list, and timestamp with each section separated by a sentinal character ("#" 
+group list, and timestamp with each section separated by a sentinel character ("#" 
 in our implementation) that is disallowed from use in any of the sections. The token 
 will appear as follows: { token || [token]K<sub>g</sub><sup>-1</sup> }K<sub>uf</sub>, where the token = timestamp || issuer || subject || groups with each section 
 separated with the "#" sign, as well as each group being delimited too.
 Just as in Phase 3, we will be using SHA-2 with a 256-bit digest (SHA-256), which is, 
-at the present momement, known to be secure and is forecasted to continue to be so 
+at the present moment, known to be secure and is forecasted to continue to be so 
 in the near future. By restricting the time window in which a token can be utilized, 
 it reduces the feasibility of a large-scale compromise of the system to only those 
 that can be conducted completely within the window of network tolerance.
@@ -227,7 +254,7 @@ that can be conducted completely within the window of network tolerance.
 <p>
 However, timestamps alone are not enough to protect against this threat, as a file 
 server could possibly distribute a stolen token to an attacker, with that attacker 
-quickly adding themself to whatever groups the original owner of the token had 
+quickly adding themselves to whatever groups the original owner of the token had 
 permission to add users to. If this is achieved within the time-frame of the 
 network tolerance, the attacker can then freely perform all the group and file 
 operations it can with their newfound permissions even after the stolen token has 
@@ -284,11 +311,18 @@ above-documented approach? Did you end up designing a really interesting
 protocol suite that addresses multiple threats at once? Use this space to show
 off your hard work!</p>
 
+<h3>Our protocols still defend from threats 1 through 4</h3>
+<h4>Threat 1: Unauthorized Token Issuance</h4>
+<h4>Threat 2: Token Modification/Forgery</h4>
+<h4>Threat 3: Unauthorized File Servers</h4>
+<h4>Threat 4: Information Leakage via Passive Monitoring</h4>
 <p>Finally, spend about one paragraph convincing me that your modified protocols
 still address the threats T1–T4 described in Phase 3 of the project.</p>
 
+<h3>Extra Credit: Two Factor Authentication</h3>
 <p>If your group did any extra credit, please discuss that in this section, as
 well.</p>
+
 
 <!-- END CHANGES HERE -->
     </section>

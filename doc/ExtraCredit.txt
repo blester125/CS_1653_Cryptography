@@ -1,6 +1,14 @@
-For extra Credit we created a GUI for the client application
+Phase 2: For extra credit we created a GUI for the client application
 
 In accordance with the rule of least privilege we added the ability 
 for users list files only within a certain group in addition to all 
 of their files. In a similar vein when deleteing or downloading a 
 file a group must be choosen. 
+
+Phase 3: For extra credit we implemented a log in option that uses
+RSA public key cryptography and signed diffie hellman to supplement
+the noraml password login procedure.
+
+Phase 4: For extra credit we implemented the option to enable two 
+factor authentication on accounts. This is done using TOTP and the 
+google authenticator app. 

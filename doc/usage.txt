@@ -9,18 +9,25 @@ USAGE:
 	java RunFileServer 8081
  
  To start ClientApp: java RunClient
- This GUI is designed to fulfill future functionality that is not yet
- implemented for this phase (such as passwords, etc...). The Home tab handles
+ This GUI is designed to fulfill functionality. The Home tab handles
  logins and creating/deleting users, Group Servers tab handles all 
  GroupServer functionality, and File Servers tab handles all FileServer
  functionality. 
 
+ The Home tab also handled login and authentication. This includes updating 
+ login credentials. The button ''Update RSA'' updates the public RSA key that
+ is set for this user specified by the key in the file path that is entered. 
+ The button ''Setup Two Factor'' will generate a key that is a secret between
+ the user and the groupserver. This key is to be entered into the google 
+ authenticator app to generate codes that are used for two factor authentication.
+
  To start Group Server: java RunGroupServer [(optional) port number]
  When the group server is first started, there are no users or groups. Since 
  there must be an administer of the system, the user is prompted via the console
- to enter a username. This name becomes the first user and is a member of the
- ADMIN group.  Also, no groups exist.  A custom port can be passed as the first 
- command line argument.
+ to enter a username The user will also be prompted to enter the path to the file
+ where their public key is stored. This name becomes the first user and is a 
+ member of the ADMIN group.  Also, no other groups exist.  A custom port can be 
+ passed as the first command line argument.
 
  The GUI Client defaults to connect to port 8080 of the localhost. Please run 
  RunGroupServer as:

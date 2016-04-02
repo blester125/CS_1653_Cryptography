@@ -5,3 +5,4 @@ COMPILE: javac -cp .:lib/* *.java
 The "lib" folder contains the following libraries:
 -BouncyCastle Cryptography (bcprov-jdk15on-154.jar)
 -Apache Commons Codec (commons-codec-1.9.jar)
+-JLayer Mp3 Library (jl1.0.jar)
