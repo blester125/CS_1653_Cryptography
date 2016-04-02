@@ -145,9 +145,9 @@ public class CipherBox {
 		return null;
 	}
 
-	public static String getKeyAsString(Key key) {
-		return new String(Base64.encodeBase64(key.getEncoded())); 
-	}
+	// public static String getKeyAsString(Key key) {
+	// 	return new String(Base64.encodeBase64(key.getEncoded())); 
+	// }
 	
 	public static Cipher initializeEncryptCipher(Key key, IvParameterSpec iv) {
 		try {
