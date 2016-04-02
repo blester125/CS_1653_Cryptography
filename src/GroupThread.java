@@ -195,8 +195,8 @@ public class GroupThread extends Thread
 											String codeString = (String)message.getObjContents().get(1);
 											long code = Integer.parseInt(codeString);
 											String key = my_gs.userList.getTwoFactorKey(user);
-											long t = GAuthEx.getT();
-											if (GAuthEx.check_code(key, code, t)) {
+											long t = GAuthBox.getT();
+											if (GAuthBox.check_code(key, code, t)) {
 												innerResponse = new Envelope("OK");
 												sequenceNumber += 2;
 												innerResponse.addObject(sequenceNumber);
@@ -295,7 +295,7 @@ public class GroupThread extends Thread
 									UserToken token = (UserToken)message.getObjContents().get(0);
 									if (token != null) {
 										if (verifyToken(token)) {
-											String key = GAuthEx.generateKey();
+											String key = GAuthBox.generateKey();
 											innerResponse = new Envelope("ENABLE-TWO-FACTOR-2");
 											innerResponse.addObject(key);
 											innerResponse.addObject(sequenceNumber);
