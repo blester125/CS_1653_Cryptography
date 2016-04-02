@@ -1195,6 +1195,10 @@ public class ClientApp {
 		String newUsername = newUsernameField.getText();
 		String newPubKeyPath = newPathField.getText();
 
+		if (dialogue != 0){
+			return;
+		}
+
 		UserToken currToken = RunClient.groupC.getToken(currentUsername, RunClient.groupC.getGroupServerKey());
 		
 		if (newUsername.contains(Token.sentinal)) {
