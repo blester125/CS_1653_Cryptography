@@ -276,21 +276,29 @@ public class FileClient extends Client implements FileClientInterface {
 	public List<String> listFiles(UserToken token) {
 		 try
 		 {
-			 Envelope message = null, e = null;
-			 //Tell the server to return the member list
-			 message = new Envelope("LFILES");
-			 message.addObject(token); //Add requester's token
-			 output.writeObject(Envelope.buildSuper(message, sessionKey)); 
-			 
-			 e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-			 
-			 //If server indicates success, return the member list
-			 if(e.getMessage().equals("OK"))
-			 { 
-				return (List<String>)e.getObjContents().get(0); //This cast creates compiler warnings. Sorry.
-			 }
-				
-			 return null;
+			Envelope message = null, e = null;
+			//Tell the server to return the member list
+			message = new Envelope("LFILES");
+			message.addObject(token); //Add requester's token
+			message.addObject(sequenceNumber); //add seqnum
+			output.writeObject(Envelope.buildSuper(message, sessionKey)); 
+
+			e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+
+			//If server indicates success, return the member list
+			if(e.getMessage().equals("OK")){
+				if(e.getObjContents().get(0) != null){
+					if(e.getObjContents().get(1) != null){
+						Integer seqNum = (Integer)e.getObjContents().get(1);
+						if(seqNum == sequenceNumber + 1){
+							sequenceNumber += 2;
+							return (List<String>)e.getObjContents().get(0); //This cast creates compiler warnings. Sorry.
+						}
+					}
+				} 	
+			}
+
+			return null;
 			 
 		 }
 		 catch(Exception e)
@@ -304,22 +312,30 @@ public class FileClient extends Client implements FileClientInterface {
 	public List<String> listFiles(String groupName, UserToken token) {
 		 try
 		 {
-			 Envelope message = null, e = null;
-			 //Tell the server to return the member list
-			 message = new Envelope("LFILESG");
-			 message.addObject(groupName); // add groupname
-			 message.addObject(token); //Add requester's token
-			 output.writeObject(Envelope.buildSuper(message, sessionKey)); 
-			 
-			 e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-			 
-			 //If server indicates success, return the member list
-			 if(e.getMessage().equals("OK"))
-			 { 
-				return (List<String>)e.getObjContents().get(0); //This cast creates compiler warnings. Sorry.
-			 }
-				
-			 return null;
+			Envelope message = null, e = null;
+			//Tell the server to return the member list
+			message = new Envelope("LFILESG");
+			message.addObject(groupName); // add groupname
+			message.addObject(token); //Add requester's token
+			message.addObject(sequenceNumber); //add seqnum
+			output.writeObject(Envelope.buildSuper(message, sessionKey)); 
+
+			e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+
+			//If server indicates success, return the member list
+			if(e.getMessage().equals("OK")){
+				if(e.getObjContents().get(0) != null){
+					if(e.getObjContents().get(1) != null){
+						Integer seqNum = (Integer)e.getObjContents().get(1);
+						if(seqNum == sequenceNumber + 1){
+							sequenceNumber += 2;
+							return (List<String>)e.getObjContents().get(0); //This cast creates compiler warnings. Sorry.
+						}
+					}
+				}
+			}
+
+			return null;
 			 
 		 }
 		 catch(Exception e)
@@ -334,37 +350,32 @@ public class FileClient extends Client implements FileClientInterface {
 			UserToken token, GroupMetadata groupMetadata) {
 			
 		if (destFile.charAt(0)!='/') {
-			 destFile = "/" + destFile;
-		 }
+			destFile = "/" + destFile;
+		}
 		
-		try
-		 {
-			 Envelope message = null, env = null;
-			 //Tell the server to return the member list
-			 message = new Envelope("UPLOADF");
-			 message.addObject(destFile);
-			 message.addObject(group);
-			 message.addObject(token); //Add requester's token
-			 output.writeObject(Envelope.buildSuper(message, sessionKey));
-			
-			 
-			 FileInputStream fis = new FileInputStream(sourceFile);
-			 
-			 
-			 env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-			 
-			 //If server indicates success, return the member list
-			 if(env.getMessage().equals("READY"))
-			 { 
+		try{
+			Envelope message = null, env = null;
+			//Tell the server to return the member list
+			message = new Envelope("UPLOADF");
+			message.addObject(destFile);
+			message.addObject(group);
+			message.addObject(token); //Add requester's token
+			message.addObject(sequenceNumber);
+			output.writeObject(Envelope.buildSuper(message, sessionKey));
+
+			FileInputStream fis = new FileInputStream(sourceFile);
+
+			env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+
+			//If server indicates success, return the member list
+			if(env.getMessage().equals("READY")){
 				System.out.printf("Meta data upload successful\n");
-				
 			}
-			 else {
-				
-				 System.out.printf("Upload failed: %s\n", env.getMessage());
-				 fis.close();
-				 return false;
-			 }
+			else {	
+				System.out.printf("Upload failed: %s\n", env.getMessage());
+				fis.close();
+				return false;
+			}
 			
 			// retrieve/generate meta-data for file encryption
 		 	IvParameterSpec iv = CipherBox.generateRandomIV();
@@ -373,39 +384,56 @@ public class FileClient extends Client implements FileClientInterface {
 		 	int keyVersion = groupMetadata.getCurrentKeyVer();
 		 	Cipher AESCipherEncrypt = CipherBox.initializeEncryptCipher(key, iv);
 		 	do {
-				 	byte[] buf = new byte[4096];
+				byte[] buf = new byte[4096];
 
-				 	if (env.getMessage().compareTo("READY")!=0) {
-				 		System.out.printf("Server error: %s\n", env.getMessage());
-				 		fis.close();
-				 		return false;
-				 	}
-				 	message = new Envelope("CHUNK");
-					int n = fis.read(buf); //can throw an IOException
-					byte[] block = AESCipherEncrypt.update(buf);
+				if (env.getMessage().compareTo("READY")!=0) {
+					System.out.printf("Server error: %s\n", env.getMessage());
+					fis.close();
+					return false;
+				}
 
-					if (n > 0) {
-						System.out.printf(".");
-					} else if (n < 0) {
-						System.out.println("Read error");
+				if(env.getObjContents().get(0) != null){
+					Integer seqNum = (Integer)env.getObjContents().get(0);
+					if(seqNum == sequenceNumber + 1){
+						sequenceNumber += 2;
+
+						message = new Envelope("CHUNK");
+						int n = fis.read(buf); //can throw an IOException
+						byte[] block = AESCipherEncrypt.update(buf);
+
+						if (n > 0) {
+							System.out.printf(".");
+						} else if (n < 0) {
+							System.out.println("Read error");
+							fis.close();
+							return false;
+						}
+						// encrypt with key and IV
+						message.addObject(block);
+						message.addObject(new Integer(block.length));
+						message.addObject(sequenceNumber);
+
+						output.writeObject(Envelope.buildSuper(message, sessionKey));
+
+						env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);			
+					} else {
+						System.out.printf("Seqnum mismatch in chunk transmission.");
 						fis.close();
 						return false;
 					}
-					// encrypt with key and IV
-					message.addObject(block);
-					message.addObject(new Integer(block.length));
-					
-					output.writeObject(Envelope.buildSuper(message, sessionKey));
-					
-					env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-			 }
-			 while (fis.available()>0);
-			 fis.close();
-			 if(env.getMessage().compareTo("READY")==0)
-			 {
+				} else {
+					System.out.printf("Seqnum error in chunk transmission.");
+					fis.close();
+					return false;
+				}		
+			}
+			while (fis.available()>0);
+			fis.close();
+			if(env.getMessage().compareTo("READY")==0)
+			{
 
-				 File f = new File(sourceFile);
-				 long fileLength = f.length();
+				File f = new File(sourceFile);
+				long fileLength = f.length();
 				//finish last block of encryption
 				byte[] block = AESCipherEncrypt.doFinal();
 				message = new Envelope("EOF");
@@ -415,29 +443,35 @@ public class FileClient extends Client implements FileClientInterface {
 				message.addObject(iv.getIV());
 				message.addObject(block);
 				message.addObject(fileLength);
+				message.addObject(sequenceNumber);
 				output.writeObject(Envelope.buildSuper(message, sessionKey));
 				
 				env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
 				if(env.getMessage().compareTo("OK")==0) {
-					System.out.printf("\nFile data upload successful\n");
+					if(env.getObjContents().get(0) != null){
+						Integer eofseq = (Integer)env.getObjContents().get(0);
+						if(eofseq == sequenceNumber + 1){
+							System.out.printf("\nFile data upload successful\n");
+							sequenceNumber += 2;
+						}
+					}
 				}
 				else {
 					
 					 System.out.printf("\nUpload failed: %s\n", env.getMessage());
 					 return false;
-				 }
+				}
 			}
 			 else {
 				 System.out.printf("Upload failed: %s\n", env.getMessage());
 				 return false;
-			 }
-		 }catch(Exception e1)
-			{
+			}
+		} catch (Exception e1) {
 				System.err.println("Error: " + e1.getMessage());
 				e1.printStackTrace(System.err);
 				return false;
-				}
-		 return true;
+		}
+		return true;
 	}
 
 	public boolean download(String sourceFile, String destFile, String group, UserToken token, 

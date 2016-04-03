@@ -209,33 +209,43 @@ public class FileThread extends Thread
 				    		response = new Envelope("FAIL-BADTOKEN");
 				    	}
 				    	else {
+				    		if(e.getObjContents().get(1) == null) {
+				    			response = new Envelope("FAIL-BADSEQNUM");
+				    		}
+				    		else {
+				    			int tempseq = (Integer)e.getObjContents().get(1);
+				    			if(tempseq == sequenceNumber + 1){
+						    		//Prepare output list of file names and retrieve the token from the envelope
+								    ArrayList<String> filteredFiles = new ArrayList<String>();
+								    UserToken tok = (UserToken)e.getObjContents().get(0);
+								    // Verify Token
+								    if (verifyToken(tok)) {
 
-				    		//Prepare output list of file names and retrieve the token from the envelope
-						    ArrayList<String> filteredFiles = new ArrayList<String>();
-						    UserToken tok = (UserToken)e.getObjContents().get(0);
-						    // Verify Token
-						    if (verifyToken(tok)) {
+								   		//Get all files from the FileServer
+									    ArrayList<ShareFile> all = FileServer.fileList.getFiles();
 
-						   		//Get all files from the FileServer
-							    ArrayList<ShareFile> all = FileServer.fileList.getFiles();
+									    //Go through all files in the server, filter for only those in the right group
+									    for(ShareFile f : all){
 
-							    //Go through all files in the server, filter for only those in the right group
-							    for(ShareFile f : all){
+								    		if(tok.getGroups().contains(f.getGroup())) 
+								    		{
+								    			String path = f.getPath();
+									    		path = path.substring(0, path.length() - f.getGroup().length());
+								    			filteredFiles.add(path);
+								    		}
+								    	}
 
-						    		if(tok.getGroups().contains(f.getGroup())) 
-						    		{
-						    			String path = f.getPath();
-							    		path = path.substring(0, path.length() - f.getGroup().length());
-						    			filteredFiles.add(path);
-						    		}
-						    	}
-
-
-						    	//form response, write it
-						    	response = new Envelope("OK");
-							    response.addObject(filteredFiles);
-							} else {
-								System.out.println("TOKEN ERROR.");
+								    	//form response, write it
+								    	sequenceNumber += 2;
+								    	response = new Envelope("OK");
+									    response.addObject(filteredFiles);
+									    response.addObject(sequenceNumber);
+									} else {
+										System.out.println("TOKEN ERROR.");
+									}
+								} else {
+									System.out.println("SEQNUM ERROR.");
+								}
 							}
 				    	}
 				    }
@@ -258,42 +268,51 @@ public class FileThread extends Thread
 				    	{
 				    		response = new Envelope("FAIL-BADTOKEN");
 				    	}
-				    	else 
+				    	else if(e.getObjContents().get(2) == null) 
 				    	{
-				    		response = new Envelope("FAIL");
-				    		//Prepare output list of file names and retrieve the token from the envelope
-						    ArrayList<String> finalFiles = new ArrayList<String>();
-						    ArrayList<ShareFile> filteredFiles = new ArrayList<ShareFile>();
-						    String groupName = (String)e.getObjContents().get(0);
-						    if (!groupName.equals("")) {
-							    UserToken tok = (UserToken)e.getObjContents().get(1);
-							    if (verifyToken(tok)) {
+				    		response = new Envelope("FAIL-BADSEQNUM");
+				    	}
+				    	else 
+				    	{	
+				    		int tempseq = (Integer)e.getObjContents().get(2);
+				    		if(tempseq == sequenceNumber + 1){
+					    		response = new Envelope("FAIL");
+					    		//Prepare output list of file names and retrieve the token from the envelope
+							    ArrayList<String> finalFiles = new ArrayList<String>();
+							    ArrayList<ShareFile> filteredFiles = new ArrayList<ShareFile>();
+							    String groupName = (String)e.getObjContents().get(0);
+							    if (!groupName.equals("")) {
+								    UserToken tok = (UserToken)e.getObjContents().get(1);
+								    if (verifyToken(tok)) {
 
-								    //Get all files from the FileServer
-								    ArrayList<ShareFile> all = FileServer.fileList.getFiles();
+									    //Get all files from the FileServer
+									    ArrayList<ShareFile> all = FileServer.fileList.getFiles();
 
-								    //Go through all files in the server, filter for only those in the right group
-								    for(ShareFile f : all)
-								    {
-									    	if(tok.getGroups().contains(f.getGroup()))
-								    		filteredFiles.add(f);
+									    //Go through all files in the server, filter for only those in the right group
+									    for(ShareFile f : all)
+									    {
+										    	if(tok.getGroups().contains(f.getGroup()))
+									    		filteredFiles.add(f);
+								    	}
+								    	//Go through all filtered files, only return one group's
+									    for(ShareFile f : filteredFiles)
+									    {
+									    	if(f.getGroup().equals(groupName))
+									    	{
+									    		String path = f.getPath();
+									    		path = path.substring(0, path.length() - groupName.length());
+									    		finalFiles.add(path);
+								    		}
+								    	}
+								  
+							    		//form response, write it
+							    		sequenceNumber += 2;
+							    		response = new Envelope("OK");
+							    		response.addObject(finalFiles);
+							    		response.addObject(sequenceNumber);
 							    	}
-							    	//Go through all filtered files, only return one group's
-								    for(ShareFile f : filteredFiles)
-								    {
-								    	if(f.getGroup().equals(groupName))
-								    	{
-								    		String path = f.getPath();
-								    		path = path.substring(0, path.length() - groupName.length());
-								    		finalFiles.add(path);
-							    		}
-							    	}
-							  
-						    		//form response, write it
-						    		response = new Envelope("OK");
-						    		response.addObject(finalFiles);
-						    	}
-						    }
+							    }
+							}
 					    }
 					}
 					output.writeObject(Envelope.buildSuper(response, sessionKey));
@@ -317,81 +336,109 @@ public class FileThread extends Thread
 						else if(e.getObjContents().get(2) == null) {
 							response = new Envelope("FAIL-BADTOKEN");
 						}
+						else if(e.getObjContents().get(3) == null) {
+							response = new Envelope("FAIL-BADSEQNUM");
+						}
 						else {
-							response = new Envelope("FAIL");
-							String remotePath = (String)e.getObjContents().get(0);
-							String group = (String)e.getObjContents().get(1);
-							if (!group.equals("") && !remotePath.equals("")) {
-								remotePath = remotePath + group;
-								UserToken yourToken = (UserToken)e.getObjContents().get(2); //Extract token
-								if (verifyToken(yourToken)) {
-									if (FileServer.fileList.checkFile(remotePath)) {
-										System.out.printf("Error: file already exists at %s\n", remotePath);
-										response = new Envelope("FAIL-FILEEXISTS"); //Success
-										System.out.println("SENT from UPLOADF - FAIL-FILEEXISTS: " + response);
-									}
-									else if (!yourToken.getGroups().contains(group)) {
-										System.out.printf("Error: user missing valid token for group %s\n", group);
-										response = new Envelope("FAIL-UNAUTHORIZED"); //Success
-										System.out.println("SENT from UPLOADF - FAIL-UNAUTHORIZED: " + response);
-									}
-									else  {
-										File file;
-										FileOutputStream fos;
-										file = new File("shared_files/"+remotePath.replace('/', '_'));
-										file.createNewFile();
-										fos = new FileOutputStream(file);
-										System.out.printf("Successfully created file %s\n", remotePath.replace('/', '_'));
-
-										response = new Envelope("READY"); //Success
-										output.writeObject(Envelope.buildSuper(response, sessionKey));
-										System.out.println("SENT from UPLOADF - READY: " + response);
-
-										e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-										while (e.getMessage().compareTo("CHUNK")==0) {
-											fos.write(((byte[])e.getObjContents().get(0)), 0, (Integer)e.getObjContents().get(1));
-											response = new Envelope("READY"); //Success
-											output.writeObject(Envelope.buildSuper(response, sessionKey));
-											System.out.println("SENT from UPLOADF - READYCHUNK: " + response);
-											e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+							int tempseq = (Integer)e.getObjContents().get(3);
+				    		if(tempseq == sequenceNumber + 1){
+								response = new Envelope("FAIL");
+								String remotePath = (String)e.getObjContents().get(0);
+								String group = (String)e.getObjContents().get(1);
+								if (!group.equals("") && !remotePath.equals("")) {
+									remotePath = remotePath + group;
+									UserToken yourToken = (UserToken)e.getObjContents().get(2); //Extract token
+									if (verifyToken(yourToken)) {
+										if (FileServer.fileList.checkFile(remotePath)) {
+											System.out.printf("Error: file already exists at %s\n", remotePath);
+											response = new Envelope("FAIL-FILEEXISTS"); //Success
+											System.out.println("SENT from UPLOADF - FAIL-FILEEXISTS: " + response);
 										}
+										else if (!yourToken.getGroups().contains(group)) {
+											System.out.printf("Error: user missing valid token for group %s\n", group);
+											response = new Envelope("FAIL-UNAUTHORIZED"); //Success
+											System.out.println("SENT from UPLOADF - FAIL-UNAUTHORIZED: " + response);
+										}
+										else  {
+											File file;
+											FileOutputStream fos;
+											file = new File("shared_files/"+remotePath.replace('/', '_'));
+											file.createNewFile();
+											fos = new FileOutputStream(file);
+											System.out.printf("Successfully created file %s\n", remotePath.replace('/', '_'));
 
-										if(e.getMessage().compareTo("EOF")==0) {
-											if(e.getObjContents() != null && e.getObjContents().size() == 5)
-											{
-												if(e.getObjContents().get(0) == null){
-													System.err.println("Error: null key index field");
-												}
-												else if(e.getObjContents().get(1) == null){
-													System.err.println("Error: null key version field");
-												}
-												else if(e.getObjContents().get(2) == null){
-													System.err.println("Error: null IV field");
-												}
-												else if(e.getObjContents().get(3) == null){
-													System.err.println("Error: null block field");
-												}
-												else if(e.getObjContents().get(4) == null){
-													System.err.println("Error: null file length field");
-												}
-												else {
-													int keyIndex = ((Integer)e.getObjContents().get(0)).intValue();
-													int keyVersion = ((Integer)e.getObjContents().get(1)).intValue();
-													byte[] iv = (byte[])e.getObjContents().get(2);
-													byte[] padBlock = (byte[])e.getObjContents().get(3);
-													long fileLength = (Long)e.getObjContents().get(4);
-													System.out.printf("Transfer successful file %s\n", remotePath);
-													FileServer.fileList.addFile(yourToken.getSubject(), group, 
-															remotePath, keyIndex, keyVersion, iv, fileLength);
-													response = new Envelope("OK"); //Success
+											sequenceNumber += 2;
+											response = new Envelope("READY"); //Success
+											response.addObject(sequenceNumber);
+											output.writeObject(Envelope.buildSuper(response, sessionKey));
+											System.out.println("SENT from UPLOADF - READY: " + response);
+
+											e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+											while (e.getMessage().compareTo("CHUNK")==0) {
+												if(e.getObjContents().get(0) != null){
+													if(e.getObjContents().get(1) != null){
+														if(e.getObjContents().get(2) != null){
+															int seqchunk = (Integer)e.getObjContents().get(2);
+				    										if(seqchunk == sequenceNumber + 1){
+				    											fos.write(((byte[])e.getObjContents().get(0)), 0, (Integer)e.getObjContents().get(1));
+				    											sequenceNumber += 2;
+																response = new Envelope("READY"); //Success
+																response.addObject(sequenceNumber);
+																output.writeObject(Envelope.buildSuper(response, sessionKey));
+																System.out.println("SENT from UPLOADF - READYCHUNK: " + response);
+																e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+				    										}
+														}
+													}
 												}
 											}
+
+											if(e.getMessage().compareTo("EOF")==0) {
+												if(e.getObjContents() != null && e.getObjContents().size() == 5)
+												{
+													if(e.getObjContents().get(0) == null){
+														System.err.println("Error: null key index field");
+													}
+													else if(e.getObjContents().get(1) == null){
+														System.err.println("Error: null key version field");
+													}
+													else if(e.getObjContents().get(2) == null){
+														System.err.println("Error: null IV field");
+													}
+													else if(e.getObjContents().get(3) == null){
+														System.err.println("Error: null block field");
+													}
+													else if(e.getObjContents().get(4) == null){
+														System.err.println("Error: null file length field");
+													}
+													else if(e.getObjContents().get(5) == null){
+														System.err.println("Error: null seq num field");
+													}
+													else {
+														int eofseq = (Integer)e.getObjContents().get(5);
+				    									if(eofseq == sequenceNumber + 1){
+
+															int keyIndex = ((Integer)e.getObjContents().get(0)).intValue();
+															int keyVersion = ((Integer)e.getObjContents().get(1)).intValue();
+															byte[] iv = (byte[])e.getObjContents().get(2);
+															byte[] padBlock = (byte[])e.getObjContents().get(3);
+															long fileLength = (Long)e.getObjContents().get(4);
+															System.out.printf("Transfer successful file %s\n", remotePath);
+															FileServer.fileList.addFile(yourToken.getSubject(), group, 
+																	remotePath, keyIndex, keyVersion, iv, fileLength);
+															sequenceNumber += 2;
+															response = new Envelope("OK"); //Success
+															response.addObject(sequenceNumber);
+														}
+													}
+												}
+											}
+											else {
+												System.out.printf("Error reading file %s from client\n", remotePath);
+												response = new Envelope("ERROR-TRANSFER"); //Success
+											}
+											fos.close();
 										}
-										else {
-											System.out.printf("Error reading file %s from client\n", remotePath);
-											response = new Envelope("ERROR-TRANSFER"); //Success
-										}
-										fos.close();
 									}
 								}
 							}
