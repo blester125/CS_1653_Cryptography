@@ -446,38 +446,40 @@ public class FileClient extends Client implements FileClientInterface {
 			fis.close();
 			if(env.getMessage().compareTo("READY")==0)
 			{
-
-				File f = new File(sourceFile);
-				long fileLength = f.length();
-				//finish last block of encryption
-				byte[] block = AESCipherEncrypt.doFinal();
-				message = new Envelope("EOF");
-				// send the file length, key index, key version, and IV used to encrypt the file
-				message.addObject(new Integer(keyIndex));
-				message.addObject(new Integer(keyVersion));
-				message.addObject(iv.getIV());
-				message.addObject(block);
-				message.addObject(fileLength);
-				message.addObject(sequenceNumber);
-				output.writeObject(Envelope.buildSuper(message, sessionKey));
+				if ((Integer)env.getObjContents().get(0) == sequenceNumber + 1) {
+					sequenceNumber += 2;
+					File f = new File(sourceFile);
+					long fileLength = f.length();
+					//finish last block of encryption
+					byte[] block = AESCipherEncrypt.doFinal();
+					message = new Envelope("EOF");
+					// send the file length, key index, key version, and IV used to encrypt the file
+					message.addObject(new Integer(keyIndex));
+					message.addObject(new Integer(keyVersion));
+					message.addObject(iv.getIV());
+					message.addObject(block);
+					message.addObject(fileLength);
+					message.addObject(sequenceNumber);
+					output.writeObject(Envelope.buildSuper(message, sessionKey));
 				
-				env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-				if(env.getMessage().compareTo("OK")==0) {
-					if(env.getObjContents().get(0) != null){
-						Integer eofseq = (Integer)env.getObjContents().get(0);
-						if(eofseq == sequenceNumber + 1){
-							System.out.printf("\nFile data upload successful\n");
-							sequenceNumber += 2;
+					env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+					if(env.getMessage().compareTo("OK")==0) {
+						if(env.getObjContents().get(0) != null){
+							Integer eofseq = (Integer)env.getObjContents().get(0);
+							if(eofseq == sequenceNumber + 1){
+								System.out.printf("\nFile data upload successful\n");
+								sequenceNumber += 2;
+							}
 						}
 					}
-				}
-				else {
+					else {
 					
-					 System.out.printf("\nUpload failed: %s\n", env.getMessage());
-					 return false;
+						System.out.printf("\nUpload failed: %s\n", env.getMessage());
+						return false;
+					}
 				}
 			}
-			 else {
+			else {
 				 System.out.printf("Upload failed: %s\n", env.getMessage());
 				 return false;
 			}
@@ -578,13 +580,16 @@ public class FileClient extends Client implements FileClientInterface {
 						env.addObject(sequenceNumber);
 						output.writeObject(Envelope.buildSuper(env, sessionKey));
 						env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-
-						if(env.getObjContents().get(2) != null){
-							Integer chunkSeq = (Integer)env.getObjContents().get(2);
-							if(chunkSeq != sequenceNumber + 1){
-								System.err.println("Error: seq num mismatch");
-								return false;
-							}
+						if (env != null) {
+							if (!env.getMessage().equals("EOF")) {
+								if(env.getObjContents().get(2) != null){
+									Integer chunkSeq = (Integer)env.getObjContents().get(2);
+									if(chunkSeq != sequenceNumber + 1){
+										System.err.println("Error: seq num mismatch");
+										return false;
+									}
+								}
+							}						
 						} else {
 							return false;
 						}								
@@ -596,11 +601,13 @@ public class FileClient extends Client implements FileClientInterface {
 				    		Integer eofseq = (Integer)env.getObjContents().get(0);
 				    		if(eofseq == sequenceNumber + 1){
 				    			fos.close();
-								System.out.printf("\nTransfer successful file %s\n", sourceFile);
-								sequenceNumber += 2;
-								env = new Envelope("OK"); //Success
-								env.addObject(sequenceNumber);
-								output.writeObject(Envelope.buildSuper(env, sessionKey));
+							System.out.printf("\nTransfer successful file %s\n", sourceFile);
+							sequenceNumber += 2;
+							env = new Envelope("OK"); //Success
+							env.addObject(sequenceNumber);
+							output.writeObject(Envelope.buildSuper(env, sessionKey));
+							// Really Gross
+							sequenceNumber += 2;
 				    		}
 				    	}
 				    }
