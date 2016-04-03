@@ -154,7 +154,7 @@ public class FileThread extends Thread
 														byte[] hashResponse = Hasher.hash(keyPlusWord);
 														message3.addObject(hashResponse);
 														SecureRandom rand = new SecureRandom();
-														int sequenceNumber = rand.nextInt(101);
+														sequenceNumber = rand.nextInt(101);
 														System.out.println("Inital Sequence Number: " + sequenceNumber);
 														message3.addObject(sequenceNumber);
 														System.out.println("Sending: ");
