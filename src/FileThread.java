@@ -339,7 +339,7 @@ public class FileThread extends Thread
 				}   	
 				if(e.getMessage().equals("UPLOADF") && isSecureConnection && isAuthenticated)
 				{
-
+					System.out.println("First RECEIVED: " + e);
 					if(e.getObjContents() == null || e.getObjContents().size() < 3)
 					{
 						response = new Envelope("FAIL-BADCONTENTS");
@@ -393,20 +393,22 @@ public class FileThread extends Thread
 											System.out.println("SENT from UPLOADF - READY: " + response);
 
 											e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+											System.out.println("RECEIVED: " + e);
 											while (e.getMessage().compareTo("CHUNK")==0) {
 												if(e.getObjContents().get(0) != null){
 													if(e.getObjContents().get(1) != null){
 														if(e.getObjContents().get(2) != null){
 															int seqchunk = (Integer)e.getObjContents().get(2);
-				    										if(seqchunk == sequenceNumber + 1){
-				    											fos.write(((byte[])e.getObjContents().get(0)));
-				    											sequenceNumber += 2;
+															if(seqchunk == sequenceNumber + 1){
+																fos.write(((byte[])e.getObjContents().get(0)));
+																sequenceNumber += 2;
 																response = new Envelope("READY"); //Success
 																response.addObject(sequenceNumber);
 																output.writeObject(Envelope.buildSuper(response, sessionKey));
 																System.out.println("SENT from UPLOADF - READYCHUNK: " + response);
 																e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-				    										}
+																System.out.println("RECEIVED: " + e);
+															}
 														}
 													}
 												}
