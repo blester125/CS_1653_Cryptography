@@ -462,107 +462,134 @@ public class FileThread extends Thread
 						}
 						else if(e.getObjContents().get(1) == null) {
 							response = new Envelope("FAIL-BADTOKEN");
-						}
+						} 
+						else if(e.getObjContents().get(2) == null) {
+							response = new Envelope("FAIL-BADSEQNUM");
+						} 
 						else if (verifyToken(t)) {
-							ShareFile sf = FileServer.fileList.getFile("/"+remotePath);
 
-							if (sf == null) 
-							{
-								System.out.printf("Error: File %s doesn't exist\n", remotePath);
-								response = new Envelope("ERROR_FILEMISSING");
-								System.out.println("SENT from DOWNLOADF - ERROR_FILEMISSING: " + e);
+							int tempseq = (Integer)e.getObjContents().get(2);
+				    		if(tempseq == sequenceNumber + 1){
 
-							}	
-							else if (!t.getGroups().contains(sf.getGroup()))
-							{
-								System.out.printf("Error user %s doesn't have permission\n", t.getSubject());
-								response = new Envelope("ERROR_PERMISSION");
-								System.out.println("SENT from DOWNLOADF - ERROR_PERMISSION: " + response);
-							}
-							else {
+								ShareFile sf = FileServer.fileList.getFile("/"+remotePath);
 
-								try
+								if (sf == null) 
 								{
-									File f = new File("shared_files/_"+remotePath.replace('/', '_'));
-									if (!f.exists()) 
+									System.out.printf("Error: File %s doesn't exist\n", remotePath);
+									response = new Envelope("ERROR_FILEMISSING");
+									System.out.println("SENT from DOWNLOADF - ERROR_FILEMISSING: " + e);
+
+								}	
+								else if (!t.getGroups().contains(sf.getGroup()))
+								{
+									System.out.printf("Error user %s doesn't have permission\n", t.getSubject());
+									response = new Envelope("ERROR_PERMISSION");
+									System.out.println("SENT from DOWNLOADF - ERROR_PERMISSION: " + response);
+								}
+								else {
+
+									try
 									{
-										System.out.printf("Error file %s missing from disk\n", "_"+remotePath.replace('/', '_'));
-										response = new Envelope("ERROR_NOTONDISK");
-										System.out.println("SENT from DOWNLOADF - ERROR_NOTONDISK: " + response);
-									}
-									else 
-									{
-										FileInputStream fis = new FileInputStream(f);
-										boolean sentMetadata = false;
-										do {
-											byte[] buf = new byte[4096];
-											if (e.getMessage().compareTo("DOWNLOADF")!=0) 
-											{
-												System.out.printf("Server error: %s\n", e.getMessage());
-												break;
-											}
-											response = new Envelope("CHUNK");
-											int n = fis.read(buf); //can throw an IOException
-											if (n > 0) 
-											{
-												System.out.printf(".");
-											} 
-											else if (n < 0) 
-											{
-												System.out.println("Read error");
-												sendFail(response, output);
-											}
-
-											response.addObject(buf);
-											response.addObject(new Integer(n));
-											// send meta-data along with the first chunk of the file
-											if(!sentMetadata) {
-												response.addObject(new Integer(sf.getKeyIndex()));
-												response.addObject(new Integer(sf.getKeyVersion()));
-												response.addObject(sf.getIv());
-												response.addObject(sf.getLength());
-												sentMetadata = true;
-											}
-
-											output.writeObject(Envelope.buildSuper(response, sessionKey));
-											System.out.println("SENT from DOWNLOADF: " + response);
-
-											e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-										}
-										while (fis.available()>0);
-
-										//If server indicates success, return the member list
-										if(e != null && e.getMessage().compareTo("DOWNLOADF")==0 && isSecureConnection  && isAuthenticated)
+										File f = new File("shared_files/_"+remotePath.replace('/', '_'));
+										if (!f.exists()) 
 										{
+											System.out.printf("Error file %s missing from disk\n", "_"+remotePath.replace('/', '_'));
+											response = new Envelope("ERROR_NOTONDISK");
+											System.out.println("SENT from DOWNLOADF - ERROR_NOTONDISK: " + response);
+										}
+										else 
+										{
+											FileInputStream fis = new FileInputStream(f);
+											boolean sentMetadata = false;
+											do {
+												byte[] buf = new byte[4096];
+												if (e.getMessage().compareTo("DOWNLOADF")!=0) 
+												{
+													System.out.printf("Server error: %s\n", e.getMessage());
+													break;
+												}
+												response = new Envelope("CHUNK");
+												int n = fis.read(buf); //can throw an IOException
+												if (n > 0) 
+												{
+													System.out.printf(".");
+												} 
+												else if (n < 0) 
+												{
+													System.out.println("Read error");
+													sendFail(response, output);
+												}
 
-											response = new Envelope("EOF");
-											output.writeObject(Envelope.buildSuper(response, sessionKey));
-											System.out.println("SENT from DOWNLOADF - EOF: " + response);
+												sequenceNumber += 2;
+												response.addObject(buf);
+												response.addObject(new Integer(n));
+												// send meta-data along with the first chunk of the file
+												if(!sentMetadata) {
+													response.addObject(new Integer(sf.getKeyIndex()));
+													response.addObject(new Integer(sf.getKeyVersion()));
+													response.addObject(sf.getIv());
+													response.addObject(sf.getLength());
+													sentMetadata = true;
+												}
+												response.addObject(sequenceNumber);
 
-											e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-											if(e.getMessage().compareTo("OK")==0) {
-												System.out.printf("File data download successful\n");
-												dSuccessFlag = 1;
+												output.writeObject(Envelope.buildSuper(response, sessionKey));
+												System.out.println("SENT from DOWNLOADF: " + response);
+
+												e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+
+												if(e.getObjContents().get(0) != null){
+													int chunkSeq = (Integer)e.getObjContents().get(0);
+													if(chunkSeq != sequenceNumber + 1){
+														System.out.println("Error: seq num mismatch");
+														break;
+													}
+												} else {
+													break;
+												}			
+											}
+											while (fis.available()>0);
+
+											//If server indicates success, return the member list
+											if(e != null && e.getMessage().compareTo("DOWNLOADF")==0 && isSecureConnection  && isAuthenticated)
+											{
+												sequenceNumber += 2;
+												response = new Envelope("EOF");
+												response.addObject(sequenceNumber);
+												output.writeObject(Envelope.buildSuper(response, sessionKey));
+												System.out.println("SENT from DOWNLOADF - EOF: " + response);
+
+												e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+												if(e.getMessage().compareTo("OK")==0) {
+													if(e.getObjContents().get(0) != null){
+														int eofseq = (Integer)e.getObjContents().get(0);
+														if(eofseq == sequenceNumber + 1){
+															System.out.printf("File data download successful\n");
+															dSuccessFlag = 1;
+															sequenceNumber += 2;
+														}
+													}
+												}
+												else {
+													System.out.printf("Upload failed: %s\n", e.getMessage());
+													sendFail(response, output);
+												}
 											}
 											else {
+
 												System.out.printf("Upload failed: %s\n", e.getMessage());
 												sendFail(response, output);
 											}
-										}
-										else {
 
-											System.out.printf("Upload failed: %s\n", e.getMessage());
-											sendFail(response, output);
+											fis.close();
 										}
-
-										fis.close();
 									}
-								}
-								catch(Exception e1)
-								{
-									System.err.println("Error: " + e.getMessage());
-									e1.printStackTrace(System.err);
-									sendFail(response, output);
+									catch(Exception e1)
+									{
+										System.err.println("Error: " + e.getMessage());
+										e1.printStackTrace(System.err);
+										sendFail(response, output);
+									}
 								}
 							}
 						}
@@ -587,6 +614,9 @@ public class FileThread extends Thread
 					else if(e.getObjContents().get(1) == null){
 						response = new Envelope("FAIL-BADTOKEN");
 					}
+					else if(e.getObjContents().get(2) == null){
+						response = new Envelope("FAIL-BADSEQNUM");
+					}
 					else if (verifyToken(t)) {
 						ShareFile sf = FileServer.fileList.getFile("/"+remotePath);
 						if (sf == null) {
@@ -599,29 +629,35 @@ public class FileThread extends Thread
 						}
 						else {
 
-							try
-							{
-								File f = new File("shared_files/"+"_"+remotePath.replace('/', '_'));
+							int tempseq = (Integer)e.getObjContents().get(2);
+							if(tempseq == sequenceNumber + 1){
 
-								if (!f.exists()) {
-									System.out.printf("Error file %s missing from disk\n", "_"+remotePath.replace('/', '_'));
-									e = new Envelope("ERROR_FILEMISSING");
+								try
+								{
+									File f = new File("shared_files/"+"_"+remotePath.replace('/', '_'));
+
+									if (!f.exists()) {
+										System.out.printf("Error file %s missing from disk\n", "_"+remotePath.replace('/', '_'));
+										e = new Envelope("ERROR_FILEMISSING");
+									}
+									else if (f.delete()) {
+										System.out.printf("File %s deleted from disk\n", "_"+remotePath.replace('/', '_'));
+										FileServer.fileList.removeFile("/"+remotePath);
+										sequenceNumber += 2;
+										e = new Envelope("OK");
+										e.addObject(sequenceNumber);
+									}
+									else {
+										System.out.printf("Error deleting file %s from disk\n", "_"+remotePath.replace('/', '_'));
+										e = new Envelope("ERROR_DELETE");
+									}
 								}
-								else if (f.delete()) {
-									System.out.printf("File %s deleted from disk\n", "_"+remotePath.replace('/', '_'));
-									FileServer.fileList.removeFile("/"+remotePath);
-									e = new Envelope("OK");
+								catch(Exception e1)
+								{
+									System.err.println("Error: " + e1.getMessage());
+									e1.printStackTrace(System.err);
+									e = new Envelope(e1.getMessage());
 								}
-								else {
-									System.out.printf("Error deleting file %s from disk\n", "_"+remotePath.replace('/', '_'));
-									e = new Envelope("ERROR_DELETE");
-								}
-							}
-							catch(Exception e1)
-							{
-								System.err.println("Error: " + e1.getMessage());
-								e1.printStackTrace(System.err);
-								e = new Envelope(e1.getMessage());
 							}
 						}
 					}

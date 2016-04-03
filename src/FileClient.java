@@ -489,6 +489,7 @@ public class FileClient extends Client implements FileClientInterface {
 				Envelope env = new Envelope("DOWNLOADF"); //Success
 				env.addObject(sourceFile);
 				env.addObject(token);
+				env.addObject(sequenceNumber);
 	
 				//build nested envelope, encrypt, and send
 				Envelope superEnv = Envelope.buildSuper(env, sessionKey);
@@ -497,7 +498,7 @@ public class FileClient extends Client implements FileClientInterface {
 				//receive, extract, and decrypt inner envelope
 				env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
 				// process meta-data for file and initialize decryption
-				if(env.getObjContents().size() == 6) {
+				if(env.getObjContents().size() == 7) {
 					if(env.getObjContents().get(0) == null) {
 						System.err.println("Error: null text");
 					}
@@ -516,62 +517,80 @@ public class FileClient extends Client implements FileClientInterface {
 					else if(env.getObjContents().get(5) == null) {
 						System.err.println("Error: null file length");
 					}
+					else if(env.getObjContents().get(6) == null) {
+						System.err.println("Error: null seq num");
+					}
 				}
 				else {
 					System.err.println("Error: invalid number of object contents");
 				}
 				
-				// retrieve file meta-data
-				int keyIndex = (Integer)env.getObjContents().get(2);
-				int keyVersion = (Integer)env.getObjContents().get(3);
-				IvParameterSpec iv = new IvParameterSpec((byte[])env.getObjContents().get(4));
-				long fileLength = (Long)env.getObjContents().get(5);
-				Key key = groupMetadata.calculateKey(keyIndex, keyVersion);
-				Cipher AESCipherDecrypt = CipherBox.initializeDecryptCipher(key, iv);
-				while (env.getMessage().compareTo("CHUNK")==0) {
-					try {
-						// decrypt chunk and write to local file
-						byte[] buf = (byte[])env.getObjContents().get(0);
-						byte[] decryptedBuf = AESCipherDecrypt.update(buf);
-						if(fileLength - decryptedBuf.length >= 0) {
-							fos.write(decryptedBuf, 0, decryptedBuf.length);
-							fileLength = fileLength - decryptedBuf.length;
+				Integer firstChunkSeq = (Integer)env.getObjContents().get(6);
+				if(firstChunkSeq == sequenceNumber + 1){
+					// retrieve file meta-data
+					int keyIndex = (Integer)env.getObjContents().get(2);
+					int keyVersion = (Integer)env.getObjContents().get(3);
+					IvParameterSpec iv = new IvParameterSpec((byte[])env.getObjContents().get(4));
+					long fileLength = (Long)env.getObjContents().get(5);
+					Key key = groupMetadata.calculateKey(keyIndex, keyVersion);
+					Cipher AESCipherDecrypt = CipherBox.initializeDecryptCipher(key, iv);
+					while (env.getMessage().compareTo("CHUNK")==0) {
+						try {
+							// decrypt chunk and write to local file
+							byte[] buf = (byte[])env.getObjContents().get(0);
+							byte[] decryptedBuf = AESCipherDecrypt.update(buf);
+							if(fileLength - decryptedBuf.length >= 0) {
+								fos.write(decryptedBuf, 0, decryptedBuf.length);
+								fileLength = fileLength - decryptedBuf.length;
+							}
+							else {
+								fos.write(decryptedBuf, 0, (int)fileLength);
+								fileLength = 0;
+							}
+							System.out.printf(".");
+						} catch (Exception e) {
+							e.printStackTrace();
+							fos.close();
+							return false;
 						}
-						else {
-							fos.write(decryptedBuf, 0, (int)fileLength);
-							fileLength = 0;
-						}
-						System.out.printf(".");
-					} catch (Exception e) {
-						e.printStackTrace();
-						fos.close();
-						return false;
+						
+						sequenceNumber += 2;
+						env = new Envelope("DOWNLOADF"); //Success
+						env.addObject(sequenceNumber);
+						output.writeObject(Envelope.buildSuper(env, sessionKey));
+						env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+
+						if(env.getObjContents().get(2) != null){
+							Integer chunkSeq = (Integer)env.getObjContents().get(2);
+							if(chunkSeq != sequenceNumber + 1){
+								System.err.println("Error: seq num mismatch");
+								return false;
+							}
+						} else {
+							return false;
+						}								
+					}										
+					
+								
+				    if(env.getMessage().compareTo("EOF")==0) {
+				    	if(env.getObjContents().get(0) != null){
+				    		Integer eofseq = (Integer)env.getObjContents().get(0);
+				    		if(eofseq == sequenceNumber + 1){
+				    			fos.close();
+								System.out.printf("\nTransfer successful file %s\n", sourceFile);
+								sequenceNumber += 2;
+								env = new Envelope("OK"); //Success
+								env.addObject(sequenceNumber);
+								output.writeObject(Envelope.buildSuper(env, sessionKey));
+				    		}
+				    	}
+				    }
+					else {
+							System.out.printf("Error reading file %s (%s)\n", sourceFile, env.getMessage());
+							file.delete();
+							fos.close();
+							return false;								
 					}
-	
-					env = new Envelope("DOWNLOADF"); //Success
-					output.writeObject(Envelope.buildSuper(env, sessionKey));
-					env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);									
-				}										
-				
-							
-			    if(env.getMessage().compareTo("EOF")==0) {
-			    	// decrypt final padding block
-			    	/*try {
-			    		byte[] paddingBlock = AESCipherDecrypt.doFinal();
-			    		fos.write(paddingBlock, 0, (int)fileLength);
-			    	} catch(Exception e) {
-			    		e.printStackTrace();
-			    	}*/
-					fos.close();
-					System.out.printf("\nTransfer successful file %s\n", sourceFile);
-					env = new Envelope("OK"); //Success
-					output.writeObject(Envelope.buildSuper(env, sessionKey));
-			    }
-				else {
-						System.out.printf("Error reading file %s (%s)\n", sourceFile, env.getMessage());
-						file.delete();
-						fos.close();
-						return false;								
 				}
 			    fos.close();
 		    }    
@@ -606,6 +625,7 @@ public class FileClient extends Client implements FileClientInterface {
 		Envelope env = new Envelope("DELETEF"); //Success
 		env.addObject(remotePath);
 		env.addObject(token);
+		env.addObject(sequenceNumber);
 
 		try {
 
@@ -617,8 +637,13 @@ public class FileClient extends Client implements FileClientInterface {
 			env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
 		   
 			if (env.getMessage().compareTo("OK")==0) {
-
-				System.out.printf("File %s deleted successfully\n", filename);				
+				if(env.getObjContents().get(0) != null) {
+					Integer tempseq = (Integer)env.getObjContents().get(0);
+					if(tempseq == sequenceNumber + 1){
+						System.out.printf("File %s deleted successfully\n", filename);
+						sequenceNumber += 2;
+					}
+				}				
 			}
 			else {
 
