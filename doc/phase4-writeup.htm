@@ -36,8 +36,9 @@ Carmen Condeluci, crc73@pitt.edu <br>
       <h2>Overview</h2>
 <!-- BEGIN CHANGES HERE -->
 
-<p>In this section, broadly overview the types of cryptographic techniques that
-your group has decided to use to address threats T5–T7.</p>
+<p>
+In this phase of the project we used to Signed Diffie-Hellman, Hashing, Leslie Lamport's one-time password scheme using hash chains, keyed-hash message authentication codes (HMAC'S), Public Key cryptography, Symmetric key cryptography with block chaining, and Time based One-time Passwords (TOTP) to defend against the original passive attackers and the new active attackers. 
+</p>
 
 <!-- END CHANGES HERE -->
     </section>
@@ -67,54 +68,77 @@ argue that both parties agree on the same key (correctnes) and that no other
 party can figure out the key (security).</p> -->
 <h3>Manifestation of the threat</h3>
 <p>
-Threat 5 is the threat of Message Reorder, Replay, or Modification by an attacker on the system. 
-<h4>Sub-threat: Man In The Middle</h4>
-<p>
-These kind of attacks often manifest as a Man in the Middle attack where each of the non malicious entities believe they are talking to each other when really they are talking to the Man in the Middle. This can lead to them disclosing sensitive information to the attacker. This threat could easily be realized in our current implementation. For example, during user authentication the user preforms Diffie-Hellman key exchange with the groupserver to create a shared secret <b>k</b>. The user then sends their username and password encrypted with <b>k</b>. The problem is what if the user is not talking to the groupserver? The user would then establish a shared key <b>k'</b> with the attacker (because the g and q in Diffie-Hellman are public knowledge an attacker could easily implement a Diffie-Hellman protocol that would work with ours). The user then sends their username and password encrypted with <b>k'</b>. This means that the attack now has the users username and password and could log on to the server as the user.
-</p>
-<h4>Sub-threat: Message Recording</h4>
+Threat 5 is the threat of Message Reorder, Replay, or Modification by an attacker on the system. The first step to defend against this is to encrypt all of our messages so that the attacker does not know what they are doing of they are changing or replaying a message. This was already happening in our system to prevent passive monitoring. However this is not the end all be all of defensives, it has several problems outlined below. 
+<h4>Sub-threat: Message Reordering</h4>
 <p>
 In the case of reordering attacks this could manifest as the attacker sending the wrong message to try to mess with the system hoping to cause an error when the system is presented with unexpected input. This would be prevalent if the attackers were to send the later messages in our handshake protocol to try to get the server to an authenticated state without actually authenticating with it.
 </p>
 <h4>Sub-threat: Message Replay</h4>
 <p>
-Replay attacks can also be used to try to game the system with out know what the messages say. For example if the attacker is recording messages and sees a small encrypted message followed by a large message going from the client to the fileserver they might guess that this is a message that deletes a file from the server and then reuploads the file with the large message. So if the attack were to resend the small message they would be able to delete the file off the system.
+Replay attacks can also be used to try to game the system even with out know what the messages say. For example if the attacker is recording messages and sees a small encrypted message followed by a large message going from the client to the fileserver they might guess that the small one is a message that deletes a file from the server and then the user reuploads the file with the large message. So if the attack were to resend the small message they would be able to delete the file off the system.
 </p>
 <h4>Sub-threat: Message Modification</h4>
 <p>
-The Attacker could also mess with the system by modifying the messages that are send. Even though the messages are encrypted with a shared secret key the attack can still change the messages, he just won't know what he is changing. For example if there is a larger message it is most likely a file upload so if the attacker changes the message at random (probably near the end because metadata and control messages are often at the front) he will corrupt the file. The lack of integrity checks in our current implementation makes this very possible.  
+The Attacker could also mess with the system by modifying the messages that are sent. Even though the messages are encrypted with a shared secret key the attacker can still change the messages, he just won't know what he is changing. For example if there is a larger message it is most likely a file upload so if the attacker changes the message at random (probably near the end because metadata and control messages are often at the front) he will corrupt the file. The lack of integrity checks in our current implementation makes this very possible.  
+</p>
+<h4>Sub-threat: Man In The Middle</h4>
+<p>
+These together these kind attacks often manifest as a Man in the Middle attack where each of the non malicious entities believe they are talking to each other when really they are talking to the Man in the Middle. This is especially possible in the initial phase of a authentication handshake before things are encrypted (because a shared secret was not set up yet). This can lead to the entities disclosing sensitive information to the attacker. This threat could easily be realized in our current implementation. For example, during user authentication the user preforms Diffie-Hellman key exchange with the groupserver to create a shared secret <b>k</b>. The user then sends their username and password encrypted with <b>k</b>. The problem is what if the user is not talking to the groupserver? The user would then establish a shared key <b>k'</b> with the attacker (because the g and q in Diffie-Hellman are public knowledge an attacker could easily implement a Diffie-Hellman protocol that would work with ours). The user then sends their username and password encrypted with <b>k'</b>. This means that the attack now has the users username and password and could log on to the server as the user. The attacker could even go as far as the establishing a shared key with server and then relaying and changing user messages to the server so the user believes that they are interacting with the server and doing things when really the messages sent by the attacker are the ones being carried out on the server.
 </p>
 
 <h3>Implementation to combat the threat</h3>
 <h4>Mechanism: Secure Authentication Protocols</h4> 
 <p>
-<b>Group Server Authentication</b><br>
-We stop this attack using public key cryptography and signed Diffie-Hellman key exchange. There are two communications that needs to be protected this way. The first is the communication between the groupserver and the client. When a user account is created it will be the ADMIN of the groupserver's responsibility to get the users public key that they will use to log into the system with. This public key will be stored in the User object on the groupserver. It will the User's responsibility to get the groupserver's public key when they are configuring their client application. This is similar to the way ssh works. Once each party has each others public keys they can use signed Diffie-Hellman to exchange a symmetric key. The fact that this Diffie-Hellman is signed authenticates the user and the groupserver to one another. The exchanged key is used to encrypt all further messages. <br><br>
+We stop this attacks using public key cryptography and signed Diffie-Hellman key exchange. There are two communications that needs to be protected this way.
+<br><b>Group Server Authentication</b><br>
+The first is the communication between the groupserver and the client. When a user account is created it will be the ADMIN of the groupserver's responsibility to get the users public key that they will use to log into the system with. This public key will be stored in the User object on the groupserver. It will be the User's responsibility to get the groupserver's public key when they are configuring their client application (this can be gotten from the ADMIN when they give the ADMIN their public key over the secure out of band communication channel they deserve). This is similar to the way ssh works. Once each party has each others public keys they can use signed Diffie-Hellman to exchange a symmetric key. The fact that this Diffie-Hellman is signed authenticates the user and the groupserver to one another. The exchanged key <b>k</b> is then used to generate two keys <b>k<sub>c</sub></b>, used for encryption and <b>k<sub>i</sub></b>which is used for integrity checks. The keys are generated by hashing (SHA-256) the key concatenated with "confidentiality" and "integrity" respectively. Once the key has been established the client and server check that the other one computed the key correctly. Without this step the first time that a party would find out the other had not created the key correctly would be a message that decrypts to junk. This is a long time to wait so we do this check now. The check is that the client will send a hash of the original key concatenated with their username. The client also picks a random number using java.security.SecureRandom. This will be used as the initial sequence number. This information is then sent over encrypted with <b>k<sub>c</sub></b> and with an HMAC keyed with <b>k<sub>i</sub></b>. The server verifies this hash and sends back the hash of the original key concatenated with the string "groupserver" and the initial sequence number plus one. The client then verifies this. If all this occurs then the two parties have authenticated each other.
+The protocol looks like so:<br><br>
 <img src="images/phase4-gsauthentication.png" class="image">
 <br><br><b>File Server Authentication</b><br>
-The second communication that needs to be protected is the communication between the user and the fileserver. There are too many fileservers to the client to be expected to know them all therefore the fileserver's public key must be exchanged. This is done by the user connecting to the fileserver and requesting the fileservers public key. This is then sent to the user who must verify it out of band like in SSH. Once the user has verified the key the user will send their key encrypted with the fileservers public key. This encryption will stop an attacker from modifying the user's public key. Once the public keys are exchanged then the user and the fileserver preform Diffie-Hellman to establish a shared key that is used to encrypt the rest of the messages between the targets.
+The second communication that needs to be protected is the communication between the user and the fileserver. There are too many fileservers to the client to be expected to know them all therefore the fileserver's public key must be exchanged. This is done by the user connecting to the fileserver and requesting the fileservers public key. This is then sent to the user who must verify it out of band like in SSH. A caching mechanism was implemented during the last phase to make this easier for users where the fileserver's public key is only displayed (in the form of a fingerprint) when there is a mismatch between the current entry for this server or if there is no entry for this server. Ease of use mechanisms like this are important to increase the psychological acceptability of the system. This is especially important for our application that places so much responsibility on the user with the things that must verification out of band. This request is always responded to by the fileserver with their public key and does not cause any state to be created on the fileserver so the user not accepting the key or something else goes wrong does not effect the availability of the server. Once the user has verified the key the user will send their public key to the server. Once the public keys are exchanged then the user and the fileserver preform signed Diffie-Hellman to establish a shared key. This key is then used to generate a confidentiality and integrity key like the handshake with the groupserver does. The confidentiality key <b>k<sub>c</sub></b> is used to encrypt all further messages. Once the key has been established the client and server check that the other one computed the key correctly. This check speeds up error detection like in the groupserver handshake. The check is that the server will send a hash of the original key concatenated with the string "fileserver". The server also picks a random number using java.security.SecureRandom. This will be used as the initial sequence number. This information is then sent over encrypted with <b>k<sub>c</sub></b> and with an HMAC keyed with <b>k<sub>i</sub></b>. The client verifies this hash and sends back the hash of the original key concatenated with the string "client" and the initial sequence number plus one. The server then verifies this. If all this occurs then the two parties have authenticated each other.
+
+The protocol looks like so:
 <br><br>
 <img src="images/phase4-fsauthentication.png" class="image">
 </p>
 <h4>Mechanism: HMAC for integrity checking</h4>
 <p>
-HMAC stuff
+To prevent message modification a keyed-hash message authentication code is used. When a message is encrypted with the key <b>k<sub>c</sub></b> the resulting ciphertext is then hashed using an HMAC that is based on SHA-256. The HMAC is keyed using <b>k<sub>i</sub></b>. When the other party received a message they verify the HMAC by computing their own version with the ciphertext. If the HMAC's match then the message was not modified in transit. The HMAC is computed using the ciphertext rather than the plaintext so that if the message is modified and therefore rendered useless it can be discarded without the expensive operation of decrypting it. 
 </p>
 <h4>Mechanism: Sequence Numbers</h4>
 <p>
-Sequence nUmber stuff.
+Both the client and the server keep track of sequence numbers that they expect to see in the next message. These numbers are set at random during the handshake and increase from there. When they receive a message they check if the revived sequence number is their number plus one and if it is they process the number and set their sequence number (which they will send in their next message) to the received number plus one. These numbers are only undated when things happen successfully so that failures in input do not desynchronize things. This sequence numbers stop old message that may have been recorded from being used on the system.
 </p>
 <h3>Correctness of mechanism</h3>
 <h4>Man in the Middle defense</h4>
+<p>
+<b>Group Server Handshake</b><br>
+This version of Diffie-Hellman is signed. This means that the person receiving the message knows that it came from the signer. A man in the middle cannot change the Diffie-Hellman message because they could not sign it like the real person can. This signing defeats man in the middle. This protocol also stops replay attacks because if an attacker records a message for example a recorded Diffie-Hellman public key when they send that to the server the server will chose a random number. This means that a new shared key will be chosen. Any other messages recorded by the attacker will be encrypted with the wrong key and therefore useless. In this protocol the initial sequence number was chosen only by the client. The ideal format would be that both parties contribute to the randomness of the initial sequence number but since the randomness of the number is not that important (the message is encrypted and has integrity checks so even if the sequence numbers are static an attacker could not insert their own sequence numbers) and the key has random contributions from both parties the client picking the initial sequence number is not a problem. 
+
+<br><b>File Server Handshake</b><br>
+This version of Diffie-Hellman is signed. This means that the person receiving the message knows that it came from the signer. A man in the middle cannot change the Diffie-Hellman message because they could not sign it like the real person can. This signing defeats man in the middle. This protocol defeats replay attacks the same way that the group protocol does. The key verification out of band is used to stop an attacker from swapping their key with the server's key. If they managed to do this then the user could assume that the signed message is from the server but it is really signed with the attackers private key. This cannot happen because the user verifies the key out of band so they always verify that the keys are correct. In this protocol the user public key is unneeded. The client doesn't need to authenticate itself with the fileserver because the token is the only thing the fileserver checks. However we included this so that the protocol is very similar to the groupserver authentication protocol. In this protocol the initial sequence number was chosen only by the server. The ideal format would be that both parties contribute to the randomness of the initial sequence number but since the randomness of the number is not that important (the message is encrypted and has integrity checks so even if the sequence numbers are static an attacker could not insert their own sequence numbers) and the key has random contributions from both parties the server picking the initial sequence number is not a problem.
+</p>
+<h4>Key derivation</h4>
+<p>
+Our Key verification is safe. It is modeled on the way that SSH expands keys. The main reason that this is safe is a property of hash functions. As stated in the notes a cryptographically useful hash means that "[g]iven two messages m and m’ that are very closely related, H(m) and H(m’) should appear completely uncorrelated." This means that when we have two closely related messages, i.e. Key + "confidentiality" and Key + "integrity" the resulting keys are unrelated. This means that the keys are safe to use and an attacker learning one will not give him information about the other. The attacker cannot recover the original key either due the the hashes preimage resistance. If the attacker could get the original key they could calculate the other key. The fact the hashes are cryptographically secure mean that this form of key derivation is safe.
+</p>  
 <h4>Replay defense</h4>
+<p>
+The sequence numbers are proficient it address the threat of the a replay attack. If an attacker records and resends a message then the sequence number will be wrong. A wrong sequence number stops any action from being taken. The sequence number cannot be changed by the attacker because the HMAC prevents modification. The sequence number is enough to stop replay attacks within the same session.
+<br>
+The session keys defend against replay attacks across sessions. Each time there is a new connection a new key is created via Diffie-Hellman. This means the encryption and integrity keys are different between the connections. This means a recorded message that is sent later it will decrypt to junk because it was encrypted with a different key.
+<br>
+The handshakes also resist replay attacks.  
+</p>
 <h4>Reordering defense</h4>
+<p>
+The sequence numbers are also enough to repel reordering attacks. Like the replay attack if the messages are reordered then the sequence numbers will be wrong and the message discarded.
+</p>
 <h4>Modification defense</h4>
 <p>
 These defenses are sufficient to stop the threat. Signed Diffie-Hellman defeats the Man in the Middle attack because the g<sup>x</sup>mod q's are digitally signed. This means that while an attacker could un-sign the message but they could not modify it then resign it because they do not know the private key used to sign the message. This means that the message must be coming from the party that it is supposed to be coming from. 
 <br>
-The key verification out of band is used to stop an attacker from swapping their key with the server's key. If they managed to do this then the user could assume that the signed message is from the server but it is really signed with the attackers private key. This cannot happen because the user verifies the key out of band so they always verify that the keys are correct.
-<br>
-Having code that gracefully handles unexpected input means that unexpected crashes will not occur that could compromise system integrity.
+
 </p>  
 
 
@@ -159,7 +183,7 @@ provided with the most recent key, from which, they can calculate the old keys t
 The problem arises that a group must begin with a key that is hashed a finite number of times, where that key
 evolves by decreasing the number of times the root key is hashed until it reaches zero and
 the root key itself will become the most recent key. In order to maintain file security
-as a group evolves after this point is reached, a new root key must be established, begining the process
+as a group evolves after this point is reached, a new root key must be established, beginning the process
 once more. Now, a list of keys must be maintained by the group server and passed off to authorized group members.
 The list being all past root keys and the current key. From this, a group member will have access to all of the group's
 files and be able to upload new files that other members of the group can decrypt. The meta-data for a file
@@ -304,7 +328,7 @@ modified in an attempt to attack these new restrictions.
       <h2>Discussion</h2>
 <!-- BEGIN CHANGES HERE -->
 
-<p>Conclude with a paragraph or two discussing the interplay between your
+<p><h1>TODO:</h1>Conclude with a paragraph or two discussing the interplay between your
 proposed mechanisms, and commenting on the design process that your group
 followed. Did you discuss other ideas that didn’t pan out before settling on the
 above-documented approach? Did you end up designing a really interesting
@@ -318,7 +342,7 @@ When users first log on they are authenticated using something that only they kn
 </p>
 <h4>Threat 2: Token Modification/Forgery</h4>
 <p>
-Tokens still include a signed hash of their contents (minus this hash) as one of their fields. Once a fileserver receives this token they can verify they token by comparing the hash of the token with the signed version. The fileserver has the groupserver's public key, this is a reasonable assumption because there is only one group server. Any modification to the token would result in the hashes mismatching and due to second preimage resistance it would be infeasible for the user to create a token that hashes to the same value. This means that any token that has its hashes match is unmodified. A user who creates a token would not be able to sign it with the groupserver's public key because that is a secret that only the groupserver knows. This means that the hashes will not match when the fileserver tries to unsign the signed hash with the group servers public key. This will cause the hashes to not match. Signing the token prevents a modified or forged token from being accepted.
+Tokens still include a signed hash of their contents (minus this hash) as one of their fields. Once a fileserver receives this token they can verify they token by comparing the hash of the token with the signed version. The fileserver has the groupserver's public key, this is a reasonable assumption because there is only one group server. Any modification to the token would result in the hashes mismatching and due to second preimage resistance it would be infeasible for the user to create a token that hashes to the same value. This means that any token that has its hashes match is unmodified. A user who creates a token would not be able to sign it with the groupserver's public key because that is a secret that only the groupserver knows. This means that the hashes will not match when the fileserver tries to verify the signed hash with the group servers public key. This will cause the hashes to not match. Signing the token prevents a modified or forged token from being accepted.
 <p>
 <h4>Threat 3: Unauthorized File Servers</h4>
 <p>
