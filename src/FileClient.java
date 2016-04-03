@@ -9,13 +9,16 @@
  *   Carmen Condeluci               *
  ************************************/
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.PublicKey;
@@ -550,11 +553,14 @@ public class FileClient extends Client implements FileClientInterface {
 							byte[] buf = (byte[])env.getObjContents().get(0);
 							byte[] decryptedBuf = AESCipherDecrypt.update(buf);
 							if(fileLength - decryptedBuf.length >= 0) {
-								fos.write(decryptedBuf, 0, decryptedBuf.length);
+								fos.write(decryptedBuf);
 								fileLength = fileLength - decryptedBuf.length;
 							}
 							else {
-								fos.write(decryptedBuf, 0, (int)fileLength);
+								fos.close();
+								fos = new FileOutputStream(file);
+								int offset = (int)file.length();
+								fos.write(decryptedBuf, offset, (int)fileLength);
 								fileLength = 0;
 							}
 							System.out.printf(".");

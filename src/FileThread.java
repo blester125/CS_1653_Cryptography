@@ -392,7 +392,7 @@ public class FileThread extends Thread
 														if(e.getObjContents().get(2) != null){
 															int seqchunk = (Integer)e.getObjContents().get(2);
 				    										if(seqchunk == sequenceNumber + 1){
-				    											fos.write(((byte[])e.getObjContents().get(0)), 0, (Integer)e.getObjContents().get(1));
+				    											fos.write(((byte[])e.getObjContents().get(0)));
 				    											sequenceNumber += 2;
 																response = new Envelope("READY"); //Success
 																response.addObject(sequenceNumber);
