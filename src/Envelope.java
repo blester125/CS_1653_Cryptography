@@ -1,3 +1,14 @@
+/************************************
+ * CS 1653 Term Project at the      *
+ * University of Pittsburgh         *
+ * Taught by Bill Garrison          *
+ * Spring 2016                      *
+ * By:                              *
+ *   Brian Lester                   *
+ *   Ryan Conley                    *
+ *   Carmen Condeluci               *
+ ************************************/
+
 import java.security.Key;
 import java.security.Security;
 import java.util.ArrayList;
@@ -11,9 +22,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class Envelope implements java.io.Serializable {
 	
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = -7726335089122193103L;
 	private String msg;
 	private ArrayList<Object> objContents = new ArrayList<Object>();

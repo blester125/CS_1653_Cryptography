@@ -1,13 +1,13 @@
-/* Group server. Server loads the users from UserList.bin.
- * If user list does not exists, it creates a new list and makes the user the server administrator.
- * On exit, the server saves the user list to file.
- */
-
-/*
- * TODO: This file will need to be modified to save state related to
- *       groups that are created in the system
- *
- */
+/************************************
+ * CS 1653 Term Project at the      *
+ * University of Pittsburgh         *
+ * Taught by Bill Garrison          *
+ * Spring 2016                      *
+ * By:                              *
+ *   Brian Lester                   *
+ *   Ryan Conley                    *
+ *   Carmen Condeluci               *
+ ************************************/
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -30,6 +30,11 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Scanner;
 
+/* Group server. Server loads the users from UserList.bin.
+ * If user list does not exists, it creates a new list and 
+ * makes the user the server administrator.
+ * On exit, the server saves the user list to file.
+ */
 public class GroupServer extends Server {
 
 	public static final int SERVER_PORT = 8765;

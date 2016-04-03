@@ -1,6 +1,14 @@
-/* This thread does all the work. It communicates with the client through Envelopes.
- * 
- */
+/************************************
+ * CS 1653 Term Project at the      *
+ * University of Pittsburgh         *
+ * Taught by Bill Garrison          *
+ * Spring 2016                      *
+ * By:                              *
+ *   Brian Lester                   *
+ *   Ryan Conley                    *
+ *   Carmen Condeluci               *
+ ************************************/
+
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
@@ -13,6 +21,9 @@ import javax.crypto.KeyAgreement;
 import javax.crypto.SealedObject;
 import javax.crypto.SecretKey;
 
+/* This thread does all the work. 
+ * It communicates with the client through Envelopes. 
+ */
 public class GroupThread extends Thread 
 {
 	private final Socket socket;

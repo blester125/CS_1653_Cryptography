@@ -1,4 +1,13 @@
-/* File worker thread handles the business of uploading, downloading, and removing files for clients with valid tokens */
+/************************************
+ * CS 1653 Term Project at the      *
+ * University of Pittsburgh         *
+ * Taught by Bill Garrison          *
+ * Spring 2016                      *
+ * By:                              *
+ *   Brian Lester                   *
+ *   Ryan Conley                    *
+ *   Carmen Condeluci               *
+ ************************************/
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -19,6 +28,9 @@ import javax.crypto.KeyAgreement;
 import javax.crypto.SealedObject;
 import javax.crypto.SecretKey;
 
+/* File worker thread handles the business of 
+   uploading, downloading, and removing files 
+   for clients with valid tokens */
 public class FileThread extends Thread
 {
 	private final Socket socket;

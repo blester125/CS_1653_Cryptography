@@ -1,3 +1,14 @@
+/************************************
+ * CS 1653 Term Project at the      *
+ * University of Pittsburgh         *
+ * Taught by Bill Garrison          *
+ * Spring 2016                      *
+ * By:                              *
+ *   Brian Lester                   *
+ *   Ryan Conley                    *
+ *   Carmen Condeluci               *
+ ************************************/
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.security.InvalidAlgorithmParameterException;
@@ -10,8 +21,6 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.SealedObject;
 import javax.crypto.spec.IvParameterSpec;
-
-//import sun.misc.BASE64Encoder;
 
 import org.apache.commons.codec.binary.Base64;
 

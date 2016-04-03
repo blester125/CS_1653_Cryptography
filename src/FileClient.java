@@ -1,4 +1,13 @@
-/* FileClient provides all the client functionality regarding the file server */
+/************************************
+ * CS 1653 Term Project at the      *
+ * University of Pittsburgh         *
+ * Taught by Bill Garrison          *
+ * Spring 2016                      *
+ * By:                              *
+ *   Brian Lester                   *
+ *   Ryan Conley                    *
+ *   Carmen Condeluci               *
+ ************************************/
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -18,6 +27,7 @@ import javax.crypto.SealedObject;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
+/* FileClient provides all the client functionality regarding the file server */
 public class FileClient extends Client implements FileClientInterface {
 	private SecretKey sessionKey;
 	private String fileserverRegistry = "FileServerRegistry.bin";

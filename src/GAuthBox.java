@@ -1,3 +1,14 @@
+/************************************
+ * CS 1653 Term Project at the      *
+ * University of Pittsburgh         *
+ * Taught by Bill Garrison          *
+ * Spring 2016                      *
+ * By:                              *
+ *   Brian Lester                   *
+ *   Ryan Conley                    *
+ *   Carmen Condeluci               *
+ ************************************/
+
 import java.util.Random;
 import java.util.*;
 import java.io.*;
@@ -10,9 +21,6 @@ import org.apache.commons.codec.binary.Base32;
 public class GAuthBox {
 
 	public static void main(String main[]) throws Exception {
-		//System.out.println("Use this key with Google Authenticator.");
-		//String key = generateKey();
-		//System.out.println(key);
 		BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 		System.out.print("Enter you key: ");
 		String key = in.readLine();
@@ -78,7 +86,7 @@ public class GAuthBox {
 
 		int offset = hash[20 - 1] & 0xF;
 		
-		// We're using a long because Java hasn't got unsigned int.
+		// We're using a long because Java doesn't have an unsigned int.
 		long truncatedHash = 0;
 		for (int i = 0; i < 4; ++i) {
 			truncatedHash <<= 8;

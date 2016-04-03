@@ -1,7 +1,17 @@
-/* Driver program for FileSharing File Server */
+/************************************
+ * CS 1653 Term Project at the      *
+ * University of Pittsburgh         *
+ * Taught by Bill Garrison          *
+ * Spring 2016                      *
+ * By:                              *
+ *   Brian Lester                   *
+ *   Ryan Conley                    *
+ *   Carmen Condeluci               *
+ ************************************/
+
 import java.lang.reflect.Field;
 import java.security.*;
-
+/* Driver program for FileSharing File Server */
 public class RunFileServer {
 	
 	public static void main(String[] args) {

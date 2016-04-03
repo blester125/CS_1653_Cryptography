@@ -1,4 +1,13 @@
-/* FileServer loads files from FileList.bin.  Stores files in shared_files directory. */
+/************************************
+ * CS 1653 Term Project at the      *
+ * University of Pittsburgh         *
+ * Taught by Bill Garrison          *
+ * Spring 2016                      *
+ * By:                              *
+ *   Brian Lester                   *
+ *   Ryan Conley                    *
+ *   Carmen Condeluci               *
+ ************************************/
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -22,6 +31,8 @@ import java.security.spec.X509EncodedKeySpec;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
+/* FileServer loads files from FileList.bin.  
+   Stores files in shared_files directory. */
 public class FileServer extends Server {
 	
 	public static final int SERVER_PORT = 4321;

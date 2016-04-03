@@ -1,9 +1,18 @@
-/* T
- * his list represents the files on the server */
+/************************************
+ * CS 1653 Term Project at the      *
+ * University of Pittsburgh         *
+ * Taught by Bill Garrison          *
+ * Spring 2016                      *
+ * By:                              *
+ *   Brian Lester                   *
+ *   Ryan Conley                    *
+ *   Carmen Condeluci               *
+ ************************************/
+
 import java.util.ArrayList;
 import java.util.Collections;
 
-
+	/* This list represents the files on the server */
 	public class FileList implements java.io.Serializable {
 		
 	/*Serializable so it can be stored in a file for persistence */

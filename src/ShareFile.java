@@ -1,9 +1,15 @@
-
+/************************************
+ * CS 1653 Term Project at the      *
+ * University of Pittsburgh         *
+ * Taught by Bill Garrison          *
+ * Spring 2016                      *
+ * By:                              *
+ *   Brian Lester                   *
+ *   Ryan Conley                    *
+ *   Carmen Condeluci               *
+ ************************************/
 public class ShareFile implements java.io.Serializable, Comparable<ShareFile> {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = -6699986336399821598L;
 	private String group;
 	private String path;

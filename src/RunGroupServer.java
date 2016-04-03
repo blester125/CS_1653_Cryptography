@@ -1,8 +1,17 @@
-/* Driver program for FileSharing Group Server */
+/************************************
+ * CS 1653 Term Project at the      *
+ * University of Pittsburgh         *
+ * Taught by Bill Garrison          *
+ * Spring 2016                      *
+ * By:                              *
+ *   Brian Lester                   *
+ *   Ryan Conley                    *
+ *   Carmen Condeluci               *
+ ************************************/
 import java.security.*;
 import java.lang.reflect.Field;
 
-
+/* Driver program for FileSharing Group Server */
 public class RunGroupServer {
 	
 	public static void main(String[] args) {

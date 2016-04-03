@@ -1,10 +1,21 @@
+/************************************
+ * CS 1653 Term Project at the      *
+ * University of Pittsburgh         *
+ * Taught by Bill Garrison          *
+ * Spring 2016                      *
+ * By:                              *
+ *   Brian Lester                   *
+ *   Ryan Conley                    *
+ *   Carmen Condeluci               *
+ ************************************/
+
 import java.net.Socket;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 public abstract class Client {
 
-	/* protected keyword is like private but subclasses have access
+	/* 
 	 * Socket and input/output streams
 	 */
 	protected Socket sock;

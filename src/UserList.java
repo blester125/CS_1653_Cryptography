@@ -1,4 +1,14 @@
-/* This list represents the users on the server */
+/************************************
+ * CS 1653 Term Project at the      *
+ * University of Pittsburgh         *
+ * Taught by Bill Garrison          *
+ * Spring 2016                      *
+ * By:                              *
+ *   Brian Lester                   *
+ *   Ryan Conley                    *
+ *   Carmen Condeluci               *
+ ************************************/
+
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.PublicKey;
@@ -6,11 +16,9 @@ import javax.crypto.SecretKey;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
+/* This list represents the users on the server */
 public class UserList implements java.io.Serializable {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 7600343803563417992L;
 	private Hashtable<String, User> list = new Hashtable<String, User>();
 	
