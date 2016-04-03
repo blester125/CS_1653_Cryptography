@@ -289,7 +289,7 @@ public class FileThread extends Thread
 				    	{
 						System.out.println("Expecting seqNum: " sequenceNumber + 1);	
 				    		int tempseq = (Integer)e.getObjContents().get(2);
-						System.out.println("Got: " tempseq);
+						System.out.println("Got: " + tempseq);
 				    		if(tempseq == sequenceNumber + 1){
 							System.out.println("Sequence number is OK");
 					    		response = new Envelope("FAIL");
