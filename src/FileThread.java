@@ -266,6 +266,7 @@ public class FileThread extends Thread
 				}
 				if(e.getMessage().equals("LFILESG") && isSecureConnection && isAuthenticated) //List only files in specified group
 				{
+				System.out.println(e);
 				    //Do error handling
 				    if(e.getObjContents()== null || e.getObjContents().size() < 1) 
 				    {
