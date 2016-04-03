@@ -288,14 +288,17 @@ public class FileThread extends Thread
 				    	{	
 				    		int tempseq = (Integer)e.getObjContents().get(2);
 				    		if(tempseq == sequenceNumber + 1){
+							System.out.println("Sequence number is OK");
 					    		response = new Envelope("FAIL");
 					    		//Prepare output list of file names and retrieve the token from the envelope
 							    ArrayList<String> finalFiles = new ArrayList<String>();
 							    ArrayList<ShareFile> filteredFiles = new ArrayList<ShareFile>();
 							    String groupName = (String)e.getObjContents().get(0);
 							    if (!groupName.equals("")) {
+								    System.out.println("Group Name is not \"\"");
 								    UserToken tok = (UserToken)e.getObjContents().get(1);
 								    if (verifyToken(tok)) {
+									System.out.println("TOKEN is verified");
 
 									    //Get all files from the FileServer
 									    ArrayList<ShareFile> all = FileServer.fileList.getFiles();
@@ -319,6 +322,7 @@ public class FileThread extends Thread
 								  
 							    		//form response, write it
 							    		sequenceNumber += 2;
+									System.out.println("New SeqNum: " + sequenceNumber);
 							    		response = new Envelope("OK");
 							    		response.addObject(finalFiles);
 							    		response.addObject(sequenceNumber);

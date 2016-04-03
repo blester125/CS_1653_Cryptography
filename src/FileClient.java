@@ -264,6 +264,7 @@ public class FileClient extends Client implements FileClientInterface {
 															System.out.println(message5 + "\n");
 															Envelope superMessage5 = Envelope.buildSuper(message5, sessionKey);
 															output.writeObject(superMessage5);
+	sequenceNumber += 2;
 															System.out.println("Secure and Authenticated connection with File Server extablished.");
 															return sessionKey;
 														}  
@@ -294,10 +295,11 @@ public class FileClient extends Client implements FileClientInterface {
 			message = new Envelope("LFILES");
 			message.addObject(token); //Add requester's token
 			message.addObject(sequenceNumber); //add seqnum
+			System.out.println(message);
 			output.writeObject(Envelope.buildSuper(message, sessionKey)); 
 
 			e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-
+			System.out.println(e);
 			//If server indicates success, return the member list
 			if(e.getMessage().equals("OK")){
 				if(e.getObjContents().get(0) != null){
@@ -331,10 +333,10 @@ public class FileClient extends Client implements FileClientInterface {
 			message.addObject(groupName); // add groupname
 			message.addObject(token); //Add requester's token
 			message.addObject(sequenceNumber); //add seqnum
+			System.out.println(message);
 			output.writeObject(Envelope.buildSuper(message, sessionKey)); 
-
 			e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-
+			System.out.println(e);
 			//If server indicates success, return the member list
 			if(e.getMessage().equals("OK")){
 				if(e.getObjContents().get(0) != null){
@@ -375,11 +377,11 @@ public class FileClient extends Client implements FileClientInterface {
 			message.addObject(token); //Add requester's token
 			message.addObject(sequenceNumber);
 			output.writeObject(Envelope.buildSuper(message, sessionKey));
-
+			System.out.println(message);
 			FileInputStream fis = new FileInputStream(sourceFile);
 
 			env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-
+			System.out.println(env);
 			//If server indicates success, return the member list
 			if(env.getMessage().equals("READY")){
 				System.out.printf("Meta data upload successful\n");
@@ -503,13 +505,14 @@ public class FileClient extends Client implements FileClientInterface {
 				env.addObject(sourceFile);
 				env.addObject(token);
 				env.addObject(sequenceNumber);
-	
+				System.out.println(env);
 				//build nested envelope, encrypt, and send
 				Envelope superEnv = Envelope.buildSuper(env, sessionKey);
 				output.writeObject(superEnv);
 					
 				//receive, extract, and decrypt inner envelope
 				env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+				System.out.println(env);
 				// process meta-data for file and initialize decryption
 				if(env.getObjContents().size() == 7) {
 					if(env.getObjContents().get(0) == null) {
@@ -642,7 +645,7 @@ public class FileClient extends Client implements FileClientInterface {
 		env.addObject(remotePath);
 		env.addObject(token);
 		env.addObject(sequenceNumber);
-
+		System.out.println(env);
 		try {
 
 			//build nested envelope, encrypt, and send
@@ -651,7 +654,7 @@ public class FileClient extends Client implements FileClientInterface {
 
 			//receive, extract, and decrypt inner envelope
 			env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-		   
+			System.out.println(env);
 			if (env.getMessage().compareTo("OK")==0) {
 				if(env.getObjContents().get(0) != null) {
 					Integer tempseq = (Integer)env.getObjContents().get(0);
