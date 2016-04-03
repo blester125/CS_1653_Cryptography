@@ -150,19 +150,19 @@ These defenses are sufficient to stop the threat. Signed Diffie-Hellman defeats 
 
 <p>
 Threat 6 is the threat of file leakage by the file servers. In this phase of the project, it is assumed that
-file server are largely untrusted, and in this way they may attempt to leak files to unauthorized
+file servers are largely untrusted, and in this way they may attempt to leak files to unauthorized
 users or attackers. Under this assumption of untrusted file servers that are unable to protect
 a group's files from unauthorized principals, a fundamental property of the group
 file sharing system is undermined: only the current members of the group may access the group's files,
 and the secrecy of a group's files must remain intact as the group changes. This means that when
 a member of the group leaves, though they will still have access to all files up until
-their termination from the group, as it can't be prevent for a group member to save a file locally,
-if a file is leaked by the untrusted file servers to this past group member, they
+their termination from the group, as it can't be prevented for a group member to save a file locally,
+if a file is leaked by the untrusted file servers to a past group member, they
 should be unable to decrypt the files that were uploaded after said termination. 
 In addition, when a new member joins a group, they should be able to view all files
 from before their joining and all files following until their termination from the group.
 What this necessitates is an evolving key to encrypt files with that evolves as the members
-of the group evolves.
+of the group evolves, allowing for backward secrecy.
 </p>
 <p>
 In order to protect against this threat, the primary mechanism we will employ is that of the
@@ -173,12 +173,13 @@ amount of times. Every time a new password is required, which in the case of our
 being when a member of a group leaves, the root password is hashed one less time than what was previously being
 used and is used to encrypt/decrypt all files from the time after the group member left the group.
 What this means is that at a time t<sub>i</sub>, with group members g and key k<sub>i</sub>,
-all the files will be encrypted with a key that is k<sub>j</sub> where the number of hashes for j &ge; i.
+all the files will be encrypted with a key that is k<sub>j</sub> where the number of hashes for j = i-1.
 So the client who is a member of g will be provided with the most recent key k<sub>i</sub>
 and all files that are currently uploaded to the group at t<sub>i</sub> can be calculated by
-hashing k<sub>i</sub> n times where n = j-i. When a member leaves the group, the key must evolve
+hashing k<sub>i</sub> n times where n is equal to the version of the key needed minues i, the version
+of the current key. When a member leaves the group, the key must evolve
 so that the member who left the group cannot calculate this new password if the file server were to leak
-the files to this now unauthorized group member. When a new member joins the group, they will be
+the files to a now unauthorized group member. When a new member joins the group, they will be
 provided with the most recent key, from which, they can calculate the old keys that older files may be encrypted with.
 The problem arises that a group must begin with a key that is hashed a finite number of times, where that key
 evolves by decreasing the number of times the root key is hashed until it reaches zero and
@@ -194,40 +195,41 @@ and with its list of old root keys and the current key obtained from the group s
 and decrypt the file. File upload is done by encrypting the file with the most recent key so past group members
 cannot decrypt it if the untrusted file server happens to leak said file. Our cryptographically secure hash algorithm
 is SHA-2 with a 256 bit digest. The key that will be generated from
-this one-time password scheme will be a 128-bit AES key. The files will be encrypted/decrypted with CBC mode, PKCS5 padding scheme, 
+this one-time password scheme will be a 256-bit AES key. The files will be encrypted/decrypted with CBC mode, PKCS5 padding scheme, 
 and a unique IV for each file.
 <br><br>
 <img src="images/file_leakage.png" class="image">
 <br><br>
 </p>
 <p>
-This protocol is correct as any authorized group member who wished to decrypt a file will be able to as all files
+This protocol is correct as any authorized group member who wishes to decrypt a file will be able to as all files
 a group member is authorized to decrypt is encrypted with a key that is either the present key provided to them by the group server,
-a past key version of this key which is obtained by hashing the current key the necessary amount of times, or an old key which hash
-used all of its versions and this old key which is hashed zero times can be hashed the necessary number of times to compute an old key
+a past key version of this key which is obtained by hashing the current key the necessary amount of times, or an old key which has
+used all of its versions and this old key which is hashed zero times when provided to the group member can be hashed the necessary number of times to compute an old key
 version from a key which has been expended due to group membership changes. It can be said to be secure due to our other mechanisms in place
 which are said to be secure under the present threat model. What this means is that only an authorized user for that user's authorized groups
-can obtain the present keys and the list of old keys for their groups. It cannot be prevent that once a user is removed from a group
+can obtain the present keys and the list of old keys for their groups. It cannot be prevented that once a user is removed from a group
 that they can no longer view the files that were uploaded to the file server prior to their
 removal from the group due to the user storing them on their local machine, however, they will be unable to decrypt files uploaded
 to a file server in the future for the group due to the preimage of resistance of SHA-2, which is at the present considered to be
 a cryptographically secure hash function. Furthermore, if one of the keys is compromised by an attacker they will only be able to decrypt
 messages uploaded at in the current group version, or prior, and what's more is that the compromise of one key also limits this to only being
-valuable to a maximum of 100 group version. The number of key evolutions was chosen by weighing the time it takes to repeatedly hash
-a value some number of times relative to the time it takes to decrypt a file and the size of they key list for a group
-that will need to be maintained by the file server relative to how many group versions may come to exist for a group.
+valuable to a maximum of 100 group versions. The number of key evolutions was chosen by weighing the time it takes to repeatedly hash
+a value some number of times relative to the time it takes to decrypt a file and the size of the key list for a group
+that will need to be maintained by the group server relative to how many group versions may come to exist for a group. Both hashing
+and storage are cheap, so the decision of where to draw the line was very fine.
 There are 100 versions of a key per root key including the root key, meaning the client will have to hash the password at most
 99 times. This is thought to be a reasonable number, as the cost of decrypting a file will almost always eclipse the cost of these hashes
 for all but the smallest of files. This value also allows for 100 group members to leave a group before a new key is needed. It is doubtful
-that such a group will exist such that the group server will need to maintain a lengthy list of old keys. Forward secrecy is a concern,
+that such a group will exist such that the group server will need to maintain a lengthy list of old keys. Forward secrecy is a concern in the event that a single key may be leaked,
 but is less prioritized over the group server storage (which should be fairly sparse) as the system is thought to be secure under the
-current threat model, making the event of a key leak to be extremely unlikely. A unique IV is associated with each IV so that no
+current threat model, making the event of a key leak to be extremely unlikely. A unique IV is associated with each file so that no
 sort of codebook can be built up, leading to malicious file insertions or detections of the semantics or semantic changes within files.
-A proper padding scheme is used to maintain the security of the encryption and bring the file size to the correct bit multiple. Symmetric key
-cryptography with a 128-bit AES key is used in CBC mode due to the speed of symmetric key cryptography and the propagation of the cipher text
+A proper padding scheme is used to maintain the security of the encryption and bring the file size to the correct block size multiple. Symmetric key
+cryptography with a 256-bit AES key is used in CBC mode due to the speed of symmetric key cryptography and the propagation of the cipher text
 to the rest of the encryption (as hard drive storage should be relatively error free). Though the IV and group meta-data 
-(key information) do not need to remain secret, they will still be encrypted with an established shared symmetric key 
-as outlined in the prior phase, in-keeping with our pattern. AES with a 128-bit key has no known vulnerabilities or breaks at this time,
+(key information that tells the user how to calculate the key for the file) do not need to remain secret, they will still be encrypted with an established shared symmetric session key 
+in transit as outlined in the prior phase, in-keeping with our pattern. AES with a 256-bit key has no known vulnerabilities or breaks at this time,
 and is being used for all symmetric keys in the system, and so here too. 
 </p>
 
@@ -377,4 +379,3 @@ an outlet to enjoy their experience more thoroughly. This feature can be reached
     </section>
   </body>
 </html>
-
