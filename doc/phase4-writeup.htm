@@ -233,7 +233,10 @@ cryptography with a 256-bit AES key is used in CBC mode due to the speed of symm
 to the rest of the encryption (as hard drive storage should be relatively error free). Though the IV and group meta-data 
 (key information that tells the user how to calculate the key for the file) do not need to remain secret, they will still be encrypted with an established shared symmetric session key 
 in transit as outlined in the prior phase, in-keeping with our pattern. AES with a 256-bit key has no known vulnerabilities or breaks at this time,
-and is being used for all symmetric keys in the system, and so here too. 
+and is being used for all symmetric keys in the system, and so here too. It should also be noted that all of the file encryption in 
+the case of file upload and decryption in the case of file download, that these costly cryptograpihc operations are carried out on
+the client side to keep the server available as often as possible, and move the burden of attacking a file server via these operations
+to the attacker.
 </p>
 
 <!-- END CHANGES HERE -->
