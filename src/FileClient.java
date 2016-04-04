@@ -220,7 +220,7 @@ public class FileClient extends Client implements FileClientInterface {
 								if (Hasher.verifyHash(recvHash, DHServerKey)) {
 									System.out.println("Hashes Matched");
 									// Generate secretKey
-									SecretKey sessionKey = DiffieHellman.generateSecretKey(DHServerKey, keyAgreement);
+									sessionKey = DiffieHellman.generateSecretKey(DHServerKey, keyAgreement);
 									System.out.println("Session Key created: " + sessionKey);
 									// Make and send Message 3
 									System.out.println("\n-----SIGNED-DIFFIE-HELLMAN - Sending my Diffie Hellman keys-----");
@@ -264,7 +264,7 @@ public class FileClient extends Client implements FileClientInterface {
 															System.out.println(message5 + "\n");
 															Envelope superMessage5 = Envelope.buildSuper(message5, sessionKey);
 															output.writeObject(superMessage5);
-	sequenceNumber += 2;
+															sequenceNumber += 2;
 															System.out.println("Secure and Authenticated connection with File Server extablished.");
 															return sessionKey;
 														}  
