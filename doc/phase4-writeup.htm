@@ -353,7 +353,9 @@ exact fashion. We also discarded our username/password scheme from the previous 
 authentication process. Our protocols make heavy use of asymmetric keys with RSA, and so using only RSA
 for authentication simplified the system and had the added security that RSA keys are more secure than passwords.
 Threats 5 and 7 were quickly apparent to us and there was little deliberation as to how the solution or its
-implementation would be carried out.
+implementation would be carried out. One interesting note is that one of our solutions for the previous phases
+threat models addressed (partially) some of this phase's threat models. Namely, the use of a timestamp
+for token freshness mitigates token T7 and T5 to a degree by only allowing an attacker 10 seconds to reuse a token.
 </p>
 <p>
 We also had several, albeit more minor points of discussion as to what would be best for the system, primarily focusing
