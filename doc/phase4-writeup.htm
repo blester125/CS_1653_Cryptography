@@ -336,12 +336,54 @@ modified in an attempt to attack these new restrictions.
       <h2>Discussion</h2>
 <!-- BEGIN CHANGES HERE -->
 
-<p><h1>TODO:</h1>Conclude with a paragraph or two discussing the interplay between your
+<p>Conclude with a paragraph or two discussing the interplay between your
 proposed mechanisms, and commenting on the design process that your group
 followed. Did you discuss other ideas that didn’t pan out before settling on the
 above-documented approach? Did you end up designing a really interesting
 protocol suite that addresses multiple threats at once? Use this space to show
 off your hard work!</p>
+
+<p>
+One major discussion we had was addressing threat 6. At first glance, we operated under the assumption
+that our solution would make use of threshold cryptography due to the need for an evolving secret as
+group members left a group. This was discovered to be a poor fit as, while it is true there was a need
+for an evolving secret, there was no logical fit for the idea of "shares" and how that would be handled.
+We eventually settled on using a Leslie-Lamport one time password scheme, which addresses the threat in a more
+exact fashion. We also discarded our username/password scheme from the previous phase in favour of a username/public key
+authentication process. Our protocols make heavy use of asymmetric keys with RSA, and so using only RSA
+for authentication simplified the system and had the added security that RSA keys are more secure than passwords.
+Threats 5 and 7 were quickly apparent to us and there was little deliberation as to how the solution or its
+implementation would be carried out.
+</p>
+<p>
+We also had several, albeit more minor points of discussion as to what would be best for the system, primarily focusing
+on the security aspects of these possibilities. For instance, as stated previously, weighing a key's lifetime
+with the cost of storage versus computation time in the Leslie-Lamport scheme. The pros and cons of a longer 
+and shorter key lifetime were both so minimal that the decision either way would be fine, but we erred
+on the side of computation time over storage as we wanted the group server to retain a minimal amount of information,
+the cost of key calulation still remains small relative to file encryption/decryption costs, and with the trusted nature of the
+group server and the rest of our systems security, the risk of a single key being compromised (which could then be hashed up until
+the key lifetime limit to decrypt a group's files) was low. In addressing threat 5 with sequence numbers for our messages to prevent
+message reorder and replay, the initial sequence number is chosen only be one party. In the group server/user interaction
+this number is chosen by the user, and in the file server/user interaction it is chosen by the file server. Ideally both
+parties would contribute toward this random sequence number to ensure that it is random. Being able to predict
+or construct the ISN is problematic in the system, however it only presents itself as a vulnerability if
+our previous assumptions break-down and our security is compromised. It is secure for only one party
+to generate the ISN due to the fact that randomness is contributed by both parties in all client/server interactions
+in the creation of the session key, so as long as this is secure, the ISN is secure with the present implementation.
+Another issue we realized after laying out the initial protocols for this phase's threats was the reuse of the session
+key for for confidentiallity and integrity. This key was being used to encrypt/decrypt messages and was keying our
+HMACs' for the message's integrity checks. Though there are currently no know vulnerabilities in the interaction
+with AES and SHA-2, this may arise in the future, and it is best practice to have a key serve a single purpose
+to minimize any compromises from cascading to other parts of the system. We used SSH key expansion over TLS key expansion,
+both established as being secure with the use of secure hash functions, which our system used, so the choice
+of one over the other had little meaning with how comparable the two are. In terms of security, speed, implemtation,
+etc. One final, more minor choice that needed to be made was in regards to our extra credit for two-factor authentication.
+The key that the user picks is left entirely up to the user, which has a few vulnerabilities in that users
+cannot be trusted to pick strong keys (passwords) and there is no mutually assured randomness from the
+group server and the user as in our other protocols which would assure a strong key. This problem may be addressed in the
+next phase of the project.
+</p>
 
 <h3>Our protocols still defend from threats 1 through 4</h3>
 <h4>Threat 1: Unauthorized Token Issuance</h4>
