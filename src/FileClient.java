@@ -545,6 +545,7 @@ public class FileClient extends Client implements FileClientInterface {
 				
 				Integer firstChunkSeq = (Integer)env.getObjContents().get(6);
 				if(firstChunkSeq == sequenceNumber + 1){
+					int length = (int)env.getObjContents().get(1);
 					// retrieve file meta-data
 					int keyIndex = (Integer)env.getObjContents().get(2);
 					int keyVersion = (Integer)env.getObjContents().get(3);
@@ -560,12 +561,11 @@ public class FileClient extends Client implements FileClientInterface {
 							if(fileLength - decryptedBuf.length >= 0) {
 								fos.write(decryptedBuf);
 								fileLength = fileLength - decryptedBuf.length;
+								System.out.println("IF: " + fileLength);
+								System.out.println(decryptedBuf);
 							}
 							else {
-								fos.close();
-								fos = new FileOutputStream(file);
-								int offset = (int)file.length();
-								fos.write(decryptedBuf, offset, (int)fileLength);
+								fos.write(decryptedBuf, 0, (int)fileLength);
 								fileLength = 0;
 							}
 							System.out.printf(".");
