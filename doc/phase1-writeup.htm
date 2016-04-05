@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>CS 1653 Project P1 Writeup</title>
+  <style>
+/* BEGIN CHANGES HERE */
+
+/* In this section, you may add CSS styling if desired */
+header {
+  text-align: center;
+}
+
+/* END CHANGES HERE */
+  </style>
+  <body>
+    <header>
+      <h1>CS 1653 Project P1 Writeup</h1>
+      <h2>
+<!-- BEGIN CHANGES HERE -->
+
+Brian Lester: bdl20@pitt.edu <br />
+Carmen Condeluci: crc73@pitt.edu <br />
+Ryan Conley: rgc11@pitt.edu <br />
+
+<!-- END CHANGES HERE -->
+      </h2>
+    </header>
+    <section id="properties">
+      <h2>1. Security Properties</h2>
+<!-- BEGIN CHANGES HERE -->
+
+<p>This section should describe the requirements that your group has identified
+as being relevant to the group-based file sharing scenario. You should aim to
+find at least 15--20 such requirements, that together will cover at least two
+different sets of reasonable system assumptions (i.e., threat models). This
+section should be arranged as a bulleted list of properties that may apply to a
+file sharing system.</p>
+
+<ul>
+  <li><b>Property 1: Correctness.</b> Correctness states that if file f is shared 
+  with members of group g, then only members of group g should be able to read,
+  modify, delete, or see the existence of f. Without this requirement, any
+  user could access any file, which is contrary to the notion of group-based file
+  sharing.</li>
+  <li><b>Property 2: User Safety.</b> User Safety states that a user u is the only
+  user capable of deleting user u. This is necessary so as to insure a user account can only be deleted with that user's permission, which is necessary for users to be the sole owners of their accounts.</li>
+  <li><b>Property 3: Group Safety.</b> Group Safety states that a group g can 
+  only be deleted by the set of users that are a part of group g. This is necessary because it protects the idea behind group file sharing where users can be separated into strict groups and share a specific set of files among only that group.</li>
+  <li><b>Property 4: User Verification.</b> Users logging on to the system will 
+  be verified with a username and password combination. This is necessary so that the singular and correct combination of username/password can be allowed to access a singular user account, which is necessary for a user to be the sole owner of his/her account.</li> 
+  <li><b>Property 5: Addition to Group.</b> A user u may add user v to group g 
+  given that user u is a member of group g and user v is not. This is predicated 
+  on the assumption that the users in the group are not malicious and will not add 
+  untrustworthy users to the group, and that no untrustworthy users can access the group without an invititation. Without this requirement, the definition of a group as a specific set of users which are chosen to view a specific set of files breaks down.</li>
+  <li><b>Property 6: Removal from a Group.</b> A user u may remove user v from 
+  group g provided both u and v are part of group g. This relies on trusted users 
+  that will not remove people from the group that should be in it. Removal from a group is necessary so that groups can be removed from the system when they are no longer relevant, and users can be removed from groups when they are no longer relevant to a group.</li>
+  <li><b>Property 7: Unique filenames within a Group.</b> All files within a 
+  group must have a unique name. Without this requirement it would be ambiguous
+  about which file a user was referring to, and so, must hold true if files are to be located and used only by the members of their corresponding group.</li>
+  <li><b>Property 8: File Consistency.</b> Changes to a file should be visible to 
+  all users as soon as it is made. With this, users could make changes to files 
+  that overwrite other changes. This property depends upon the assumption that users have knowledge of this function, and will be responsible for managing the contents of the files and how the edits to that file will be included.</li>
+  <li><b>Property 9: Atomicity of Operations</b> Operations to files, users, and groups 
+  are preformed in an all or nothing fashion, otherwise such errors may occur that could leave a 
+  file half modified, a user half deleted, or a group member half removed from a group, and other unintended behavior of the group-based file system.</li>
+  <li><b>Property 10: Group Limit.</b> Users are limited to making a set amount of groups based upon the size of the file server and the size of the user-base. 
+  This property stops a malicious user from creating arbitrarily many 
+  groups that cripple the system. It also allows for a reasonable limit of fairness imposed upon the users, which stops even a non-malicious user from using a disprortionately large amount of the system's resources.</li>
+  <li><b>Property 11: Secure Communication.</b> Communication between both the 
+  client and the group server and communication between the clients and 
+  fileservers will be encrypted. This requirement ensures that file contents 
+  cannot be discovered by listening to the wire. This is needed for a secure file 
+  sharing system where confidentiallity and integrity can be maintained.</li>
+  <li><b>Property 12: Separation of Responsibility.</b> The group server will 
+  only handle the authentication of users and group management while the file servers
+  will only handle file operations. This modularity prevents one aspect of the system from being compromised to cascading to the entire system being compromised.</li>
+  <li><b>Property 13: Security by Inclusion.</b> The file servers will block all 
+  users from access by default and will allow access to files based on a 
+  white list rather than blocking certain users. This is necessary since the only information known to a group and its associated files will be the users who are authorized, instead of the unknown number of users who are unauthorized.</li> 
+  <li><b>Property 14: Availability.</b> The system will be accessible most of 
+  the time (>99% up-down ration) when operating under normal system conditions free from unaccountable, external factors. This property assures that users may access their files whenever 
+  they are needed, which is necessary for a group-based file sharing system to be used.</li>
+  <li><b>Property 15: User Information Privacy.</b> Sensitive user information 
+  that is stored shall be encrypted to protect data such as user email addresses 
+  and passwords. This insures that in the case the system is compromised and this information is retrieved, the information is useless to the attacker/s, and so, in-keeping with protection of any further compromise to the system and its users.</li>
+  <li><b>Property 16: User Creation.</b> Users can create a user account with a
+  user name and password combination. These are necessary for users to be identified and authorized, as well as verified for their correct identity.</li>
+  <li><b>Property 17: File Server Creation.</b> A new file server can be added 
+  to the system by authenticating with the group server. This requirement can 
+  make sure that a perspective new server conforms to the security standards of 
+  the system and will be accounted for for future use.</li>
+  <li><b>Property 18: File Server Location.</b> The group server shall have up 
+  to date information on the file servers so that clients do not send information to unaffiliated third parties.</li>
+  <li><b>Property 19: Administrator Priveledges</b> A trusted administrator of the system can only be instated by another administrator of the system, where the initial administrators are the creators of the group-based file system. Such administrators will have priveledges to modify the system in any way they see fit in the interest of its use and security, and it is also assumed that there will be cooperation among the administrators.</li> 
+</ul>
+
+<!-- END CHANGES HERE -->
+    </section>
+    <section id="models">
+      <h2>2. Threat Models</h2>
+<!-- BEGIN CHANGES HERE -->
+
+<p>This section should describe several sets of trust assumptions that could be
+made regarding the players in the system. Describe several scenarios in which
+you expect the file sharing system to be used, and describe the ways in which
+the various entities with access to the system will be trusted to behave. This
+section should be arranged as follows.</p>
+
+<ol>
+  <li>A paragraph describing a system model: an environment in which you
+  envision your application being deployed.</li>
+  <li>A paragraph describing the trust assumptions that you would make regarding
+  the players in the system, within this particular system model.</li>
+  <li>A bulleted list of relevant security properties from Section 1, each with
+  a sentence or two discussing how it applies to this system / threat model.
+  Note that not all of the security properties you define will necessarily be
+  relevant to all of your threat models.</li>
+  <li>Repeat items 1--3 as needed for additional system / threat models.</li>
+</ol>
+
+<p>For example:</p>
+
+<h3>Threat Model 1: (Name the use case)</h3>
+
+<p>This is a description of one of the system models: the environment in which
+such a distributed file system may be used.</p>
+
+<p>This is a description of the trust assumptions that are made regarding the
+entities in the system, if used in this scenario.</p>
+
+<p>Here is a brief discussion of the relevant security properties from the section above:</p>
+
+<ul>
+  <li>Some Property: This is a description of how this property applies to Threat Model 1.</li>
+  <li>...</li>
+</ul>
+
+<p>You should repeat all of the above for additional threat models.</p>
+
+<h3>Threat Model 1: Protected Subnet</h3>
+
+<p>The system will be deployed within an organization to facilitate file 
+sharing between members of its staff. All servers will be operated on 
+a subnet that can only be accessed from a wired connection inside of the
+premsises of the organization, and only machines whose MAC addresses have been explicitly added by a trusted system administrator are authorized 
+to connect to these wired ports.</p>
+
+<p>It is assumed that only members of the technical staff can listen to 
+communications on this subnet, and that servers on this subnet cannot 
+communicate with the broader Internet. The users within 
+a group should be trusted to manage the users in the group.</p>
+
+<p>Properties that apply to this model.</p>
+<ul>
+  <li>Property 1: Correctness. If the system is not correct then it would be 
+  useless.</li>
+  <li>Property 2: User Safety. Users should not be allowed to delete each 
+  other.</li>
+  <li>Property 3: Group Safety. A different team should not be allowed to delete 
+  another teams group.</li>
+  <!-- Property 4 isn't valid for a subnet, as every user is pre-verified by system administrators. -->
+  <li>Property 5: Addition to Group. Multiple groups will still exist within the system, so additions to each group should be controlled.</li>
+  <li>Property 6: Removal from a Group. Without the ability to remove users from groups, groups could never be deleted entirely when they are no longer relevant.</li>
+  <li>Property 7: Unique Filenames within a Group. Without this, users would not be able to accurately retrieve the correct files.</li>
+  <li>Property 8: File Consistency. Without this, there would exist no way to handle edits or updates for existing files, making things like version control or overwrites impossible.</li>
+  <li>Property 9: Atomicity of Operations. Lack of this property would result in unintended behavior due to lack of certainty in fully completing operations.</li>
+  <!-- Property 10 isn't valid because administrators ensure users aren't malicious and the number of groups can be manually edited by administrators in the case of failure. -->
+  <!-- Property 11 isn't valid because all users exist only within the same subnet and have known physical locations, and only administrators can "listen on the wire" for traffic. -->
+  <li>Property 12: Separation of Responsibility. Without this property, the system would completely fail in the result of a single server crash, as opposed to being more robust.</li>
+  <li>Property 13: Security by Inclusion. Since different users will be parts of different groups, and users will have varying amounts of access (depending on their job/assignment/etc...), access to files still needs controlled via a white list.</li>
+  <li>Property 14: Availability. Without this property, the system would not be able to be used reliably by users.</li>
+  <!-- Property 15 isn't valid because users are manually added via MAC addresses and the system is inaccessible from the outside world. -->
+  <!-- Property 16 isn't valid because users are manually added via MAC addresses by administrators. -->
+  <li>Property 17: File Server Creation. Even though the entire system is local, new file servers may be required down the line to provide additional space.</li>
+  <!-- Property 18 isn't valid because the system is entirely local, so the file servers available SHOULD be entirely static. -->
+  <li>Property 19: Administrator Priveledges. The administrators already exist to add users by physical MAC addresses, so they will need additional priviledges to manage the local system. Administrators can act in the best interest of both the users and the system. </li>
+</ul>
+
+<h3>Threat Model 2: Accountable Users on the Internet</h3>
+
+<p>The system will be deployed for use over the Internet for users to share their 
+files with each other. All servers will be on the Internet with static IP 
+addresses. It is assumed that for the organization employing this group-based file sharing system, that they can provide adequate security of their own location and the trustworthiness of their users.</p>
+
+<p>No trust assumptions should be made about users as a whole. The users within 
+a group should be trusted to manage the users in the group. Attackers are free to find vulnerabilities and attempt to exploit them, and so the only obstacles and barriers must come from security of the system itself.</p>
+
+<p>Properties that apply to this model.</p>
+<ul>
+  <li>Property 1: Correctness. If the system is not correct then it would be 
+  useless.</li>
+  <li>Property 2: User Safety. Users should not be allowed to delete each 
+  other. Otherwise, an attacker could infiltrate and remove users from the group they infiltrated.</li>
+  <li>Property 3: Group Safety. A different team should not be allowed to delete 
+  another teams group. Same idealogy as with Property 2.</li>
+  <li>Property 4: User Verifiction. Without verification, any attacker could log on to the system and attempt further exploitation.</li>
+  <li>Property 5: Addition to Group. Multiple groups will still exist within the system, so additions to each group should be controlled.</li>
+  <li>Property 6: Removal from a Group. Without the ability to remove users from groups, groups could never be deleted entirely when they are no longer relevant.</li>
+  <li>Property 7: Unique Filenames within a Group. Without this, users would not be able to accurately retrieve the correct files.</li>
+  <li>Property 8: File Consistency. Without this, there would exist no way to handle edits or updates for existing files, making things like version control or overwrites impossible.</li>
+  <li>Property 9: Atomicity of Operations. Lack of this property would result in unintended behavior due to lack of certainty in fully completing operations.</li>
+  <li>Property 10: Group Limit. As the system is avaliable over the interent, this property needs to be in place in the event of a malicious user entering the system from outside the intended userbase.</li>
+  </li>Property 11: Secure Communication. With the system being on the general 
+  Internet the data of the files must be encrypted to protect the information 
+  from third party listeners.</li>
+  <li>Property 12: Separation of Responsibility. Without this property, the system would completely fail in the result of a single server crash, as opposed to being more robust.</li>
+  <li>Property 13: Security by Inclusion. Since different users will be parts of different groups, and users will have varying amounts of access (depending on their job/assignment/etc...), access to files still needs controlled via a white list.</li>
+  <li>Property 14: Availability. Without this property, the system would not be able to be used reliably by users.</li>
+  <li>Property 15: User Information Privacy. Since the system is accessible from the internet, user information required for authentication must be adequately protected.</li>
+  <li>Property 16: User Creation. The users are located everywhere throughout the world and connect to the system via the Internet, so they need to be able to create accounts (that will be identified and verified later).</li>
+  <li>Property 17: File Server Creation. New file servers may be required down the line to provide additional space.</li>
+  <!-- Property 18 isn't valid since it is outlined in threat model that file server locations are static and can provide adequate location security. -->
+  <li>Property 19: Administrator Priveledges. Administrators need special priviledges in order to recover the system in the event of a malicious attack. Administrators can act in the best interest of both the users and the system.</li>
+</ul>
+
+<h3>Threat Model 3: Unknown Users on the Internet</h3>
+
+<p>The system will be deployed for use over the Internet for users to share their 
+files with each other. All servers will be on the Internet with static IP 
+addresses. It cannot be assumed that users have any knowledge of each other outside of the group-based file sharing system.
+Administrors will be responsible only for the system, and will have no involvement with the users or groups unless malicious activity is detected.</p>
+
+<p>No trust assumptions should be made about users as a whole. The users within 
+a group should be trusted to manage the users in the group. Attackers are free to find vulnerabilities and attempt to exploit them, and so the only obstacles and barriers must come from security of the system itself.</p>
+
+<p>Properties that apply to this model.</p>
+<ul>
+  <li>Property 1: Correctness. If the system is not correct then it would be 
+  useless.</li>
+  <li>Property 2: User Safety. Users should not be allowed to delete each 
+  other. Otherwise, an attacker could infiltrate and remove users from the group they infiltrated.</li>
+  <li>Property 3: Group Safety. A different team should not be allowed to delete 
+  another teams group. Same idealogy as with Property 2.</li>
+  <li>Property 4: User Verifiction. Without verification, any attacker could log on to the system and attempt further exploitation.</li>
+  <li>Property 5: Addition to Group. Multiple groups will still exist within the system, so additions to each group should be controlled.</li>
+  <li>Property 6: Removal from a Group. Without the ability to remove users from groups, groups could never be deleted entirely when they are no longer relevant.</li>
+  <li>Property 7: Unique Filenames within a Group. Without this, users would not be able to accurately retrieve the correct files.</li>
+  <li>Property 8: File Consistency. Without this, there would exist no way to handle edits or updates for existing files, making things like version control or overwrites impossible.</li>
+  <li>Property 9: Atomicity of Operations. Lack of this property would result in unintended behavior due to lack of certainty in fully completing operations.</li>
+  <li>Property 10: Group Limit. As the system is avaliable over the interent, this property needs to be in place in the event of a malicious user entering the system from outside the intended userbase.</li>
+  </li>Property 11: Secure Communication. With the system being on the general 
+  Internet the data of the files must be encrypted to protect the information 
+  from third party listeners.</li>
+  <li>Property 12: Separation of Responsibility. Without this property, the system would completely fail in the result of a single server crash, as opposed to being more robust.</li>
+  <li>Property 13: Security by Inclusion. Since different users will be parts of different groups, and users will have varying amounts of access (depending on their job/assignment/etc...), access to files still needs controlled via a white list.</li>
+  <li>Property 14: Availability. Without this property, the system would not be able to be used reliably by users.</li>
+  <li>Property 15: User Information Privacy. Since the system is accessible from the internet, user information required for authentication must be adequately protected.</li>
+  <li>Property 16: User Creation. The users are located everywhere throughout the world and connect to the system via the Internet, so they need to be able to create accounts (that will be identified and verified later).</li>
+  <li>Property 17: File Server Creation. New file servers may be required down the line to provide additional space.</li>
+  <li>Property 18: File Server Location. Although the server locations are static, in this scenario there is no organization guaranteeing the security of that location, so the file server locations need to be constantly known and checked.
+  <li>Property 19: Administrator Priveledges. Administrators need special priviledges in order to recover the system in the event of a malicious attack. Administrators act with the best interests of the system as a primary concern.</li>
+</ul>
+<!-- END CHANGES HERE -->
+    </section>
+    <section id="references">
+      <h2>3. References</h2>
+<!-- BEGIN CHANGES HERE -->
+
+<p>If any of the requirements in Section 1, or any of the system models in
+Section 2, were inspired by material from books, papers, articles, or existing
+products, your sources should be cited here.</p>
+
+<p>Property 1, Correctness, and Threat Model 1, protected subnet, are based off 
+the project assignment and the class notes respectively.</p>
+
+<!-- END CHANGES HERE -->
+    </section>
+  </body>
+</html>
