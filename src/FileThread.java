@@ -154,7 +154,7 @@ public class FileThread extends Thread
 														byte[] hashResponse = Hasher.hash(keyPlusWord);
 														message3.addObject(hashResponse);
 														SecureRandom rand = new SecureRandom();
-														int sequenceNumber = rand.nextInt(101);
+														sequenceNumber = rand.nextInt(101);
 														System.out.println("Inital Sequence Number: " + sequenceNumber);
 														message3.addObject(sequenceNumber);
 														System.out.println("Sending: ");
@@ -266,6 +266,7 @@ public class FileThread extends Thread
 				}
 				if(e.getMessage().equals("LFILESG") && isSecureConnection && isAuthenticated) //List only files in specified group
 				{
+				System.out.println(e);
 				    //Do error handling
 				    if(e.getObjContents()== null || e.getObjContents().size() < 1) 
 				    {
@@ -285,17 +286,22 @@ public class FileThread extends Thread
 				    		response = new Envelope("FAIL-BADSEQNUM");
 				    	}
 				    	else 
-				    	{	
+				    	{
+						System.out.println("Expecting seqNum: " + (sequenceNumber + 1));	
 				    		int tempseq = (Integer)e.getObjContents().get(2);
+						System.out.println("Got: " + tempseq);
 				    		if(tempseq == sequenceNumber + 1){
+							System.out.println("Sequence number is OK");
 					    		response = new Envelope("FAIL");
 					    		//Prepare output list of file names and retrieve the token from the envelope
 							    ArrayList<String> finalFiles = new ArrayList<String>();
 							    ArrayList<ShareFile> filteredFiles = new ArrayList<ShareFile>();
 							    String groupName = (String)e.getObjContents().get(0);
 							    if (!groupName.equals("")) {
+								    System.out.println("Group Name is not \"\"");
 								    UserToken tok = (UserToken)e.getObjContents().get(1);
 								    if (verifyToken(tok)) {
+									System.out.println("TOKEN is verified");
 
 									    //Get all files from the FileServer
 									    ArrayList<ShareFile> all = FileServer.fileList.getFiles();
@@ -319,6 +325,7 @@ public class FileThread extends Thread
 								  
 							    		//form response, write it
 							    		sequenceNumber += 2;
+									System.out.println("New SeqNum: " + sequenceNumber);
 							    		response = new Envelope("OK");
 							    		response.addObject(finalFiles);
 							    		response.addObject(sequenceNumber);
@@ -332,7 +339,7 @@ public class FileThread extends Thread
 				}   	
 				if(e.getMessage().equals("UPLOADF") && isSecureConnection && isAuthenticated)
 				{
-
+					System.out.println("First RECEIVED: " + e);
 					if(e.getObjContents() == null || e.getObjContents().size() < 3)
 					{
 						response = new Envelope("FAIL-BADCONTENTS");
@@ -386,27 +393,29 @@ public class FileThread extends Thread
 											System.out.println("SENT from UPLOADF - READY: " + response);
 
 											e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+											System.out.println("RECEIVED: " + e);
 											while (e.getMessage().compareTo("CHUNK")==0) {
 												if(e.getObjContents().get(0) != null){
 													if(e.getObjContents().get(1) != null){
 														if(e.getObjContents().get(2) != null){
 															int seqchunk = (Integer)e.getObjContents().get(2);
-				    										if(seqchunk == sequenceNumber + 1){
-				    											fos.write(((byte[])e.getObjContents().get(0)), 0, (Integer)e.getObjContents().get(1));
-				    											sequenceNumber += 2;
+															if(seqchunk == sequenceNumber + 1){
+																fos.write(((byte[])e.getObjContents().get(0)));
+																sequenceNumber += 2;
 																response = new Envelope("READY"); //Success
 																response.addObject(sequenceNumber);
 																output.writeObject(Envelope.buildSuper(response, sessionKey));
 																System.out.println("SENT from UPLOADF - READYCHUNK: " + response);
 																e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-				    										}
+																System.out.println("RECEIVED: " + e);
+															}
 														}
 													}
 												}
 											}
-
+											System.out.println("I GOT: " + e);
 											if(e.getMessage().compareTo("EOF")==0) {
-												if(e.getObjContents() != null && e.getObjContents().size() == 5)
+												if(e.getObjContents() != null && e.getObjContents().size() == 6)
 												{
 													if(e.getObjContents().get(0) == null){
 														System.err.println("Error: null key index field");
@@ -427,7 +436,9 @@ public class FileThread extends Thread
 														System.err.println("Error: null seq num field");
 													}
 													else {
-														int eofseq = (Integer)e.getObjContents().get(5);
+													int eofseq = (Integer)e.getObjContents().get(5);
+													System.out.println("Expected: " + (sequenceNumber+1));
+													System.out.println("Got: " + eofseq);
 				    									if(eofseq == sequenceNumber + 1){
 
 															int keyIndex = ((Integer)e.getObjContents().get(0)).intValue();
@@ -462,6 +473,7 @@ public class FileThread extends Thread
 				}
 				else if (e.getMessage().equals("DOWNLOADF") && isSecureConnection && isAuthenticated) 
 				{
+					System.out.println("FIRST RECEIVED: " + e);
 					int dSuccessFlag = 0;
 					String remotePath = (String)e.getObjContents().get(0);
 					if (!remotePath.equals("")) {
@@ -481,8 +493,8 @@ public class FileThread extends Thread
 						else if (verifyToken(t)) {
 
 							int tempseq = (Integer)e.getObjContents().get(2);
-				    		if(tempseq == sequenceNumber + 1){
-
+							if(tempseq == sequenceNumber + 1){
+								System.out.println("SequenceNumber OK");
 								ShareFile sf = FileServer.fileList.getFile("/"+remotePath);
 
 								if (sf == null) 
@@ -544,12 +556,11 @@ public class FileThread extends Thread
 													sentMetadata = true;
 												}
 												response.addObject(sequenceNumber);
-
 												output.writeObject(Envelope.buildSuper(response, sessionKey));
 												System.out.println("SENT from DOWNLOADF: " + response);
 
 												e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-
+												System.out.println("RECEIVED: " + e);
 												if(e.getObjContents().get(0) != null){
 													int chunkSeq = (Integer)e.getObjContents().get(0);
 													if(chunkSeq != sequenceNumber + 1){
@@ -572,6 +583,7 @@ public class FileThread extends Thread
 												System.out.println("SENT from DOWNLOADF - EOF: " + response);
 
 												e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+												System.out.println("GOT: " + e);
 												if(e.getMessage().compareTo("OK")==0) {
 													if(e.getObjContents().get(0) != null){
 														int eofseq = (Integer)e.getObjContents().get(0);
@@ -610,7 +622,7 @@ public class FileThread extends Thread
 					if(dSuccessFlag == 0){
 						output.writeObject(Envelope.buildSuper(response, sessionKey));
 					}
-					System.out.println("SENT from DOWNLOADF (NO WRITEOUT): " + response);
+					//System.out.println("SENT from DOWNLOADF (NO WRITEOUT): " + response);
 				}
 				else if (e.getMessage().compareTo("DELETEF")==0 && isSecureConnection && isAuthenticated) {
 					if(e.getObjContents() == null || e.getObjContents().size() < 2) {

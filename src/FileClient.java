@@ -9,13 +9,16 @@
  *   Carmen Condeluci               *
  ************************************/
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.PublicKey;
@@ -217,7 +220,7 @@ public class FileClient extends Client implements FileClientInterface {
 								if (Hasher.verifyHash(recvHash, DHServerKey)) {
 									System.out.println("Hashes Matched");
 									// Generate secretKey
-									SecretKey sessionKey = DiffieHellman.generateSecretKey(DHServerKey, keyAgreement);
+									sessionKey = DiffieHellman.generateSecretKey(DHServerKey, keyAgreement);
 									System.out.println("Session Key created: " + sessionKey);
 									// Make and send Message 3
 									System.out.println("\n-----SIGNED-DIFFIE-HELLMAN - Sending my Diffie Hellman keys-----");
@@ -261,6 +264,7 @@ public class FileClient extends Client implements FileClientInterface {
 															System.out.println(message5 + "\n");
 															Envelope superMessage5 = Envelope.buildSuper(message5, sessionKey);
 															output.writeObject(superMessage5);
+															sequenceNumber += 2;
 															System.out.println("Secure and Authenticated connection with File Server extablished.");
 															return sessionKey;
 														}  
@@ -291,10 +295,11 @@ public class FileClient extends Client implements FileClientInterface {
 			message = new Envelope("LFILES");
 			message.addObject(token); //Add requester's token
 			message.addObject(sequenceNumber); //add seqnum
+			System.out.println(message);
 			output.writeObject(Envelope.buildSuper(message, sessionKey)); 
 
 			e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-
+			System.out.println(e);
 			//If server indicates success, return the member list
 			if(e.getMessage().equals("OK")){
 				if(e.getObjContents().get(0) != null){
@@ -328,10 +333,10 @@ public class FileClient extends Client implements FileClientInterface {
 			message.addObject(groupName); // add groupname
 			message.addObject(token); //Add requester's token
 			message.addObject(sequenceNumber); //add seqnum
+			System.out.println(message);
 			output.writeObject(Envelope.buildSuper(message, sessionKey)); 
-
 			e = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-
+			System.out.println(e);
 			//If server indicates success, return the member list
 			if(e.getMessage().equals("OK")){
 				if(e.getObjContents().get(0) != null){
@@ -372,11 +377,11 @@ public class FileClient extends Client implements FileClientInterface {
 			message.addObject(token); //Add requester's token
 			message.addObject(sequenceNumber);
 			output.writeObject(Envelope.buildSuper(message, sessionKey));
-
+			System.out.println(message);
 			FileInputStream fis = new FileInputStream(sourceFile);
 
 			env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-
+			System.out.println(env);
 			//If server indicates success, return the member list
 			if(env.getMessage().equals("READY")){
 				System.out.printf("Meta data upload successful\n");
@@ -441,38 +446,40 @@ public class FileClient extends Client implements FileClientInterface {
 			fis.close();
 			if(env.getMessage().compareTo("READY")==0)
 			{
-
-				File f = new File(sourceFile);
-				long fileLength = f.length();
-				//finish last block of encryption
-				byte[] block = AESCipherEncrypt.doFinal();
-				message = new Envelope("EOF");
-				// send the file length, key index, key version, and IV used to encrypt the file
-				message.addObject(new Integer(keyIndex));
-				message.addObject(new Integer(keyVersion));
-				message.addObject(iv.getIV());
-				message.addObject(block);
-				message.addObject(fileLength);
-				message.addObject(sequenceNumber);
-				output.writeObject(Envelope.buildSuper(message, sessionKey));
+				if ((Integer)env.getObjContents().get(0) == sequenceNumber + 1) {
+					sequenceNumber += 2;
+					File f = new File(sourceFile);
+					long fileLength = f.length();
+					//finish last block of encryption
+					byte[] block = AESCipherEncrypt.doFinal();
+					message = new Envelope("EOF");
+					// send the file length, key index, key version, and IV used to encrypt the file
+					message.addObject(new Integer(keyIndex));
+					message.addObject(new Integer(keyVersion));
+					message.addObject(iv.getIV());
+					message.addObject(block);
+					message.addObject(fileLength);
+					message.addObject(sequenceNumber);
+					output.writeObject(Envelope.buildSuper(message, sessionKey));
 				
-				env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-				if(env.getMessage().compareTo("OK")==0) {
-					if(env.getObjContents().get(0) != null){
-						Integer eofseq = (Integer)env.getObjContents().get(0);
-						if(eofseq == sequenceNumber + 1){
-							System.out.printf("\nFile data upload successful\n");
-							sequenceNumber += 2;
+					env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+					if(env.getMessage().compareTo("OK")==0) {
+						if(env.getObjContents().get(0) != null){
+							Integer eofseq = (Integer)env.getObjContents().get(0);
+							if(eofseq == sequenceNumber + 1){
+								System.out.printf("\nFile data upload successful\n");
+								sequenceNumber += 2;
+							}
 						}
 					}
-				}
-				else {
+					else {
 					
-					 System.out.printf("\nUpload failed: %s\n", env.getMessage());
-					 return false;
+						System.out.printf("\nUpload failed: %s\n", env.getMessage());
+						return false;
+					}
 				}
 			}
-			 else {
+			else {
 				 System.out.printf("Upload failed: %s\n", env.getMessage());
 				 return false;
 			}
@@ -500,13 +507,14 @@ public class FileClient extends Client implements FileClientInterface {
 				env.addObject(sourceFile);
 				env.addObject(token);
 				env.addObject(sequenceNumber);
-	
+				System.out.println(env);
 				//build nested envelope, encrypt, and send
 				Envelope superEnv = Envelope.buildSuper(env, sessionKey);
 				output.writeObject(superEnv);
 					
 				//receive, extract, and decrypt inner envelope
 				env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
+				System.out.println(env);
 				// process meta-data for file and initialize decryption
 				if(env.getObjContents().size() == 7) {
 					if(env.getObjContents().get(0) == null) {
@@ -537,6 +545,7 @@ public class FileClient extends Client implements FileClientInterface {
 				
 				Integer firstChunkSeq = (Integer)env.getObjContents().get(6);
 				if(firstChunkSeq == sequenceNumber + 1){
+					int length = (int)env.getObjContents().get(1);
 					// retrieve file meta-data
 					int keyIndex = (Integer)env.getObjContents().get(2);
 					int keyVersion = (Integer)env.getObjContents().get(3);
@@ -550,8 +559,10 @@ public class FileClient extends Client implements FileClientInterface {
 							byte[] buf = (byte[])env.getObjContents().get(0);
 							byte[] decryptedBuf = AESCipherDecrypt.update(buf);
 							if(fileLength - decryptedBuf.length >= 0) {
-								fos.write(decryptedBuf, 0, decryptedBuf.length);
+								fos.write(decryptedBuf);
 								fileLength = fileLength - decryptedBuf.length;
+								System.out.println("IF: " + fileLength);
+								System.out.println(decryptedBuf);
 							}
 							else {
 								fos.write(decryptedBuf, 0, (int)fileLength);
@@ -569,13 +580,16 @@ public class FileClient extends Client implements FileClientInterface {
 						env.addObject(sequenceNumber);
 						output.writeObject(Envelope.buildSuper(env, sessionKey));
 						env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-
-						if(env.getObjContents().get(2) != null){
-							Integer chunkSeq = (Integer)env.getObjContents().get(2);
-							if(chunkSeq != sequenceNumber + 1){
-								System.err.println("Error: seq num mismatch");
-								return false;
-							}
+						if (env != null) {
+							if (!env.getMessage().equals("EOF")) {
+								if(env.getObjContents().get(2) != null){
+									Integer chunkSeq = (Integer)env.getObjContents().get(2);
+									if(chunkSeq != sequenceNumber + 1){
+										System.err.println("Error: seq num mismatch");
+										return false;
+									}
+								}
+							}						
 						} else {
 							return false;
 						}								
@@ -587,11 +601,13 @@ public class FileClient extends Client implements FileClientInterface {
 				    		Integer eofseq = (Integer)env.getObjContents().get(0);
 				    		if(eofseq == sequenceNumber + 1){
 				    			fos.close();
-								System.out.printf("\nTransfer successful file %s\n", sourceFile);
-								sequenceNumber += 2;
-								env = new Envelope("OK"); //Success
-								env.addObject(sequenceNumber);
-								output.writeObject(Envelope.buildSuper(env, sessionKey));
+							System.out.printf("\nTransfer successful file %s\n", sourceFile);
+							sequenceNumber += 2;
+							env = new Envelope("OK"); //Success
+							env.addObject(sequenceNumber);
+							output.writeObject(Envelope.buildSuper(env, sessionKey));
+							// Really Gross
+							sequenceNumber += 2;
 				    		}
 				    	}
 				    }
@@ -636,7 +652,7 @@ public class FileClient extends Client implements FileClientInterface {
 		env.addObject(remotePath);
 		env.addObject(token);
 		env.addObject(sequenceNumber);
-
+		System.out.println(env);
 		try {
 
 			//build nested envelope, encrypt, and send
@@ -645,7 +661,7 @@ public class FileClient extends Client implements FileClientInterface {
 
 			//receive, extract, and decrypt inner envelope
 			env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
-		   
+			System.out.println(env);
 			if (env.getMessage().compareTo("OK")==0) {
 				if(env.getObjContents().get(0) != null) {
 					Integer tempseq = (Integer)env.getObjContents().get(0);
