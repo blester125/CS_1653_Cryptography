@@ -1151,10 +1151,10 @@ public class ClientApp {
 			e.printStackTrace();
 		}*/
 		
-		MP3 mp3 = new MP3("sunlight.mp3");
+		MP3 mp3 = new MP3("enhance/sunlight.mp3");
         mp3.play();
 		
-		ImageIcon icon = new ImageIcon("ENHANCE-IMAGE.gif");
+		ImageIcon icon = new ImageIcon("enhance/ENHANCE-IMAGE.gif");
 		int close = JOptionPane.showConfirmDialog(null,
 				"PLEASE ENJOY \nTHE EXPERIENCE", 
 				"ENHANCE", 
