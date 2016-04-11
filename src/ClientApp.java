@@ -359,23 +359,27 @@ public class ClientApp {
 		gbc_btnLogout.gridx = 3;
 		gbc_btnLogout.gridy = 6;
 		
-		//attempt to connect to server
-		btnLogout.addActionListener(new ActionListener() {
+		// //attempt to connect to server
+		// btnLogout.addActionListener(new ActionListener() {
 
-				@Override
-				public void actionPerformed(ActionEvent arg0) {
+		// 		@Override
+		// 		public void actionPerformed(ActionEvent arg0) {
 
-					attemptLogout(
-						btnNewUser, 
-						tabbedPane, 
-						btnDeleteUser, 
-						btnFileServer,
-						btnRSA,
-						btnRSASetup,
-						btnLogout);
-				}
-			}
-		);
+		// 			attemptLogout(
+		// 				btnNewUser, 
+		// 				tabbedPane, 
+		// 				btnDeleteUser, 
+		// 				btnFileServer,
+		// 				btnRSA,
+		// 				btnRSASetup,
+		// 				btnLogout,
+		// 				usersListPanel,
+		// 				groupsListPanel,
+		// 				fileListsPane,
+		// 				filesPane);
+		// 		}
+		// 	}
+		// );
 
 		homePage.add(btnLogout, gbc_btnLogout);
 		
@@ -831,6 +835,28 @@ public class ClientApp {
 		);
 		fileOperationsPane.add(btnViewAllFiles, gbc_btnViewAllFiles);
 
+
+		//attempt to connect to server
+		btnLogout.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+
+					attemptLogout(
+						btnNewUser, 
+						tabbedPane, 
+						btnDeleteUser, 
+						btnFileServer,
+						btnRSA,
+						btnRSASetup,
+						btnLogout,
+						usersListPanel,
+						groupsListPanel,
+						filesPane);
+				}
+			}
+		);
+
 		//-------------------------------------------------------------------------
 
 		//Set Enabled/Disabled functionality on startup
@@ -1107,13 +1133,24 @@ public class ClientApp {
 					JButton btnFileServer,
 					JButton btnRSA,
 					JButton btnRSASetup,
-					JButton btnLogout) {
+					JButton btnLogout,
+					JPanel usersListPanel,
+					JPanel groupsListPanel,
+					JPanel filesPane 		) {
 		if (RunClient.fileC.isConnected()) {
 			RunClient.fileC.disconnect();
 		}
 		if (RunClient.groupC.isConnected()) {
 			RunClient.groupC.disconnect();
 		}
+
+		usersListPanel.removeAll();
+		usersListPanel.updateUI();
+		groupsListPanel.removeAll();
+		groupsListPanel.updateUI();
+		filesPane.removeAll();
+		filesPane.updateUI();
+
 		usernameField.setEnabled(true);
 		ipField.setEnabled(true);
 		portField.setEnabled(true);
