@@ -61,6 +61,8 @@ public interface UserToken extends java.io.Serializable
      */
     public List<String> getGroups();
 
+    public List<String> getAliases();
+
     public boolean signToken(PrivateKey privateKey);
 
     public SealedObject getSignedHash();

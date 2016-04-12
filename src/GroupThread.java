@@ -692,13 +692,28 @@ public class GroupThread extends Thread
 		if(my_gs.userList.checkUser(username)) {
 			//Add the timestamp and signage
 			//Issue a new token with server's name, user's name, and user's groups
-			UserToken yourToken = new Token(my_gs.name, username, my_gs.userList.getUserGroups(username), serverKey);
+			ArrayList<String> userGroups = my_gs.userList.getUserGroups(username);
+			ArrayList<String> userAliases = generateAliasList(userGroups);
+			UserToken yourToken = new Token(
+										my_gs.name, 
+										username, 
+										userGroups, 
+										userAliases, 
+										serverKey);
 			System.out.println(yourToken);
 			return yourToken;
 		}
 		else {
 			return null;
 		}
+	}
+
+	private ArrayList<String> generateAliasList(ArrayList<String> groups) {
+		ArrayList<String> aliases = new ArrayList<String>();
+		for (String group : groups) {
+			aliases.add(my_gs.groupList.getAlias(group));
+		}
+		return aliases;
 	}
 	
 	
@@ -795,8 +810,9 @@ public class GroupThread extends Thread
 					
 					//Delete owned groups
 					for(int index = 0; index < deleteOwnedGroup.size(); index++){
+						ArrayList<String> aliases = generateAliasList(deleteOwnedGroup);
 						//Use the delete group method. Token must be created for this action
-						deleteGroup(deleteOwnedGroup.get(index), new Token(my_gs.name, username, deleteOwnedGroup));
+						deleteGroup(deleteOwnedGroup.get(index), new Token(my_gs.name, username, deleteOwnedGroup, aliases));
 					}
 					
 					//Delete the user from the user list
@@ -834,10 +850,10 @@ public class GroupThread extends Thread
 		// this assumes all group names must be unique, regardless of owner
 		if(!my_gs.groupList.checkGroup(groupName)){
 			if(my_gs.userList.checkUser(requester)){		
-				my_gs.groupList.createGroup(groupName, requester);
-				my_gs.groupList.addMember(groupName, requester);
-				my_gs.userList.addGroup(requester, groupName);
-				my_gs.userList.addOwnership(requester, groupName);
+				String groupId = my_gs.groupList.createGroup(groupName, requester);
+				my_gs.groupList.addMember(groupId, requester);
+				my_gs.userList.addGroup(requester, groupId);
+				my_gs.userList.addOwnership(requester, groupId);
 				return true;
 			}
 			return false;

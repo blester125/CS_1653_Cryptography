@@ -1369,7 +1369,10 @@ public class ClientApp {
 		}
 
 		ArrayList<String> temp = (ArrayList<String>)currToken.getGroups();
-
+		ArrayList<String> alias = (ArrayList<String>)currToken.getAliases();
+		for (String a : alias) {
+			System.out.println(a);
+		}
 		final JList groupsListView = new JList(temp.toArray());
 		groupsListView.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		GridBagConstraints gbc_groupsListView = new GridBagConstraints();

@@ -28,19 +28,33 @@ public class Token implements UserToken {
 	private SealedObject signedHash;
 	private final long networkTolerance = 10000L;
 	private Key publicKey;
+	private ArrayList<String> aliases;
 	
 	public static final String sentinal = "#";
 	
-	Token(String issuer, String subject, ArrayList<String> in_groups) {
+	public Token(
+				String issuer, 
+				String subject, 
+				ArrayList<String> in_groups, 
+				ArrayList<String> in_alias) {
 		this.issuer = issuer;
 		this.subject = subject;
 		this.groups = new ArrayList<String>(in_groups.size());
 		for(String group : in_groups)
 			this.groups.add(group);
+		this.aliases = new ArrayList<String>(in_alias.size());
+		for (String alias : in_alias) {
+			this.aliases.add(alias);
+		}
 		this.timestamp = new Date();
 	}
 	
-	Token(String issuer, String subject, ArrayList<String> in_groups, Key publicKey) {
+	public Token(
+				String issuer, 
+				String subject, 
+				ArrayList<String> in_groups, 
+				ArrayList<String> in_alias, 
+				Key publicKey) {
 		this.issuer = issuer;
 		this.subject = subject;
 		this.groups = new ArrayList<String>(in_groups.size());
@@ -48,15 +62,28 @@ public class Token implements UserToken {
 			this.groups.add(group);
 		this.timestamp = new Date();
 		this.publicKey = publicKey;
+		this.aliases = new ArrayList<String>(in_alias.size());
+		for (String alias : in_alias) {
+			this.aliases.add(alias);
+		}
 	}
 	
-	Token(String issuer, String subject, ArrayList<String> in_groups, Date timestamp) {
+	public Token(
+				String issuer, 
+				String subject, 
+				ArrayList<String> in_groups, 
+				ArrayList<String> in_alias, 
+				Date timestamp) {
 		this.issuer = issuer;
 		this.subject = subject;
 		this.groups = new ArrayList<String>(in_groups.size());
 		for(String group : in_groups)
 			this.groups.add(group);
 		this.timestamp = timestamp;
+		this.aliases = new ArrayList<String>(in_alias.size());
+		for (String alias : in_alias) {
+			this.aliases.add(alias);
+		}
 	}
 	
 	/**
@@ -89,6 +116,10 @@ public class Token implements UserToken {
 	public List<String> getGroups() {
 		return this.groups;
 	}
+
+	public List<String> getAliases() {
+		return this.aliases;
+	}
 	
 	public SealedObject getSignedHash() {
 		return this.signedHash;
@@ -113,13 +144,16 @@ public class Token implements UserToken {
 		for(String group : this.groups) {
 			token += sentinal + group;
 		}
+		for (String alias : this.aliases) {
+			token += sentinal + alias;
+		}
 		token += sentinal + this.publicKey;
 		return token;
 	}
 
 	public static void main(String[] args) {
 		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
-		UserToken t = new Token("issue","subject",new ArrayList<String>());
+		UserToken t = new Token("issue","subject",new ArrayList<String>(),new ArrayList<String>());
 		System.out.println(new String(Hasher.hash(t)));
 		t.signToken(null);
 	}
