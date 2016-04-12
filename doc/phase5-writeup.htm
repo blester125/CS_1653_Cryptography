@@ -30,8 +30,7 @@ Carmen Condeluci, crc73@pitt.edu <br>
       <h2>Overview</h2>
 <!-- BEGIN CHANGES HERE -->
 
-<p>In this section, broadly overview your threat model, attacks, and
-countermeasures.</p>
+<p>Most of the threats outlined in this section revolve around the untrustworthiness of the machines that the group/file server run on. The trust models for the individual parts break down like this: <br><b>Group Server:</b> The group server is still entirely trustworthy.<br><b>File Server:</b> The file server is trust for the same things that it is trusted in part 4 of the project. The difference is that it is no longer trusted to not modify the files on disk.<br><b>Clients:</b> Clients are still entirely untrusted.<br><b>Machines that the programs are run on:</b> These are entirely untrusted.</p>
 
 <!-- END CHANGES HERE -->
     </section>
@@ -52,31 +51,39 @@ the project.</p>
     <section id="threat8">
       <h2>Threat T8: Snooping System Admin</h2>
 <!-- BEGIN CHANGES HERE -->
-
+<p>This threat model is that a System Admin (or anyone that is using the machine that the group model is running on) could read or modify the GroupList and the UserList that the group server uses to save state.</p>
 
 <!-- END CHANGES HERE -->
     </section>
 
     <section id="threat9">
-      <h2>Threat T9: File Modification</h2>
+      <h2>Threat T9: Theft of the Groupserver private key</h2>
 <!-- BEGIN CHANGES HERE -->
-
+<p>This threat model is that a user on the machine that the group server is running on could steal the group servers private key from the "groupserverprivate.key" file</p>
 
 <!-- END CHANGES HERE -->
     </section>
 
     <section id="threat10">
-      <h2>Threat T10: Unprotected File Server Key</h2>
+      <h2>Threat T10: File Modification</h2>
 <!-- BEGIN CHANGES HERE -->
-
+<p>This threat is that the file server (or a user on the machine that the file server runs on) may modify the files that are saved on disk.</p>
 
 <!-- END CHANGES HERE -->
     </section>
 
     <section id="threat11">
-      <h2>Threat T11: Lack of Plausible Deniability</h2>
+      <h2>Threat T11: Unprotected File Server Key</h2>
 <!-- BEGIN CHANGES HERE -->
+<p>This threat is that a user on the file server machine could steal the file servers private key from the "fileserverprivate.key" file.
 
+<!-- END CHANGES HERE -->
+    </section>
+
+    <section id="threat12">
+      <h2>Threat T12: Lack of Plausible Deniability</h2>
+<!-- BEGIN CHANGES HERE -->
+<p>This threat is if an adversary (or a malicious server) records client server interactions then they can prove that the user took part in this conversation. 
 
 <!-- END CHANGES HERE -->
     </section>    
