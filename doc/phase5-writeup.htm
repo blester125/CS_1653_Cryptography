@@ -119,6 +119,47 @@ file server.
       <h2>Threat T11: Lack of Plausible Deniability</h2>
 <!-- BEGIN CHANGES HERE -->
 
+<p>
+In our current system, no communication provides any form of plausible 
+deniability to any of the parties involved. This is due primarily to the use of 
+signed Diffie-Hellmen to create secure sessions between both the client and the 
+group server and the client and the file server. Since the first two messages of 
+protocol are signed with the sender's respective private keys, any third party 
+can discover the identity of the parties involved by examining message logs of 
+any communications throughout our file sharing system. An attacker that has 
+compromised any of the parties involved could send sensitive, innapropriate, or 
+"illegal" data after authenticating with another party, then effectively 
+"blackmail" the original compromised user with message logs "proving" that 
+user's supposed misuse of the system, or simply release the message log to the 
+internet in an attempt to undermine the validity of the file sharing system.
+</p>
+
+<p>
+Thankfully, this issue is not terribly complex to design a mechanism to defend 
+against. Instead of signing the messages in our Diffie-Hellman protocol (as in 
+Phase 4, T5), we will encrypt them with each party's respective public RSA keys. 
+In this version of Diffie-Hellman, each party is still sure that only the 
+intended recipient could have correctly responded successive messages in the 
+protocol due to security properties of public key cryptography. However, a third 
+party would not be able to verify that any individual party truly sent any given 
+message, as anyone could generate a false message log as the information used in 
+each pre-secured message of the protocol utilizes only publicly known
+information. By making this change to the Diffie-Hellman protocols used to set 
+up secure connections between clients, group servers, and file serevers, we can 
+effectively provide all parties involved in communication in our system 
+plausible deniability.
+</p>
+
+<p>
+This mechanism adequately provides plausible deniability to users of our file 
+sharing system. Since only an individual has access to their private RSA key and 
+they are trusted to keep that key safe, it is acceptable to use them in order to 
+verify the indentity of the recipient of messages throughout the various uses of 
+the Diffie-Hellman protocol to set up secure communication between two parties. 
+Furthermore, all set up for secure communication throughout the system now uses 
+only publicly available information, so message logs cannot be used to verify 
+message recipients or senders any longer.
+</p>
 
 <!-- END CHANGES HERE -->
     </section>    
