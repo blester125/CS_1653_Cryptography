@@ -67,6 +67,19 @@ the project.</p>
     <section id="threat10">
       <h2>Threat T10: File Modification</h2>
 <!-- BEGIN CHANGES HERE -->
+
+
+<!-- END CHANGES HERE -->
+    </section>
+
+    <section id="threat11">
+      <h2>Threat T11: Unprotected File Server Key</h2>
+<!-- BEGIN CHANGES HERE -->
+<p>
+This threat is that a user on the file server machine could steal the file 
+servers private key from the "fileserverprivate.key" file.
+</p>
+
 <p>
 Our current implementation of file servers provide no protection against the 
 theft of a file server's private RSA key (in the case of the machine being 
@@ -111,12 +124,14 @@ file server.
 <!-- END CHANGES HERE -->
     </section>
 
-    <section id="threat11">
-      <h2>Threat T11: Unprotected File Server Key</h2>
+    <section id="threat12">
+      <h2>Threat T12: Lack of Plausible Deniability</h2>
 <!-- BEGIN CHANGES HERE -->
-<p>This threat is that a user on the file server machine could steal the file servers private key from the "fileserverprivate.key" file.
+<p>
+This threat is if an adversary (or a malicious server) records client server 
+interactions then they can prove that the user took part in this conversation.
+</p> 
 
-<<<<<<< HEAD
 <p>
 In our current system, no communication provides any form of plausible 
 deniability to any of the parties involved. This is due primarily to the use of 
@@ -158,15 +173,6 @@ Furthermore, all set up for secure communication throughout the system now uses
 only publicly available information, so message logs cannot be used to verify 
 message recipients or senders any longer.
 </p>
-=======
-<!-- END CHANGES HERE -->
-    </section>
-
-    <section id="threat12">
-      <h2>Threat T12: Lack of Plausible Deniability</h2>
-<!-- BEGIN CHANGES HERE -->
-<p>This threat is if an adversary (or a malicious server) records client server interactions then they can prove that the user took part in this conversation. 
->>>>>>> origin/master
 
 <!-- END CHANGES HERE -->
     </section>    
