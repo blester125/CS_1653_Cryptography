@@ -134,6 +134,17 @@ file server.
       <h2>Attacks</h2>
 <!-- BEGIN CHANGES HERE -->
 
+<h3>Attack leveraged via Threat 8</h3>
+An attacker could simply load up the GroupList and the UserList into their own group server implementation (this is possible because the GroupList and UserList are unencrypted and the implementation of the objects that underlie these lists is known due to transparency of mechanism) and start to change things. They could add a new account and then add that new user to each group. This is dangerous because they could access any sensitive files in the groups they add themselves too. They could even add themselves to the admin group.
+<h3>Attack leveraged via Threat 9</h3>
+"groupserverprivate.key" is unencrypted on the disk so if a user on that machine were to steal that file they would have the group servers public key. This could be used to create fake tokens. These fake tokens could then be signed with this key which would cause them to be accepted. 
+<h3>Attack leveraged via Threat 10</h3> 
+Files on the disk for the file server could be modified. This modification would not be detected so any changes could junk the file or worse they could be changed and the changes were not noticed which could lead to non correct information.
+<h3>Attack leveraged via Threat 11</h3>
+"fileserverprivate.key" is unencrypted on the disk so if a user steals the private key for the file server they can impersonate the file server. This can lead to the clients uploading a sensitive file to the fake server.
+<h3>Attack leveraged via Threat 12</h3>
+Similar to the attack of the fake file server if a client uploads a suspicious file to one of these fake file servers and the interaction was recorded. This recording would prove that the client was the one who uploaded this file. This is due to the use of signed Diffie-Hellman for log in and authentication.
+
 <p>Write a clear and concise description of the attacks against your
 implementation. Describe each step of the attack, and include protocol diagrams
 to clarify your discussion as needed. Provide evidence for why these attacks are
@@ -177,6 +188,10 @@ threats?</p>
 
 <p>If your group implemented the countermeasures or did any extra credit, please
 discuss these additional contributions in this section, as well.</p>
+
+<h3>Extra stuff</h3>
+- DDoS, write a program that does this. <br>
+- Group name collisions that I discuss in the TODO.
 
 <!-- END CHANGES HERE -->
     </section>
