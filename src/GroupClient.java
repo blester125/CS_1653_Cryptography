@@ -285,8 +285,6 @@ public class GroupClient extends Client implements GroupClientInterface {
 	 * @return a token on success and null on failure. 
 	 */
 	public UserToken getToken(String username, PublicKey serverKey) {
-		// Rewrite so instead of provided username it uses the saved on in group
-		// thread
 		try {
 			UserToken token = null;
 			Envelope message = null, response = null;

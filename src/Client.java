@@ -56,6 +56,7 @@ public abstract class Client {
 			try
 			{
 				Envelope message = new Envelope("DISCONNECT");
+				System.out.println(message);
 				output.writeObject(message);
 				sock.close(); //close the socket
 			}

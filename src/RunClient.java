@@ -21,7 +21,6 @@ public class RunClient {
 
 	protected static GroupClient groupC;
 	protected static FileClient fileC;
-	protected static UserToken uToken;
 
 	public static void main (String[] args) throws Exception {
 
