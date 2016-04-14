@@ -43,10 +43,12 @@ import javax.crypto.SecretKey;
 		} 
 
 		public synchronized ArrayList<String> getGroupUsers(String groupName) {
+			System.out.println(groupName);
 			return groups.get(groupName).getUsers();
 		}
 
 		public synchronized String getGroupOwner(String groupName) {
+			System.out.println(groupName);
 			return groups.get(groupName).getOwner();
 		}
 

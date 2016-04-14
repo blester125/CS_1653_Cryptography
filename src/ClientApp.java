@@ -53,6 +53,8 @@ public class ClientApp {
 	JList loadedUsers;
 	JList loadedFileGroups;
 	JList loadedFileList;
+	String[] loadedGroupNames;
+	String[] loadedFileGroupNames;
 	int groupFlag = 0;
 	int userFlag = 0;
 	int groupFileFlag = 0;
@@ -1373,7 +1375,7 @@ public class ClientApp {
 		for (String a : alias) {
 			System.out.println(a);
 		}
-		final JList groupsListView = new JList(temp.toArray());
+		final JList groupsListView = new JList(alias.toArray());
 		groupsListView.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		GridBagConstraints gbc_groupsListView = new GridBagConstraints();
 		gbc_groupsListView.fill = GridBagConstraints.BOTH;
@@ -1394,6 +1396,7 @@ public class ClientApp {
 		groupFlag = 1;
 
 		loadedGroups = groupsListView;
+		loadedGroupNames = temp.toArray(new String[temp.size()]);
 	}
 
 	//Populates the visable list with users from a selected
@@ -1409,8 +1412,9 @@ public class ClientApp {
 
 		String currGroup = "";
 
-		if(loadedGroups != null && loadedGroups.getSelectedValue() != null)
-			currGroup = (String)loadedGroups.getSelectedValue();
+		if(loadedGroups != null && loadedGroups.getSelectedValue() != null){
+			currGroup = loadedGroupNames[loadedGroups.getSelectedIndex()];
+		}
 		else{
 			JOptionPane.showMessageDialog(
 							null, 
@@ -1510,7 +1514,7 @@ public class ClientApp {
 		String currGroup = "";
 
 		if(loadedGroups != null && loadedGroups.getSelectedValue() != null)
-			currGroup = (String)loadedGroups.getSelectedValue();
+			currGroup = loadedGroupNames[loadedGroups.getSelectedIndex()];
 		else{
 			JOptionPane.showMessageDialog(null, "Please select a group.", "Select Error", JOptionPane.OK_CANCEL_OPTION);
 			return;
@@ -1540,7 +1544,7 @@ public class ClientApp {
 		String currGroup = "";
 
 		if(loadedGroups != null && loadedGroups.getSelectedValue() != null)
-			currGroup = (String)loadedGroups.getSelectedValue();
+			currGroup = loadedGroupNames[loadedGroups.getSelectedIndex()];
 		else{
 			JOptionPane.showMessageDialog(null, "Please select a group.", "Select Error", JOptionPane.OK_CANCEL_OPTION);
 			return;
@@ -1593,7 +1597,7 @@ public class ClientApp {
 		String currGroup = "";
 
 		if(loadedGroups != null && loadedGroups.getSelectedValue() != null)
-			currGroup = (String)loadedGroups.getSelectedValue();
+			currGroup = loadedGroupNames[loadedGroups.getSelectedIndex()];
 		else{
 			JOptionPane.showMessageDialog(null, "Please select a group.", "Select Error", JOptionPane.OK_CANCEL_OPTION);
 			return;
@@ -1642,7 +1646,8 @@ public class ClientApp {
 			return;
 		}
 
-		ArrayList<String> temp = (ArrayList<String>)currToken.getGroups();
+		ArrayList<String> temp = (ArrayList<String>)currToken.getAliases();
+		ArrayList<String> uniqueNames = (ArrayList<String>)currToken.getGroups();
 
 		final JList groupsList = new JList(temp.toArray());
 		groupsList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -1667,6 +1672,7 @@ public class ClientApp {
 		groupFileFlag = 1;
 
 		loadedFileGroups = groupsList;
+		loadedFileGroupNames = uniqueNames.toArray(new String[uniqueNames.size()]);
 	}
 
 	//list files in fileserver page
@@ -1680,9 +1686,12 @@ public class ClientApp {
 		}
 
 		String currGroup = "";
+		String displayGroup = "";
 
-		if(loadedFileGroups != null && loadedFileGroups.getSelectedValue() != null)
-			currGroup = (String)loadedFileGroups.getSelectedValue();
+		if(loadedFileGroups != null && loadedFileGroups.getSelectedValue() != null){
+			currGroup = loadedFileGroupNames[loadedFileGroups.getSelectedIndex()];
+			displayGroup = (String)loadedFileGroups.getSelectedValue();
+		}
 		else{
 			JOptionPane.showMessageDialog(null, "Please select a group.", "Token Error", JOptionPane.OK_CANCEL_OPTION);
 			return;
@@ -1709,7 +1718,7 @@ public class ClientApp {
 		filesPane.add(filesList, gbc_filesList);
 
 		//File label
-		JLabel lblFiles = new JLabel("" + currGroup + " Files");
+		JLabel lblFiles = new JLabel("" + displayGroup + " Files");
 		GridBagConstraints gbc_lblFiles = new GridBagConstraints();
 		gbc_lblFiles.anchor = GridBagConstraints.NORTH;
 		gbc_lblFiles.insets = new Insets(0, 0, 5, 0);
@@ -1778,7 +1787,7 @@ public class ClientApp {
 		String currGroup = "";
 
 		if(loadedFileGroups != null && loadedFileGroups.getSelectedValue() != null)
-			currGroup = (String)loadedFileGroups.getSelectedValue();
+			currGroup = loadedFileGroupNames[loadedFileGroups.getSelectedIndex()];
 		else{
 			JOptionPane.showMessageDialog(null, "Please select a group.", "Select Error", JOptionPane.OK_CANCEL_OPTION);
 			return;
@@ -1864,7 +1873,7 @@ public class ClientApp {
 		}
 
 		if(loadedFileGroups != null && loadedFileGroups.getSelectedValue() != null)
-			currGroup = (String)loadedFileGroups.getSelectedValue();
+			currGroup = loadedFileGroupNames[loadedFileGroups.getSelectedIndex()];
 		else{
 			JOptionPane.showMessageDialog(null, "Please select a group.", "Select Error", JOptionPane.OK_CANCEL_OPTION);
 			return;
@@ -1903,7 +1912,7 @@ public class ClientApp {
 		}
 
 		if(loadedFileGroups != null && loadedFileGroups.getSelectedValue() != null)
-			currGroup = (String)loadedFileGroups.getSelectedValue();
+			currGroup = loadedFileGroupNames[loadedFileGroups.getSelectedIndex()];
 		else{
 			JOptionPane.showMessageDialog(null, "Please select a group.", "Select Error", JOptionPane.OK_CANCEL_OPTION);
 			return;
