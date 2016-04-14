@@ -29,9 +29,9 @@ import org.apache.commons.codec.binary.Base32;
 
 public class Dos {
 
-	protected static GroupClient groupC;
-	protected static FileClient fileC;
-	protected static KeyPair keyPair;
+	 static GroupClient groupC;
+	 static FileClient fileC;
+	 static KeyPair keyPair;
 
 	public static void main(String[] args) throws Exception {
 		Security.addProvider(new BouncyCastleProvider());
@@ -42,28 +42,32 @@ public class Dos {
 	    } catch (Exception ex) {
 	    	ex.printStackTrace();
 	    }
-		groupC = new GroupClient();
-		fileC = new FileClient();
-		keyPair = RSA.loadRSA("", "");
+		
+		keyPair = RSA.loadRSA("dospublic.key", "dosprivate.key");
 		PublicKey serverPublicKey = RSA.loadServerKey("groupserverpublic.key");
 		while (true) {
+			groupC = new GroupClient();
+			fileC = new FileClient();
 			groupC.connect("localhost", 8080);
-			login();
+			groupC.authenticateGroupServerRSA("test", "adminpublic.key", "adminprivate.key");
+			UserToken t = groupC.getToken("test", serverPublicKey);
 		}
 	}
 
 	public static void login() throws Exception {
-		KeyPair DHKeyPair = null;
+		KeyPair dhKeyPair = null;
 		KeyAgreement keyAgreement = null;
-		DHKeyPair = DiffieHellman.genKeyPair();
-		keyAgreement = DiffieHellman.genKeyAgreement(DHKeyPair);
-		byte[] hashedPublicKey = Hasher.hash(DHKeyPair.getPublic());
-		SealedObject sealedKey;
-		sealedKey = CipherBox.encrypt(hashedPublicKey, keyPair.getPrivate());
+		dhKeyPair = DiffieHellman.genKeyPair();
+		keyAgreement = DiffieHellman.genKeyAgreement(dhKeyPair);
+		byte[] hashedPublicKey = Hasher.hash(dhKeyPair.getPublic());
+		// System.out.println(new String(hashedPublicKey));
+		// System.out.println(keyPair);
+		// System.out.println(keyPair.getPrivate());
+		SealedObject sealedKey = CipherBox.encrypt(hashedPublicKey, keyPair.getPrivate());
 		Envelope message = new Envelope("RSALOGIN");
 		message.addObject("test");
 		message.addObject(sealedKey);
-		message.addObject(DHKeyPair.getPublic());
+		message.addObject(dhKeyPair.getPublic());
 		groupC.output.writeObject(message);
 	}
 }
