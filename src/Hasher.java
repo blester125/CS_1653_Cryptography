@@ -68,6 +68,17 @@ public class Hasher {
 		}
 	}
 
+	public static byte[] concatenateArrays(byte[] arr1, byte[] arr2) {
+		byte[] arr3 = new byte[arr1.length + arr2.length];
+		for (int i = 0; i < arr1.length; i++) {
+			arr3[i] = arr1[i];
+		}
+		for (int i = 0; i < arr2.length; i++) {
+			arr3[i + arr1.length] = arr2[i];
+		}
+		return arr3;
+	}
+
 	public static void main(String args[]) throws Exception {
 		Security.addProvider(new BouncyCastleProvider());
 		KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA", "BC");

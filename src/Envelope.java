@@ -90,7 +90,7 @@ public class Envelope implements java.io.Serializable {
 								IvParameterSpec iv) {
 		byte[] so_ba = Hasher.convertToByteArray(so);
 		byte[] iv_ba = iv.getIV();
-		byte[] concat = concatenateArrays(so_ba, iv_ba);
+		byte[] concat = Hasher.concatenateArrays(so_ba, iv_ba);
 		return Hasher.generateHMAC(k, concat);
 	}
 
@@ -106,17 +106,6 @@ public class Envelope implements java.io.Serializable {
 		System.out.println(new String(madeHMAC));
 		System.out.println("-------------------------------------");
 		return Hasher.verifyHMAC(recvHMAC, madeHMAC);
-	}
-
-	private static byte[] concatenateArrays(byte[] arr1, byte[] arr2) {
-		byte[] arr3 = new byte[arr1.length + arr2.length];
-		for (int i = 0; i < arr1.length; i++) {
-			arr3[i] = arr1[i];
-		}
-		for (int i = 0; i < arr2.length; i++) {
-			arr3[i + arr1.length] = arr2[i];
-		}
-		return arr3;
 	}
 
 	public static void main(String args[]) throws Exception {
