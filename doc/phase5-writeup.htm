@@ -116,7 +116,7 @@ key is stolen, an attacker could then impersonate a server.</p>
       <h2>Threat T10: File Modification</h2>
 <!-- BEGIN CHANGES HERE -->
 <p>Due to the untrusted nature of the file server and the untrusted machine it 
-is running on a file that is saved to disk could be modified.
+is running on, a file that is saved to disk could be modified.
 </p>
 
 <!-- END CHANGES HERE -->
@@ -264,8 +264,8 @@ The server administrator (starter) is tasked with the responsibility
 of keeping his/her private RSA key (used to create <b>k<sub>c</sub></b> and 
 <b>k<sub>i</sub></b> to protect the server private RSA key) safe from 
 compromise. This means that the key used to protect the server state files 
-is not present on the system, and will not be stolen in the result of a machine 
-compromise of any verified server. It is acceptable to require the starter of a 
+is not present on the system, and the state files will not be stolen in the result of a machine 
+compromise of any verified server or modified due to the HMAC. It is acceptable to require the starter of a 
 server to type in a full RSA key as both servers are assumed to have long 
 uptimes, and this operation only needs to occur once on server startup. This 
 administrator is also tasked with verifying the server's public key out-of-band with 
@@ -327,7 +327,7 @@ group alias concatenated with a randomly generated string.
 <p>
 This mechanism is sufficient for defending against the threat due to users no 
 longer being able to create a new group that possesses the same unique 
-identifier as a previously deleted group. A user could also now create any 
+identifier as a previously deleted group. A user can also create any 
 number of groups with any given alias, so they would never receive an error 
 message that would indicate if a group with a given identifier already existed. 
 The random string is generated using Java.Security.SecureRandom and is 128 bits 
