@@ -34,7 +34,7 @@ public class GroupThread extends Thread
 	private KeyPair rsaKeyPair;
 	private SecretKey sessionKey;
 	private String username;
-	private boolean solvedPuzzle;
+	private boolean solvePuzzle;
 
 	public GroupThread(Socket _socket, GroupServer _gs)
 	{
@@ -45,7 +45,7 @@ public class GroupThread extends Thread
 		sessionKey = null;
 		rsaKeyPair = my_gs.keyPair;
 		username = "";
-		solvedPuzzle = false;
+		solvePuzzle = false;
 	}
 
 	public void run()
@@ -89,6 +89,7 @@ public class GroupThread extends Thread
 				System.out.println("\nRequest received: " + message.getMessage());
 /*----------------------------------"PUZZLE"----------------------------------*/				
 				if (message.getMessage().equals("PUZZLE")) {
+					System.out.println("Sending Puzzle");
 					// Make puzzle
 					// encrypt answer
 					// send both
@@ -105,7 +106,7 @@ public class GroupThread extends Thread
 					}
 				}
 /*---------------------------------"RSALOGIN"---------------------------------*/	
-				else if (message.getMessage().equals("RSALOGIN" && solvePuzzle)) {
+				else if (message.getMessage().equals("RSALOGIN") && solvePuzzle) {
 					response = new Envelope("FAIL");
 					if (message.getObjContents().size() == 3) {
 						if (message.getObjContents().get(0) != null) {

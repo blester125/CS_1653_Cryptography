@@ -54,7 +54,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 				}
 			}
 		} catch (Exception e) {
-			e.printStacktrace();
+			e.printStackTrace();
 		}
 		return false;
 	}
