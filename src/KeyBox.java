@@ -10,6 +10,7 @@
  ************************************/
 
 import java.security.Key;
+import java.security.PrivateKey;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -73,6 +74,16 @@ public class KeyBox {
 	public static SecretKey generateIntegrityKey(SecretKey inputKey){
 
 		String temp = getKeyAsString(inputKey) + "Integrity";
+		byte[] hash = Hasher.hash(temp);
+
+		SecretKey key = new SecretKeySpec(hash, 0, hash.length, "AES");
+
+		return key;
+	}
+
+	public static SecretKey convertPrivateKey(PrivateKey inputKey){
+
+		String temp = getKeyAsString(inputKey);
 		byte[] hash = Hasher.hash(temp);
 
 		SecretKey key = new SecretKeySpec(hash, 0, hash.length, "AES");

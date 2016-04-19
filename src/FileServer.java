@@ -28,8 +28,12 @@ import java.security.Security;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Scanner;
+import javax.crypto.SecretKey;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
+import org.apache.commons.codec.binary.Base64;
 
 /* FileServer loads files from FileList.bin.  
    Stores files in shared_files directory. */
@@ -41,6 +45,8 @@ public class FileServer extends Server {
 
 	static final int RSA_BIT_KEYSIZE = 2048;
 	public static KeyPair rsaPair;
+	public PrivateKey inputPrivate;
+	public static SecretKey convertPrivate;
 
 	private String fileServerPublicPath = "fileserverpublic.key";
 	private String fileServerPrivatePath = "fileserverprivate.key";
@@ -57,19 +63,46 @@ public class FileServer extends Server {
 		Security.addProvider(new BouncyCastleProvider());
 
 		String fileFile = "FileList.bin";
+
+		Scanner console = new Scanner(System.in);
+		String publicKeyPath = "";
+		String privateKeyPath = "";
 		ObjectInputStream fileStream;
 		
 		//This runs a thread that saves the lists on program exit
 		Runtime runtime = Runtime.getRuntime();
 		Thread catchExit = new Thread(new ShutDownListenerFS());
 		runtime.addShutdownHook(catchExit);
+
+		System.out.println("Enter Starter's public key path: ");
+		publicKeyPath = console.next();
+		System.out.println("Enter Starter's private key in Base64 encoding: ");
+		privateKeyPath = console.next();
+
+		//Get private key from string
+		try {
+			byte[] privateBytes = Base64.decodeBase64(privateKeyPath.getBytes("utf-8"));
+			PKCS8EncodedKeySpec inputPrivateSpec = new PKCS8EncodedKeySpec(privateBytes);
+			KeyFactory privateFactory = KeyFactory.getInstance("RSA", "BC");
+			inputPrivate = privateFactory.generatePrivate(inputPrivateSpec);
+			convertPrivate = KeyBox.convertPrivateKey(inputPrivate);
+		} catch(Exception e){
+			e.printStackTrace();
+			System.exit(0);
+		}
+
+		KeyPair starterKeyPair = RSA.loadRSA(publicKeyPath, inputPrivate);
+
+		//NEED TO DECRYPT AND LOAD SERVER PRIVATE KEY (USING ADMIN KEYPAIR)
+		rsaPair = RSA.loadRSA(fileServerPublicPath, fileServerPrivatePath, convertPrivate);
 		
 		//Open user file to get user list
 		try
 		{
 			FileInputStream fis = new FileInputStream(fileFile);
 			fileStream = new ObjectInputStream(fis);
-			fileList = (FileList)fileStream.readObject();
+			Envelope tempEnv = (Envelope)fileStream.readObject();
+			fileList = (FileList)Envelope.extractInner(tempEnv, convertPrivate).getObjContents().get(0);
 		}
 		catch(FileNotFoundException e)
 		{
@@ -99,8 +132,6 @@ public class FileServer extends Server {
 		else {
 			System.out.println("Error creating shared_files directory");				 
 		}
-
-		rsaPair = RSA.loadRSA(fileServerPublicPath, fileServerPrivatePath);
 
 		//Autosave Daemon. Saves lists every 5 minutes
 		AutoSaveFS aSave = new AutoSaveFS();
@@ -142,10 +173,13 @@ class ShutDownListenerFS implements Runnable
 		System.out.println("Shutting down server");
 		ObjectOutputStream outStream;
 
+		Envelope fileListEnv = new Envelope("FileList");
+		fileListEnv.addObject(FileServer.fileList);
+		Envelope superFileListEnv = Envelope.buildSuper(fileListEnv, FileServer.convertPrivate);
 		try
 		{
 			outStream = new ObjectOutputStream(new FileOutputStream("FileList.bin"));
-			outStream.writeObject(FileServer.fileList);
+			outStream.writeObject(superFileListEnv);
 		}
 		catch(Exception e)
 		{
@@ -166,10 +200,14 @@ class AutoSaveFS extends Thread
 				Thread.sleep(300000); //Save group and user lists every 5 minutes
 				System.out.println("Autosave file list...");
 				ObjectOutputStream outStream;
+
+				Envelope fileListEnv = new Envelope("FileList");
+				fileListEnv.addObject(FileServer.fileList);
+				Envelope superFileListEnv = Envelope.buildSuper(fileListEnv, FileServer.convertPrivate);
 				try
 				{
 					outStream = new ObjectOutputStream(new FileOutputStream("FileList.bin"));
-					outStream.writeObject(FileServer.fileList);
+					outStream.writeObject(superFileListEnv);
 				}
 				catch(Exception e)
 				{
