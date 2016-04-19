@@ -1073,6 +1073,16 @@ public class ClientApp {
 			JOptionPane.showMessageDialog(null, "Connection failure. Could not connect to FILE server at " + ipAddr + ":" + port + ".", "Connection Failure", JOptionPane.OK_CANCEL_OPTION);
 			return;
 		}
+
+		if (!RunClient.fileC.solvePuzzle()) {
+					// Error getting the group server key
+					JOptionPane.showMessageDialog(
+									null, 
+									"Unable to solve the Computational puzzle.", 
+									"DoS protection", 
+									JOptionPane.OK_CANCEL_OPTION);
+					return;
+				}
 		// Establish secret key with Diffie-Hellman Protocol
 		/*if(RunClient.fileC.establishSessionKey() == null) {
 			JOptionPane.showMessageDialog(null, "Connection failure. Could not establish a secure connection to FILE server at " + ipAddr + ":" + port + ".", "Connection Failure", JOptionPane.OK_CANCEL_OPTION);

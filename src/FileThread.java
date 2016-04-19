@@ -94,6 +94,23 @@ public class FileThread extends Thread
 				}
 
 				System.out.println("Request received: " + e.getMessage());
+				if (e.getMessage().equals("PUZZLE")) {
+					System.out.println("Sending Puzzle");
+					// Make puzzle
+					// encrypt answer
+					// send both
+					// receive user answer and encrypted answer
+					// verify answer
+
+					// Skeleton place holder 
+					try {
+						response = new Envelope("OK");
+						output.writeObject(response);
+						solvePuzzle = true;
+					} catch (Exception e1) {
+						e1.printStackTrace();
+					}
+				}
 				else if (e.getMessage().equals("REQUEST") && solvePuzzle) {
 					response = new Envelope("REQ-RESPONSE");
 					response.addObject(rsaPair.getPublic());
@@ -711,7 +728,7 @@ public class FileThread extends Thread
 				{
 					socket.close();
 					proceed = false;
-					isScureConnection = false;
+					isSecureConnection = false;
 					isAuthenticated = false;
 					solvePuzzle = false;
 				}
@@ -721,7 +738,7 @@ public class FileThread extends Thread
 		{
 			System.err.println("Error: " + e.getMessage());
 			e.printStackTrace(System.err);
-			isScureConnection = false;
+			isSecureConnection = false;
 			isAuthenticated = false;
 			solvePuzzle = false;
 		}
