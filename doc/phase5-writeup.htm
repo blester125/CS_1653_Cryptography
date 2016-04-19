@@ -271,7 +271,9 @@ This mechanism is sufficient for defending against this threat.
 The server administrator (starter) is tasked with the responsibility 
 of keeping his/her private RSA key (used to create <b>k<sub>c</sub></b> and 
 <b>k<sub>i</sub></b> to protect the server private RSA key) safe from 
-compromise. This means that the key used to protect the server state files 
+compromise. It is safe to create these keys from the private key due to 
+our cryptographically secure hash functions which has preimage resistance.
+The compromise of one key will reveal nothing about another key. This means that the key used to protect the server state files 
 is not present on the system, and the state files will not be stolen in the result of a machine 
 compromise of any verified server or modified due to the HMAC. It is acceptable to require the starter of a 
 server to type in a full RSA key as both servers are assumed to have long 
@@ -301,7 +303,8 @@ This mechanism is sufficient for defending against this threat.
 The server administrator (starter) is tasked with the responsibility 
 of keeping his/her private RSA key (used to create <b>k<sub>c</sub></b> and 
 <b>k<sub>i</sub></b> to protect the server private RSA key) safe from 
-compromise. This means that the key used to protect the server private key 
+compromise. This key derivation is safe due to the property of preimage resistance
+mentioned in T8. This means that the key used to protect the server private key 
 is not present on the system, and will not be stolen in the result of a machine 
 compromise of any verified server. It is acceptable to require the starter of a 
 server to type in a full RSA key as both servers are assumed to have long 
@@ -405,7 +408,10 @@ countermeasures in a particular way so as not to re-introduce these older
 threats?</p>
 
 <p>
-
+There was no overlap between the threats for P5 and the past phases. The private asymmetric keys
+are now split into confidentiallity and integrity keys. The DoS threat is entirely separate from all
+past protocols and counter-measures. The only change that affect the previous phases deals with fixing an oversight from the previous
+phases in the information leakage from group naming. No past threats were reintroduced.
 </p>
 
 <p>If your group implemented the countermeasures or did any extra credit, please
