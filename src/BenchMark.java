@@ -33,7 +33,7 @@ public class BenchMark {
 		fileC = new FileClient();
 		PublicKey serverPublicKey = RSA.loadServerKey("groupserverpublic.key");
 		long start = System.currentTimeMillis();
-		groupC.connect("localhost", 8080);
+		groupC.connect("192.168.1.219", 8080);
 		groupC.authenticateGroupServerRSA("test", "adminpublic.key", "adminprivate.key");
 		UserToken t = groupC.getToken("test", serverPublicKey);
 		groupC.createGroup("test", t);
