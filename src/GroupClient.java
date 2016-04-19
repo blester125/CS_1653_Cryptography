@@ -42,6 +42,23 @@ public class GroupClient extends Client implements GroupClientInterface {
 
 /*---------------------RSA Authentication Functions---------------------------*/
 
+	public boolean solvePuzzle() {
+		try {
+			Envelope message = new Envelope("PUZZLE");
+			output.writeObject(message);
+			// recive puzzle and solve
+			Envelope response = (Envelope)input.readObject();
+			if(response != null) {
+				if (response.getMessage().equals("OK")) {
+					return true;
+				}
+			}
+		} catch (Exception e) {
+			e.printStacktrace();
+		}
+		return false;
+	}
+
 	/**
 	 * Loads RSA public key and tries to share it with the server.
 	 * @param publicPath: The path to the file that contains the new 

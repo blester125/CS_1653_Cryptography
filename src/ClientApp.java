@@ -906,6 +906,18 @@ public class ClientApp {
 		else {
 			// Establish secure connection with Diffie-Hellman Protocol
 			try {
+				// Get and solve the Puzzle first
+				if (!RunClient.groupC.solvePuzzle()) {
+					// Error getting the group server key
+					JOptionPane.showMessageDialog(
+									null, 
+									"Unable to solve the Computational puzzle.", 
+									"DoS protection", 
+									JOptionPane.OK_CANCEL_OPTION);
+					return;
+				}
+
+
 				int result = RunClient.groupC.authenticateGroupServerRSA(username, publicPath, privatePath);
 				if (result == -1) {
 					// Error getting the group server key

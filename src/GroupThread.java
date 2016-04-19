@@ -94,7 +94,15 @@ public class GroupThread extends Thread
 					// send both
 					// receive user answer and encrypted answer
 					// verify answer
-					solvePuzzle = true;
+
+					// Skeleton place holder 
+					try {
+						response = new Envelope("OK");
+						output.writeObject(response);
+						solvePuzzle = true;
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
 				}
 /*---------------------------------"RSALOGIN"---------------------------------*/	
 				else if (message.getMessage().equals("RSALOGIN" && solvePuzzle)) {
