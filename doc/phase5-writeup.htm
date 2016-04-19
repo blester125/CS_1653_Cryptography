@@ -369,11 +369,36 @@ above-documented approach? Did you design attacks that you were unable to
 mitigate, or that you think are impossible to mitigate? Use this space to show
 off your hard work!</p>
 
+<p>
+Our threat model is overly ambitious for even the most secure-minded environments
+and users. Many reasonable assumptions for a file sharing system that may be
+applied for such a system to be considered secure must fail for some of our
+protection mechanisms to come into play. Such as the extremely weak assumptions
+made on the ability for a server to keep its own files isolated on its local machine. Furthermore,
+all of the security measures implemented for our system makes it inconvenient
+for use by both the users and the administrators. Our design process was that
+general testing of the system and looking over protocol overviews from the previous
+phases led us to discover where we made mistakes (such as with information leakage
+via non-unique group names) and where we made some implicit assumptions of stronger
+trust than what is outlined herein. Some of our ideas did not pan out, such as
+thinking our system did not have plausible deniability. We realized that the signed
+Diffie-Hellman protocol actually does provide such a characteristic, but we had planned
+on an encrypted Diffie-Hellman protocol and outlined it before realizing we had already acheived
+plausible deniability. The one attack we are unable to fully defend against is DoS, as
+there are really no 100% guaranteed protections against such an attack at the moment, or even
+mostly correct defenses that do not require a fair bit of sophistication. We can only
+stop small-scale DoS and DDoS attacks with our countermeasures. 
+</p>
+
 <p>Finally, spend a paragraph discussing the interplay between the
 countermeasures for your proposed attacks and your techniques for mitigating
 threats T1–T7 from Phases P3 and P4 of the project. Did you have to design your
 countermeasures in a particular way so as not to re-introduce these older
 threats?</p>
+
+<p>
+
+</p>
 
 <p>If your group implemented the countermeasures or did any extra credit, please
 discuss these additional contributions in this section, as well.</p>
