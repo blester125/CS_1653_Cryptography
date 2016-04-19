@@ -34,6 +34,7 @@ public class GroupThread extends Thread
 	private KeyPair rsaKeyPair;
 	private SecretKey sessionKey;
 	private String username;
+	private boolean solvedPuzzle;
 
 	public GroupThread(Socket _socket, GroupServer _gs)
 	{
@@ -44,6 +45,7 @@ public class GroupThread extends Thread
 		sessionKey = null;
 		rsaKeyPair = my_gs.keyPair;
 		username = "";
+		solvedPuzzle = false;
 	}
 
 	public void run()
@@ -85,9 +87,17 @@ public class GroupThread extends Thread
 				}
 				
 				System.out.println("\nRequest received: " + message.getMessage());
-				
+/*----------------------------------"PUZZLE"----------------------------------*/				
+				if (message.getMessage().equals("PUZZLE")) {
+					// Make puzzle
+					// encrypt answer
+					// send both
+					// receive user answer and encrypted answer
+					// verify answer
+					solvePuzzle = true;
+				}
 /*---------------------------------"RSALOGIN"---------------------------------*/	
-				if (message.getMessage().equals("RSALOGIN")) {
+				else if (message.getMessage().equals("RSALOGIN" && solvePuzzle)) {
 					response = new Envelope("FAIL");
 					if (message.getObjContents().size() == 3) {
 						if (message.getObjContents().get(0) != null) {
@@ -193,7 +203,8 @@ public class GroupThread extends Thread
 					output.writeObject(response);
 				}
 				else if (message.getMessage().equals("TWO-FACTOR")
-							&& username != null) {
+							&& username != null
+							&& solvePuzzle) {
 					innerResponse = new Envelope("FAIL");
 					if (message.getObjContents().size() == 3) {
 						if (message.getObjContents().get(0) != null) {
@@ -227,7 +238,8 @@ public class GroupThread extends Thread
 /*---------------------------------"RSAKEY"-----------------------------------*/
 				else if (message.getMessage().equals("RSAKEY")
 							&& isSecureConnection
-							&& isAuthenticated) {
+							&& isAuthenticated
+							&& solvePuzzle) {
 					if (message.getObjContents().size() < 2) {
 						innerResponse = new Envelope("FAIL");
 					}
@@ -253,9 +265,12 @@ public class GroupThread extends Thread
 					response = Envelope.buildSuper(innerResponse, sessionKey);
 					output.writeObject(response);
 				}
+				/* Version of two factor that tried to use random umbers from 
+				   Both parties to generate a shared secret, not currently working*/
 				/*else if (message.getMessage().equals("ENABLE-TWO-FACTOR")
 							&& isSecureConnection
-							&& isAuthenticated) {
+							&& isAuthenticated
+							&& solvePuzzle) {
 					innerResponse = new Envelope("FAIL");
 					KeyPair twoFactorkeyPair = null;
 					KeyAgreement twoFactorkeyAgreement = null;
@@ -295,7 +310,8 @@ public class GroupThread extends Thread
 				} */
 				else if (message.getMessage().equals("ENABLE-TWO-FACTOR")
 							&& isSecureConnection
-							&& isAuthenticated) {
+							&& isAuthenticated
+							&& solvePuzzle) {
 					innerResponse = new Envelope("FAIL");
 					KeyPair twoFactorkeyPair = null;
 					KeyAgreement twoFactorkeyAgreement = null;
@@ -326,7 +342,8 @@ public class GroupThread extends Thread
 /*----------------------------------"GET"-------------------------------------*/
 				else if (message.getMessage().equals("GET") 
 							&& isSecureConnection
-							&& isAuthenticated) {//Client wants a token
+							&& isAuthenticated
+							&& solvePuzzle) {//Client wants a token
 					innerResponse = new Envelope("FAIL");
 					if (message.getObjContents().size() == 3) {
 						if (message.getObjContents().get(0) != null){
@@ -363,7 +380,8 @@ public class GroupThread extends Thread
 				// should only be called on file upload/download after get token
 				else if (message.getMessage().equals("GET-GMETADATA") 
 						&& isSecureConnection
-						&& isAuthenticated) {//Client wants meta-data for their groups
+						&& isAuthenticated
+						&& solvePuzzle) {//Client wants meta-data for their groups
 					if(message.getObjContents().size() != 2) {
 						innerResponse = new Envelope("FAIL");
 					}
@@ -401,7 +419,8 @@ public class GroupThread extends Thread
 /*----------------------------------"CUSER"-----------------------------------*/
 				else if (message.getMessage().equals("CUSER") 
 							&& isSecureConnection
-							&& isAuthenticated) {
+							&& isAuthenticated
+							&& solvePuzzle) {
 					if (message.getObjContents().size() < 3) {
 						innerResponse = new Envelope("FAIL");
 					}
@@ -436,7 +455,8 @@ public class GroupThread extends Thread
 /*----------------------------------"DUSER"-----------------------------------*/
 				else if(message.getMessage().equals("DUSER") 
 						&& isSecureConnection
-						&& isAuthenticated) //Client wants to delete a user
+						&& isAuthenticated
+						&& solvePuzzle) //Client wants to delete a user
 				{
 					if (message.getObjContents().size() < 3) {
 						innerResponse = new Envelope("FAIL");
@@ -469,7 +489,8 @@ public class GroupThread extends Thread
 /*---------------------------------"CGROUP"-----------------------------------*/
 				else if(message.getMessage().equals("CGROUP") 
 						&& isSecureConnection
-						&& isAuthenticated) //Client wants to create a group
+						&& isAuthenticated
+						&& solvePuzzle) //Client wants to create a group
 				{	
 					if (message.getObjContents().size() < 3) {
 						innerResponse = new Envelope("FAIL");
@@ -503,7 +524,8 @@ public class GroupThread extends Thread
 /*---------------------------------"DGROUP"-----------------------------------*/
 				else if(message.getMessage().equals("DGROUP") 
 						&& isSecureConnection
-						&& isAuthenticated) //Client wants to delete a group
+						&& isAuthenticated
+						&& solvePuzzle) //Client wants to delete a group
 				{
 					if (message.getObjContents().size() < 3) {
 						innerResponse = new Envelope("FAIL");
@@ -536,7 +558,8 @@ public class GroupThread extends Thread
 /*---------------------------------"LMEMBERS"---------------------------------*/
 				else if(message.getMessage().equals("LMEMBERS") 
 						&& isSecureConnection
-						&& isAuthenticated) //Client wants a list of members in a group
+						&& isAuthenticated
+						&& solvePuzzle) //Client wants a list of members in a group
 				{
 					// If there isn't enough information in the envelope
 					if (message.getObjContents().size() < 3) {
@@ -575,7 +598,8 @@ public class GroupThread extends Thread
 /*-------------------------------"AUSERTOGROUP"-------------------------------*/
 				else if(message.getMessage().equals("AUSERTOGROUP") 
 						&& isSecureConnection
-						&& isAuthenticated) //Client wants to add user to a group
+						&& isAuthenticated
+						&& solvePuzzle) //Client wants to add user to a group
 				{
 					// Is there a userName, groupName, and Token in the Envelope
 					if (message.getObjContents().size() < 4)
@@ -614,7 +638,8 @@ public class GroupThread extends Thread
 /*--------------------------------"RUSERFROMGROUP"----------------------------*/
 				else if(message.getMessage().equals("RUSERFROMGROUP") 
 						&& isSecureConnection
-						&& isAuthenticated) //Client wants to remove user from a group
+						&& isAuthenticated
+						&& solvePuzzle) //Client wants to remove user from a group
 				{
 					// Is there a userName, groupName, and Token in the Envelope
 					if (message.getObjContents().size() < 4){
@@ -651,9 +676,12 @@ public class GroupThread extends Thread
 /*---------------------------------"DISCONNECT"-------------------------------*/
 				else if(message.getMessage().equals("DISCONNECT") 
 						&& isSecureConnection
-						&& isAuthenticated) //Client wants to disconnect
+						&& isAuthenticated
+						&& solvePuzzle) //Client wants to disconnect
 				{
 					isSecureConnection = false;
+					isAuthenticated = false;
+					solvePuzzle = false;
 					username = null;
 					sessionKey = null;
 					socket.close(); //Close the socket
@@ -674,6 +702,8 @@ public class GroupThread extends Thread
 			isSecureConnection = false;
 			username = null;
 			sessionKey = null;
+			isAuthenticated = false;
+			solvePuzzle = false;
 			System.err.println("Error: " + e.getMessage());
 			e.printStackTrace(System.err);
 		}
