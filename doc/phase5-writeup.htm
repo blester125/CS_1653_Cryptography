@@ -29,7 +29,15 @@ Carmen Condeluci, crc73@pitt.edu <br>
     <section id="overview">
       <h2>Overview</h2>
 <!-- BEGIN CHANGES HERE -->
-
+      <p>
+      Our general threat model relies on weakened assumptions primarily dealing with the 
+      untrusted nature of the local machines and what is stored on disk on the servers.
+      The threat model encompasses having files that are saved long term on the server be vulnerable,
+      and so confidentiallity and integrity measures are in place. There are also threats
+      against DoS attacks and a vulnerability that partially remained from the previous phases
+      concerning information leakage via group naming. The former is taken care of via
+      a simple computational puzzle and the latter via a fix that assigns unique identifiers to group names.
+      <p/>
 <!-- <p>Most of the threats outlined in this section revolve around the untrustworthiness of the machines that the group/file server run on. The trust models for the individual parts break down like this: 
 
 <br><b>Group Server:</b> The group server is still entirely trustworthy.<br><b>File Server:</b> The file server is trust for the same things that it is trusted in part 4 of the project. The difference is that it is no longer trusted to not modify the files on disk.<br><b>Clients:</b> Clients are still entirely untrusted.<br><b>Machines that the programs are run on:</b> These are entirely untrusted.</p> -->
