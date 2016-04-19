@@ -18,6 +18,7 @@ public class ShareFile implements java.io.Serializable, Comparable<ShareFile> {
 	private int keyVersion;
 	private byte[] iv;
 	private long length;
+	private byte[] HMAC;
 	
 	public ShareFile(
 						String _owner, 
@@ -26,7 +27,8 @@ public class ShareFile implements java.io.Serializable, Comparable<ShareFile> {
 						int _keyIndex,
 						int _keyVersion,
 						byte[] _iv,
-						long _length) {
+						long _length,
+						byte[] _HMAC) {
 		group = _group;
 		owner = _owner;
 		path = _path;
@@ -34,6 +36,7 @@ public class ShareFile implements java.io.Serializable, Comparable<ShareFile> {
 		keyVersion = _keyVersion;
 		iv = _iv;
 		length = _length;
+		HMAC = _HMAC;
 	}
 	
 	public String getPath()
@@ -64,6 +67,10 @@ public class ShareFile implements java.io.Serializable, Comparable<ShareFile> {
 	
 	public long getLength() {
 		return length;
+	}
+	
+	public byte[] getHMAC() {
+		return HMAC;
 	}
 	
 	public int compareTo(ShareFile rhs) {

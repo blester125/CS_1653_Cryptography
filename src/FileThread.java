@@ -415,7 +415,7 @@ public class FileThread extends Thread
 											}
 											System.out.println("I GOT: " + e);
 											if(e.getMessage().compareTo("EOF")==0) {
-												if(e.getObjContents() != null && e.getObjContents().size() == 6)
+												if(e.getObjContents() != null && e.getObjContents().size() == 7)
 												{
 													if(e.getObjContents().get(0) == null){
 														System.err.println("Error: null key index field");
@@ -433,10 +433,13 @@ public class FileThread extends Thread
 														System.err.println("Error: null file length field");
 													}
 													else if(e.getObjContents().get(5) == null){
+														System.err.println("Error: null HMAC");
+													}
+													else if(e.getObjContents().get(6) == null){
 														System.err.println("Error: null seq num field");
 													}
 													else {
-													int eofseq = (Integer)e.getObjContents().get(5);
+													int eofseq = (Integer)e.getObjContents().get(6);
 													System.out.println("Expected: " + (sequenceNumber+1));
 													System.out.println("Got: " + eofseq);
 				    									if(eofseq == sequenceNumber + 1){
@@ -446,9 +449,10 @@ public class FileThread extends Thread
 															byte[] iv = (byte[])e.getObjContents().get(2);
 															byte[] padBlock = (byte[])e.getObjContents().get(3);
 															long fileLength = (Long)e.getObjContents().get(4);
+															byte[] HMAC = (byte[])e.getObjContents().get(5);
 															System.out.printf("Transfer successful file %s\n", remotePath);
 															FileServer.fileList.addFile(yourToken.getSubject(), group, 
-																	remotePath, keyIndex, keyVersion, iv, fileLength);
+																	remotePath, keyIndex, keyVersion, iv, fileLength, HMAC);
 															sequenceNumber += 2;
 															response = new Envelope("OK"); //Success
 															response.addObject(sequenceNumber);
@@ -553,6 +557,7 @@ public class FileThread extends Thread
 													response.addObject(new Integer(sf.getKeyVersion()));
 													response.addObject(sf.getIv());
 													response.addObject(sf.getLength());
+													response.addObject(sf.getHMAC());
 													sentMetadata = true;
 												}
 												response.addObject(sequenceNumber);

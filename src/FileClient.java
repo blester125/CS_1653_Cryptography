@@ -22,6 +22,7 @@ import java.io.PrintWriter;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.PublicKey;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.crypto.Cipher;
@@ -394,10 +395,11 @@ public class FileClient extends Client implements FileClientInterface {
 			
 			// retrieve/generate meta-data for file encryption
 		 	IvParameterSpec iv = CipherBox.generateRandomIV();
-		 	SecretKey key = groupMetadata.getCurrentKey();
+		 	SecretKey key = groupMetadata.getCurrentConfKey();
 		 	int keyIndex = groupMetadata.getCurrentKeyIndex();
 		 	int keyVersion = groupMetadata.getCurrentKeyVer();
 		 	Cipher AESCipherEncrypt = CipherBox.initializeEncryptCipher(key, iv);
+		 	byte[] HMAC = new byte[0];
 		 	do {
 				byte[] buf = new byte[4096];
 
@@ -415,6 +417,8 @@ public class FileClient extends Client implements FileClientInterface {
 						message = new Envelope("CHUNK");
 						int n = fis.read(buf); //can throw an IOException
 						byte[] block = AESCipherEncrypt.update(buf);
+						// hash block
+						HMAC = Hasher.concatenateArrays(HMAC, Hasher.hash(buf));
 
 						if (n > 0) {
 							System.out.printf(".");
@@ -452,6 +456,8 @@ public class FileClient extends Client implements FileClientInterface {
 					long fileLength = f.length();
 					//finish last block of encryption
 					byte[] block = AESCipherEncrypt.doFinal();
+					// compute hash for entire file
+					HMAC = Hasher.generateHMAC(groupMetadata.getCurrentIntegKey(), HMAC);
 					message = new Envelope("EOF");
 					// send the file length, key index, key version, and IV used to encrypt the file
 					message.addObject(new Integer(keyIndex));
@@ -459,6 +465,7 @@ public class FileClient extends Client implements FileClientInterface {
 					message.addObject(iv.getIV());
 					message.addObject(block);
 					message.addObject(fileLength);
+					message.addObject(HMAC);
 					message.addObject(sequenceNumber);
 					output.writeObject(Envelope.buildSuper(message, sessionKey));
 				
@@ -468,6 +475,7 @@ public class FileClient extends Client implements FileClientInterface {
 							Integer eofseq = (Integer)env.getObjContents().get(0);
 							if(eofseq == sequenceNumber + 1){
 								System.out.printf("\nFile data upload successful\n");
+								System.out.println("HMAC : " + HMAC);
 								sequenceNumber += 2;
 							}
 						}
@@ -502,7 +510,6 @@ public class FileClient extends Client implements FileClientInterface {
 			if (!file.exists()) {
 				file.createNewFile();
 				FileOutputStream fos = new FileOutputStream(file);
-					    
 				Envelope env = new Envelope("DOWNLOADF"); //Success
 				env.addObject(sourceFile);
 				env.addObject(token);
@@ -516,7 +523,7 @@ public class FileClient extends Client implements FileClientInterface {
 				env = Envelope.extractInner((Envelope)input.readObject(), sessionKey);
 				System.out.println(env);
 				// process meta-data for file and initialize decryption
-				if(env.getObjContents().size() == 7) {
+				if(env.getObjContents().size() == 8) {
 					if(env.getObjContents().get(0) == null) {
 						System.err.println("Error: null text");
 					}
@@ -536,6 +543,9 @@ public class FileClient extends Client implements FileClientInterface {
 						System.err.println("Error: null file length");
 					}
 					else if(env.getObjContents().get(6) == null) {
+						System.err.println("Error: null HMAC");
+					}
+					else if(env.getObjContents().get(7) == null) {
 						System.err.println("Error: null seq num");
 					}
 				}
@@ -543,7 +553,7 @@ public class FileClient extends Client implements FileClientInterface {
 					System.err.println("Error: invalid number of object contents");
 				}
 				
-				Integer firstChunkSeq = (Integer)env.getObjContents().get(6);
+				Integer firstChunkSeq = (Integer)env.getObjContents().get(7);
 				if(firstChunkSeq == sequenceNumber + 1){
 					int length = (int)env.getObjContents().get(1);
 					// retrieve file meta-data
@@ -551,13 +561,19 @@ public class FileClient extends Client implements FileClientInterface {
 					int keyVersion = (Integer)env.getObjContents().get(3);
 					IvParameterSpec iv = new IvParameterSpec((byte[])env.getObjContents().get(4));
 					long fileLength = (Long)env.getObjContents().get(5);
-					Key key = groupMetadata.calculateKey(keyIndex, keyVersion);
+					byte[] HMAC = (byte[])env.getObjContents().get(6);
+					Key key = KeyBox.generateConfidentialityKey(groupMetadata.calculateKey(keyIndex, keyVersion));
 					Cipher AESCipherDecrypt = CipherBox.initializeDecryptCipher(key, iv);
+					byte[] computedHMAC = new byte[0];
 					while (env.getMessage().compareTo("CHUNK")==0) {
 						try {
 							// decrypt chunk and write to local file
 							byte[] buf = (byte[])env.getObjContents().get(0);
 							byte[] decryptedBuf = AESCipherDecrypt.update(buf);
+							if(decryptedBuf.length < 4096) {
+								decryptedBuf = Hasher.concatenateArrays(decryptedBuf, new byte[4096-decryptedBuf.length]);
+							}
+							computedHMAC = Hasher.concatenateArrays(computedHMAC, Hasher.hash(decryptedBuf));
 							if(fileLength - decryptedBuf.length >= 0) {
 								fos.write(decryptedBuf);
 								fileLength = fileLength - decryptedBuf.length;
@@ -599,6 +615,13 @@ public class FileClient extends Client implements FileClientInterface {
 				    if(env.getMessage().compareTo("EOF")==0) {
 				    	if(env.getObjContents().get(0) != null){
 				    		Integer eofseq = (Integer)env.getObjContents().get(0);
+				    		// check computed hash to saved hash
+				    		computedHMAC = Hasher.generateHMAC(groupMetadata.getCurrentIntegKey(), computedHMAC);
+				    		if(!Arrays.equals(computedHMAC, HMAC)) {
+				    			System.out.println("WARNING: THE DOWNLOADED FILE HAS BEEN TAMPERED WITH");
+				    			System.out.println("Expected HMAC: " + Arrays.toString(computedHMAC));
+				    			System.out.println("Received HMAC: " + Arrays.toString(HMAC));
+				    		}
 				    		if(eofseq == sequenceNumber + 1){
 				    			fos.close();
 							System.out.printf("\nTransfer successful file %s\n", sourceFile);

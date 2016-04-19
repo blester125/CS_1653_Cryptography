@@ -25,9 +25,9 @@ import java.util.Collections;
 	}
 	
 	public synchronized void addFile(String owner, String group, String path, int keyIndex, 
-			int keyVersion, byte[] iv, long length)
+			int keyVersion, byte[] iv, long length, byte[] HMAC)
 	{
-		ShareFile newFile = new ShareFile(owner, group, path, keyIndex, keyVersion, iv, length);
+		ShareFile newFile = new ShareFile(owner, group, path, keyIndex, keyVersion, iv, length, HMAC);
 		list.add(newFile);
 	}
 	

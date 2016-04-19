@@ -48,6 +48,14 @@ public class GroupMetadata implements java.io.Serializable {
 	    	return currentKey;
 	    }
 	    
+	    public SecretKey getCurrentConfKey() {
+	    	return KeyBox.generateConfidentialityKey(currentKey);
+	    }
+	    
+	    public SecretKey getCurrentIntegKey() {
+	    	return KeyBox.generateIntegrityKey(currentKey);
+	    }
+	    
 	    public int getCurrentKeyIndex() {
 	    	return currentKeyIndex;
 	    }
@@ -55,6 +63,7 @@ public class GroupMetadata implements java.io.Serializable {
 	    public int getCurrentKeyVer() {
 	    	return currentKeyVer;
 	    }
+	    
 	    
 	    public ArrayList<SecretKey> getOldKeys() {
 	    	return oldKeys;

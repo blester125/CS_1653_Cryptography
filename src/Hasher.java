@@ -17,6 +17,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.Security;
+import java.util.Arrays;
 
 import javax.crypto.Mac;
 
@@ -27,6 +28,17 @@ public class Hasher {
 		try {
 			MessageDigest md = MessageDigest.getInstance("SHA-256", "BC");
 			md.update(obj.toString().getBytes("UTF-8"));
+			return md.digest();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	public static byte[] hash(byte[] arr) {
+		try {
+			MessageDigest md = MessageDigest.getInstance("SHA-256", "BC");
+			md.update(arr);
 			return md.digest();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -45,6 +57,8 @@ public class Hasher {
 			return null;
 		}	
 	}
+	
+	
 
 	public static boolean verifyHash(byte[] recvHash, Object obj) {
 		byte[] madeHash = hash(obj);
