@@ -67,4 +67,21 @@ public abstract class Client {
 			}
 		}
 	}
+
+	public boolean solvePuzzle() {
+		try {
+			Envelope message = new Envelope("PUZZLE");
+			output.writeObject(message);
+			// recive puzzle and solve
+			Envelope response = (Envelope)input.readObject();
+			if(response != null) {
+				if (response.getMessage().equals("OK")) {
+					return true;
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
 }

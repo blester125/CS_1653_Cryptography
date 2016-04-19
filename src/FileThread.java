@@ -36,6 +36,7 @@ public class FileThread extends Thread
 	private final Socket socket;
 	private boolean isSecureConnection;
 	private boolean isAuthenticated;
+	private boolean solvePuzzle;
 	private SecretKey sessionKey;
 	private KeyPair rsaPair;
 	// Group Server Public Key
@@ -48,6 +49,7 @@ public class FileThread extends Thread
 		rsaPair = _rsaPair;
 		isSecureConnection = false;
 		isAuthenticated = false;
+		solvePuzzle = false;
 		
 	}
 
@@ -92,7 +94,7 @@ public class FileThread extends Thread
 				}
 
 				System.out.println("Request received: " + e.getMessage());
-				if (e.getMessage().equals("REQUEST")) {
+				else if (e.getMessage().equals("REQUEST") && solvePuzzle) {
 					response = new Envelope("REQ-RESPONSE");
 					response.addObject(rsaPair.getPublic());
 					System.out.println("-----REQUEST - Sending my Public Key to User-----");
@@ -100,7 +102,8 @@ public class FileThread extends Thread
 					System.out.println(response + "\n");
 					output.writeObject(response);
 				}
-				else if (e.getMessage().equals("SIGNED-DIFFIE-HELLMAN")) {
+				else if (e.getMessage().equals("SIGNED-DIFFIE-HELLMAN") 
+							&& solvePuzzle) {
 					response = new Envelope("Fail");
 					System.out.println("-----SIGENED-DIFFIE-HELLMAN - User Sends Public Key-----");
 					System.out.println("Received:");
@@ -209,7 +212,10 @@ public class FileThread extends Thread
 					} 
 				}
 				// Handler to list files that this user is allowed to see
-				else if(e.getMessage().equals("LFILES") && isSecureConnection && isAuthenticated)
+				else if(e.getMessage().equals("LFILES") 
+							&& isSecureConnection 
+							&& isAuthenticated
+							&& solvePuzzle)
 				{
 				    //Do error handling
 				    response = new Envelope("FAIL");
@@ -264,7 +270,10 @@ public class FileThread extends Thread
 				    output.writeObject(Envelope.buildSuper(response, sessionKey));
 					System.out.println("SENT from LFILES: " + response);   	
 				}
-				if(e.getMessage().equals("LFILESG") && isSecureConnection && isAuthenticated) //List only files in specified group
+				else if(e.getMessage().equals("LFILESG") 
+						&& isSecureConnection 
+						&& isAuthenticated
+						&& solvePuzzle) //List only files in specified group
 				{
 				System.out.println(e);
 				    //Do error handling
@@ -337,7 +346,10 @@ public class FileThread extends Thread
 					output.writeObject(Envelope.buildSuper(response, sessionKey));
 					System.out.println("SENT from LFILESG: " + response);
 				}   	
-				if(e.getMessage().equals("UPLOADF") && isSecureConnection && isAuthenticated)
+				else if(e.getMessage().equals("UPLOADF") 
+							&& isSecureConnection 
+							&& isAuthenticated
+							&& solvePuzzle)
 				{
 					System.out.println("First RECEIVED: " + e);
 					if(e.getObjContents() == null || e.getObjContents().size() < 3)
@@ -471,7 +483,10 @@ public class FileThread extends Thread
 					output.writeObject(Envelope.buildSuper(response, sessionKey));
 					System.out.println("SENT from UPLOADF: " + response);
 				}
-				else if (e.getMessage().equals("DOWNLOADF") && isSecureConnection && isAuthenticated) 
+				else if (e.getMessage().equals("DOWNLOADF") 
+							&& isSecureConnection 
+							&& isAuthenticated
+							&& solvePuzzle) 
 				{
 					System.out.println("FIRST RECEIVED: " + e);
 					int dSuccessFlag = 0;
@@ -624,7 +639,10 @@ public class FileThread extends Thread
 					}
 					//System.out.println("SENT from DOWNLOADF (NO WRITEOUT): " + response);
 				}
-				else if (e.getMessage().compareTo("DELETEF")==0 && isSecureConnection && isAuthenticated) {
+				else if (e.getMessage().compareTo("DELETEF")==0 
+							&& isSecureConnection 
+							&& isAuthenticated
+							&& solvePuzzle) {
 					if(e.getObjContents() == null || e.getObjContents().size() < 2) {
 						response = new Envelope("FAIL-BADCONTENTS");
 						output.writeObject(response);
@@ -693,6 +711,9 @@ public class FileThread extends Thread
 				{
 					socket.close();
 					proceed = false;
+					isScureConnection = false;
+					isAuthenticated = false;
+					solvePuzzle = false;
 				}
 			} while(proceed);
 		}
@@ -700,6 +721,9 @@ public class FileThread extends Thread
 		{
 			System.err.println("Error: " + e.getMessage());
 			e.printStackTrace(System.err);
+			isScureConnection = false;
+			isAuthenticated = false;
+			solvePuzzle = false;
 		}
 	}
 
