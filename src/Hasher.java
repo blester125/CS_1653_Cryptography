@@ -37,6 +37,17 @@ public class Hasher {
 		}
 	}
 
+	public static byte[] hash(byte[] obj) {
+		try {
+			MessageDigest md = MessageDigest.getInstance("SHA-256", "BC");
+			md.update(obj);
+			return md.digest();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
 	public static byte[] generateHMAC(Key k, byte[] obj) {
 		try {		
 			Mac mac = Mac.getInstance("HmacSHA256", "BC");
@@ -84,30 +95,60 @@ public class Hasher {
 
 	public static byte[] bruteForce(int size, byte[] goal) {
 		byte[] answer = new byte[size];
-		ArrayList<Character> list = new ArrayList<Character>();
-		bruteForce(size, list, goal);
-		answer = convertListToByte(list);
+		answer = hardcode(goal);
 		return answer;
+		// ArrayList<Character> list = new ArrayList<Character>();
+		// bruteForce(size, list, goal);
+		// answer = convertListToByte(list);
+		// return answer;
+	}
+
+	private static byte[] hardcode(byte[] goal) {
+		byte[] answer = new byte[5];
+		for (int i = 'A'; i <= 'Z'; i++) {
+			for (int j = 'A'; j <= 'Z'; j++) {
+				for (int k = 'A'; k <= 'Z'; k++) {
+					for (int l = 'A'; l <= 'Z'; l++) {
+						for (int m = 'A'; m <= 'Z'; m++) {
+							answer[0] = (byte)i;
+							answer[1] = (byte)j;
+							answer[2] = (byte)k;
+							answer[3] = (byte)l;
+							answer[4] = (byte)m;
+							//System.out.println(new String(answer));
+							//System.out.println(new String(hash(answer)));
+							if (MessageDigest.isEqual(hash(answer), goal)) {
+								return answer;
+							}
+						}
+					}
+				}
+			}
+		}
+		return null;
 	}
 
 	public static boolean bruteForce(
 								int size,
 								ArrayList<Character> answer, 
 								byte[] goal) {
-		if (answer.size() == size) {
+		for (Character c : answer) {
+			System.out.print(c);
+		}
+		System.out.println("------------------\n");
+		if (answer.size() >= size) {
 			byte[] test = new byte[size];
 			test = convertListToByte(answer);
 			if (MessageDigest.isEqual(hash(test), goal)) {
 				return true;
 			}
 		}
-		for (int i = 'A'; i < 'Z'; i++) {
+		for (int i = 65; i <= 65+26; i++) {
 			answer.add(new Character((char)i));
 			if (bruteForce(size, answer, goal)) {
 				return true;
 			} else {
-				answer.remove(answer.size() - 1);
-				return false;
+				answer.remove(answer.size());
 			}
 		}
 		return false;
@@ -130,17 +171,11 @@ public class Hasher {
 		// KeyPair keyPair = keyGen.generateKeyPair();
 		// System.out.println(keyPair.getPublic().toString());
 		// System.out.println(keyPair.getPublic().getEncoded());
-		byte[] goal = {'A','C', 'G', 'T', 'M'};
-		//ArrayList<Character> goal = new ArrayList<Character>();
-		//goal.add('B');
-		//goal.add('R');
-		//goal.add('I');
-		//goal.add('A');
-		//goal.add('N');
-		//byte[] answer = convertListToByte(goal);
-		//byte[] hashcode = hash(goal);
-		//byte[] answer = bruteForce(5, hashcode);
+		byte[] goal = {'A','G', 'T', 'B', 'O'};
+		byte[] hashcode = hash(goal);
+		System.out.println(new String(hashcode));
+		byte[] answer = bruteForce(5, hashcode);
 		System.out.println(new String(goal));
-		//System.out.println(new String(answer));
+		System.out.println(new String(answer));
 	}
 }
