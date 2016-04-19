@@ -18,11 +18,14 @@ import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.Security;
 
+import java.util.*;
+
 import javax.crypto.Mac;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class Hasher {
+
 	public static byte[] hash(Object obj) {
 		try {
 			MessageDigest md = MessageDigest.getInstance("SHA-256", "BC");
@@ -79,12 +82,65 @@ public class Hasher {
 		return arr3;
 	}
 
+	public static byte[] bruteForce(int size, byte[] goal) {
+		byte[] answer = new byte[size];
+		ArrayList<Character> list = new ArrayList<Character>();
+		bruteForce(size, list, goal);
+		answer = convertListToByte(list);
+		return answer;
+	}
+
+	public static boolean bruteForce(
+								int size,
+								ArrayList<Character> answer, 
+								byte[] goal) {
+		if (answer.size() == size) {
+			byte[] test = new byte[size];
+			test = convertListToByte(answer);
+			if (MessageDigest.isEqual(hash(test), goal)) {
+				return true;
+			}
+		}
+		for (int i = 'A'; i < 'Z'; i++) {
+			answer.add(new Character((char)i));
+			if (bruteForce(size, answer, goal)) {
+				return true;
+			} else {
+				answer.remove(answer.size() - 1);
+				return false;
+			}
+		}
+		return false;
+	}
+
+	private static byte[] convertListToByte(ArrayList<Character> list) {
+		byte[] answer = new byte[list.size()];
+		int i = 0;
+		for (char c : list) {
+			answer[i] = (byte)c;
+			i++;
+		}
+		return answer;
+	}
+
 	public static void main(String args[]) throws Exception {
 		Security.addProvider(new BouncyCastleProvider());
-		KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA", "BC");
-		keyGen.initialize(2048);
-		KeyPair keyPair = keyGen.generateKeyPair();
-		System.out.println(keyPair.getPublic().toString());
-		System.out.println(keyPair.getPublic().getEncoded());
+		// KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA", "BC");
+		// keyGen.initialize(2048);
+		// KeyPair keyPair = keyGen.generateKeyPair();
+		// System.out.println(keyPair.getPublic().toString());
+		// System.out.println(keyPair.getPublic().getEncoded());
+		byte[] goal = {'A','C', 'G', 'T', 'M'};
+		//ArrayList<Character> goal = new ArrayList<Character>();
+		//goal.add('B');
+		//goal.add('R');
+		//goal.add('I');
+		//goal.add('A');
+		//goal.add('N');
+		//byte[] answer = convertListToByte(goal);
+		//byte[] hashcode = hash(goal);
+		//byte[] answer = bruteForce(5, hashcode);
+		System.out.println(new String(goal));
+		//System.out.println(new String(answer));
 	}
 }
