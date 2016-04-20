@@ -51,7 +51,8 @@ public class FileClient extends Client implements FileClientInterface {
 
 	public int authenticateFileServerRSA(
 					String publicKeyPath, 
-					String privateKeyPath) {
+					String privateKeyPath,
+					Envelope answer) {
 		KeyPair keyPair = RSA.loadRSA(publicKeyPath, privateKeyPath);
 		serverPublicKey = requestFSPublicKey();
 		ServerInfo serverInfo = new ServerInfo(sock);
@@ -60,7 +61,7 @@ public class FileClient extends Client implements FileClientInterface {
 			System.out.println("Look Up Failed");
 			return -1;
 		}
-		sessionKey = signedDiffieHellman(keyPair, serverPublicKey);
+		sessionKey = signedDiffieHellman(keyPair, serverPublicKey, answer);
 		if (sessionKey == null) {
 			// Signed DiffieHellman failed
 			return -2;
@@ -182,13 +183,16 @@ public class FileClient extends Client implements FileClientInterface {
 		return true;
 	}
 
-	public SecretKey signedDiffieHellman(String a, String b) {
+	public SecretKey signedDiffieHellman(String a, String b, Envelope answer) {
 		KeyPair keyPair = RSA.loadRSA(a, b);
-		return signedDiffieHellman(keyPair, serverPublicKey);
+		return signedDiffieHellman(keyPair, serverPublicKey, answer);
 	}
 
 	// Establish File connection with RSA
-	public SecretKey signedDiffieHellman(KeyPair keyPair, PublicKey serverKey) {
+	public SecretKey signedDiffieHellman(
+							KeyPair keyPair, 
+							PublicKey serverKey,
+							Envelope answer) {
 		KeyPair DHKeyPair = null;
 		KeyAgreement keyAgreement = null;
 		try {
@@ -199,7 +203,10 @@ public class FileClient extends Client implements FileClientInterface {
 			Envelope message1 = new Envelope("SIGNED-DIFFIE-HELLMAN");
 			//SealedObject encryptedKey = CipherBox.encrypt(keyPair.getPublic(), serverKey);
 			//publicKeyEnv.addObject(encryptedKey);
+			System.out.println(answer);
 			message1.addObject(keyPair.getPublic());
+			message1.addObject(answer.getObjContents().get(0));
+			message1.addObject(answer.getObjContents().get(1));
 			System.out.println("Sending: ");
 			System.out.println(message1 + "\n");
 			output.writeObject(message1);

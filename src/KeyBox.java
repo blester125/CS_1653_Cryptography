@@ -14,6 +14,7 @@ import java.security.PrivateKey;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import java.security.PrivateKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.commons.codec.binary.Base64;

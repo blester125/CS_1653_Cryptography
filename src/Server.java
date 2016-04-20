@@ -9,6 +9,9 @@
  *   Carmen Condeluci               *
  ************************************/
 
+import java.security.SecureRandom;
+import java.util.Date;
+
 public abstract class Server {
 	
 	protected int port;
@@ -29,4 +32,11 @@ public abstract class Server {
 		return name;
 	}
 
+	public boolean isFresh(Date timestamp) {
+		Date now = new Date();
+		if ((now.getTime() - timestamp.getTime()) < 30000L) {
+			return true;
+		} 
+		return false;
+	}
 }

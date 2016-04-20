@@ -13,6 +13,8 @@ import java.net.Socket;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
+import javax.crypto.SealedObject;
+
 public abstract class Client {
 
 	/* 
@@ -66,5 +68,43 @@ public abstract class Client {
 				e.printStackTrace(System.err);
 			}
 		}
+	}
+
+	public Envelope solvePuzzle() {
+		int number = 0;
+		//SealedObject encryptedAnswer = null;
+		Envelope encryptedAnswer = null;
+		byte[] answer = null;
+		byte[] hash = null;
+		try {
+			Envelope message = new Envelope("PUZZLE");
+			output.writeObject(message);
+			// recive puzzle and solve
+			Envelope response = (Envelope)input.readObject();
+			if (response != null) {
+				if (response.getMessage().equals("PUZZLEOK")) {
+					if (response.getObjContents().size() == 3) {
+						if (response.getObjContents().get(0) != null) {
+							if (response.getObjContents().get(1) != null) {
+								if (response.getObjContents().get(2) != null) {
+									hash = (byte[])response.getObjContents().get(0);
+									number = (Integer)response.getObjContents().get(1);
+									//encryptedAnswer = (SealedObject)response.getObjContents().get(2);
+									encryptedAnswer = (Envelope)response.getObjContents().get(2);
+								}
+							}
+						}
+					}
+				}
+			}
+			answer = Hasher.bruteForce(number, hash);
+			message = new Envelope("ANSWER");
+			message.addObject(answer);
+			message.addObject(encryptedAnswer);
+			return message;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 }
