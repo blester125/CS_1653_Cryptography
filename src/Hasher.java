@@ -172,6 +172,7 @@ public class Hasher {
 		// System.out.println(keyPair.getPublic().toString());
 		// System.out.println(keyPair.getPublic().getEncoded());
 		byte[] goal = {'A','G', 'T', 'B', 'O'};
+		byte[] goal2 = {'A','G','T','B','O'};
 		byte[] hashcode = hash(goal);
 		System.out.println(new String(hashcode));
 		byte[] answer = bruteForce(5, hashcode);

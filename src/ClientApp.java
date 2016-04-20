@@ -906,18 +906,7 @@ public class ClientApp {
 		else {
 			// Establish secure connection with Diffie-Hellman Protocol
 			try {
-				// Get and solve the Puzzle first
-				if (!RunClient.groupC.solvePuzzle()) {
-					// Error getting the group server key
-					JOptionPane.showMessageDialog(
-									null, 
-									"Unable to solve the Computational puzzle.", 
-									"DoS protection", 
-									JOptionPane.OK_CANCEL_OPTION);
-					return;
-				}
-
-
+				
 				int result = RunClient.groupC.authenticateGroupServerRSA(username, publicPath, privatePath);
 				if (result == -1) {
 					// Error getting the group server key
@@ -934,6 +923,16 @@ public class ClientApp {
 									null, 
 									"Could not establish a secure connection.", 
 									"Session Key Failure", 
+									JOptionPane.OK_CANCEL_OPTION);
+					return;
+				}
+				// Get and solve the Puzzle first
+				if (result == -3) {
+					// Error getting the group server key
+					JOptionPane.showMessageDialog(
+									null, 
+									"Unable to solve the Computational puzzle.", 
+									"DoS protection", 
 									JOptionPane.OK_CANCEL_OPTION);
 					return;
 				}
@@ -1074,15 +1073,15 @@ public class ClientApp {
 			return;
 		}
 
-		if (!RunClient.fileC.solvePuzzle()) {
-					// Error getting the group server key
-					JOptionPane.showMessageDialog(
-									null, 
-									"Unable to solve the Computational puzzle.", 
-									"DoS protection", 
-									JOptionPane.OK_CANCEL_OPTION);
-					return;
-				}
+		// if (!RunClient.fileC.solvePuzzle()) {
+		// 			// Error getting the group server key
+		// 			JOptionPane.showMessageDialog(
+		// 							null, 
+		// 							"Unable to solve the Computational puzzle.", 
+		// 							"DoS protection", 
+		// 							JOptionPane.OK_CANCEL_OPTION);
+		// 			return;
+		// 		}
 		// Establish secret key with Diffie-Hellman Protocol
 		/*if(RunClient.fileC.establishSessionKey() == null) {
 			JOptionPane.showMessageDialog(null, "Connection failure. Could not establish a secure connection to FILE server at " + ipAddr + ":" + port + ".", "Connection Failure", JOptionPane.OK_CANCEL_OPTION);

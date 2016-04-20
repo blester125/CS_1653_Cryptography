@@ -70,7 +70,7 @@ public abstract class Client {
 		}
 	}
 
-	public boolean solvePuzzle() {
+	public Envelope solvePuzzle() {
 		int number = 0;
 		SealedObject encryptedAnswer = null;
 		byte[] answer = null;
@@ -86,9 +86,9 @@ public abstract class Client {
 						if (response.getObjContents().get(0) != null) {
 							if (response.getObjContents().get(1) != null) {
 								if (response.getObjContents().get(2) != null) {
-									number = (Integer)response.getObjContents().get(0);
-									hash = (byte[])response.getObjContents().get(1);
-									encryptedAnswer = (SealedObject)response.getObjContents().get(1);
+									hash = (byte[])response.getObjContents().get(0);
+									number = (Integer)response.getObjContents().get(1);
+									encryptedAnswer = (SealedObject)response.getObjContents().get(2);
 								}
 							}
 						}
@@ -99,16 +99,10 @@ public abstract class Client {
 			message = new Envelope("ANSWER");
 			message.addObject(answer);
 			message.addObject(encryptedAnswer);
-			output.writeObject(message);
-			response = (Envelope)input.readObject();
-			if (response != null) {
-				if (response.getMessage().equals("OK")) {
-					return true;
-				}
-			}
+			return message;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return false;
+		return null;
 	}
 }

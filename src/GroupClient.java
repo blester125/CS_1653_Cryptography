@@ -114,7 +114,24 @@ public class GroupClient extends Client implements GroupClientInterface {
 			return -1;
 		}
 		try {
-			boolean check = establishSessionKeyRSA(username, keyPair, groupServerKey);
+			Envelope puzzleAnswer = solvePuzzle();
+			if (puzzleAnswer == null) {
+				return -3;
+			}
+			if (puzzleAnswer.getObjContents().size() != 2) {
+				return -3;
+			}
+			if (puzzleAnswer.getObjContents().get(0) == null) {
+				return -3;
+			}
+			if (puzzleAnswer.getObjContents().get(1) == null) {
+				return -3;
+			}
+			boolean check = establishSessionKeyRSA(
+								username, 
+								keyPair, 
+								groupServerKey,
+								puzzleAnswer);
 			if (check == false) {
 				// Error creating the sharedKey
 				return -2;
@@ -135,7 +152,8 @@ public class GroupClient extends Client implements GroupClientInterface {
 	public boolean establishSessionKeyRSA(
 						String username, 
 						KeyPair keyPair, 
-						PublicKey serverKey) throws TwoFactorException {
+						PublicKey serverKey,
+						Envelope puzzleAnswer) throws TwoFactorException {
 		KeyPair DHKeyPair = null;
 		KeyAgreement keyAgreement = null;
 		try {
@@ -150,6 +168,8 @@ public class GroupClient extends Client implements GroupClientInterface {
 			message1.addObject(username);
 			message1.addObject(sealedKey);
 			message1.addObject(DHKeyPair.getPublic());
+			message1.addObject(puzzleAnswer.getObjContents().get(0));
+			message1.addObject(puzzleAnswer.getObjContents().get(1));
 			System.out.println("Sending:");
 			System.out.println(message1 + "\n");
 			output.writeObject(message1);
