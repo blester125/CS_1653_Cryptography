@@ -37,17 +37,6 @@ public class Hasher {
 			return null;
 		}
 	}
-	
-	public static byte[] hash(byte[] arr) {
-		try {
-			MessageDigest md = MessageDigest.getInstance("SHA-256", "BC");
-			md.update(arr);
-			return md.digest();
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
-	}
 
 	public static byte[] hash(byte[] obj) {
 		try {
