@@ -35,7 +35,6 @@ import javax.crypto.SecretKey;
 public class FileThread extends Thread
 {
 	private final Socket socket;
-	private FileServer my_fs;
 	private boolean isSecureConnection;
 	private boolean isAuthenticated;
 	private boolean solvePuzzle;
@@ -99,7 +98,7 @@ public class FileThread extends Thread
 				if (e.getMessage().equals("PUZZLE")) {
 					System.out.println("Sending Puzzle");
 					// Make puzzle
-					byte[] answer = generatePuzzle(puzzleSize);
+					byte[] answer = Hasher.generatePuzzle(puzzleSize);
 					Date now = new Date();
 					Envelope puzzle = new Envelope("PUZZLEOK");
 					puzzle.addObject(Hasher.hash(answer));
@@ -108,19 +107,12 @@ public class FileThread extends Thread
 					Envelope answerEnv = new Envelope("ANSWER");
 					answerEnv.addObject(answer);
 					answerEnv.addObject(now);
-					SealedObject sealedAnswer = (SealedObject)CipherBox.encrypt(answerEnv, rsaPair.getPublic());
-					// send both
+					//SealedObject sealedAnswer = (SealedObject)CipherBox.encrypt(answerEnv, rsaPair.getPublic());
+					SecretKey puzzleKey = KeyBox.convertPrivateKey(rsaPair.getPrivate());
+					Envelope sealedAnswer = Envelope.buildSuper(answerEnv, puzzleKey);
 					puzzle.addObject(sealedAnswer);
 					System.out.println(puzzle);
 					output.writeObject(puzzle);
-					// Skeleton place holder 
-					// try {
-					// 	response = new Envelope("OK");
-					// 	output.writeObject(response);
-					// 	solvePuzzle = true;
-					// } catch (Exception e) {
-					// 	e.printStackTrace();
-					// }
 				}
 				else if (e.getMessage().equals("REQUEST")) {
 					response = new Envelope("REQ-RESPONSE");
@@ -143,8 +135,11 @@ public class FileThread extends Thread
 									// get the answer and check
 									PublicKey userPublicKey = (PublicKey)e.getObjContents().get(0);
 									byte[] answer = (byte[])e.getObjContents().get(1);
-									SealedObject sealedAnswer = (SealedObject)e.getObjContents().get(2);
-									Envelope realAnswer = (Envelope)CipherBox.decrypt(sealedAnswer, rsaPair.getPrivate());
+									//SealedObject sealedAnswer = (SealedObject)e.getObjContents().get(2);
+									Envelope sealedAnswer = (Envelope)e.getObjContents().get(2);
+									SecretKey puzzleKey = KeyBox.convertPrivateKey(rsaPair.getPrivate());
+									//Envelope realAnswer = (Envelope)CipherBox.decrypt(sealedAnswer, rsaPair.getPrivate());
+									Envelope realAnswer = Envelope.extractInner(sealedAnswer, puzzleKey);
 									if (realAnswer != null) {
 										if (realAnswer.getObjContents().size() == 2) {
 											if (realAnswer.getObjContents().get(0) != null) {
@@ -815,16 +810,6 @@ public class FileThread extends Thread
 				e2.printStackTrace();
 			}
 		}
-	}
-
-	public byte[] generatePuzzle(int size) {
-		SecureRandom rand = new SecureRandom();
-		byte[] answer = new byte[size];
-		for (int i = 0; i < size; i++) {
-			answer[i] = (byte)(rand.nextInt('Z' - 'A' + 1) + 'A');
-		}
-		//System.out.println(new String(answer));
-		return answer;
 	}
 
 	public boolean isFresh(Date timestamp) {

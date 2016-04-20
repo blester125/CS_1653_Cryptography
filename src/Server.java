@@ -32,16 +32,6 @@ public abstract class Server {
 		return name;
 	}
 
-	public byte[] generatePuzzle(int size) {
-		SecureRandom rand = new SecureRandom();
-		byte[] answer = new byte[size];
-		for (int i = 0; i < size; i++) {
-			answer[i] = (byte)(rand.nextInt('Z' - 'A' + 1) + 'A');
-		}
-		//System.out.println(new String(answer));
-		return answer;
-	}
-
 	public boolean isFresh(Date timestamp) {
 		Date now = new Date();
 		if ((now.getTime() - timestamp.getTime()) < 30000L) {

@@ -94,7 +94,7 @@ public class GroupThread extends Thread
 				if (message.getMessage().equals("PUZZLE")) {
 					System.out.println("Sending Puzzle");
 					// Make puzzle
-					byte[] answer = my_gs.generatePuzzle(puzzleSize);
+					byte[] answer = Hasher.generatePuzzle(puzzleSize);
 					Date now = new Date();
 					Envelope puzzle = new Envelope("PUZZLEOK");
 					puzzle.addObject(Hasher.hash(answer));
@@ -103,19 +103,13 @@ public class GroupThread extends Thread
 					Envelope answerEnv = new Envelope("ANSWER");
 					answerEnv.addObject(answer);
 					answerEnv.addObject(now);
-					SealedObject sealedAnswer = (SealedObject)CipherBox.encrypt(answerEnv, rsaKeyPair.getPublic());
+					//SealedObject sealedAnswer = (SealedObject)CipherBox.encrypt(answerEnv, rsaKeyPair.getPublic());
+					SecretKey puzzleKey = KeyBox.convertPrivateKey(rsaKeyPair.getPrivate());
+					Envelope sealedAnswer = Envelope.buildSuper(answerEnv, puzzleKey);
 					// send both
 					puzzle.addObject(sealedAnswer);
 					System.out.println(puzzle);
 					output.writeObject(puzzle);
-					// Skeleton place holder 
-					// try {
-					// 	response = new Envelope("OK");
-					// 	output.writeObject(response);
-					// 	solvePuzzle = true;
-					// } catch (Exception e) {
-					// 	e.printStackTrace();
-					// }
 				}
 /*---------------------------------"RSALOGIN"---------------------------------*/	
 				else if (message.getMessage().equals("RSALOGIN")) {
@@ -128,8 +122,11 @@ public class GroupThread extends Thread
 										if (message.getObjContents().get(4) != null) {
 											System.out.println("-----Checking Puzzle-----");
 											byte[] answer = (byte[])message.getObjContents().get(3);
-											SealedObject sealedAnswer = (SealedObject)message.getObjContents().get(4);
-											Envelope realAnswer = (Envelope)CipherBox.decrypt(sealedAnswer, rsaKeyPair.getPrivate());
+											Envelope sealedAnswer = (Envelope)message.getObjContents().get(4);
+											SecretKey puzzleKey = KeyBox.convertPrivateKey(rsaKeyPair.getPrivate());
+											Envelope realAnswer = Envelope.extractInner(sealedAnswer, puzzleKey);
+											//SealedObject sealedAnswer = (SealedObject)message.getObjContents().get(4);
+											//Envelope realAnswer = (Envelope)CipherBox.decrypt(sealedAnswer, rsaKeyPair.getPrivate());
 											if (realAnswer != null) {
 												if (realAnswer.getObjContents().size() == 2) {
 													if (realAnswer.getObjContents().get(0) != null) {

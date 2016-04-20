@@ -72,7 +72,8 @@ public abstract class Client {
 
 	public Envelope solvePuzzle() {
 		int number = 0;
-		SealedObject encryptedAnswer = null;
+		//SealedObject encryptedAnswer = null;
+		Envelope encryptedAnswer = null;
 		byte[] answer = null;
 		byte[] hash = null;
 		try {
@@ -88,7 +89,8 @@ public abstract class Client {
 								if (response.getObjContents().get(2) != null) {
 									hash = (byte[])response.getObjContents().get(0);
 									number = (Integer)response.getObjContents().get(1);
-									encryptedAnswer = (SealedObject)response.getObjContents().get(2);
+									//encryptedAnswer = (SealedObject)response.getObjContents().get(2);
+									encryptedAnswer = (Envelope)response.getObjContents().get(2);
 								}
 							}
 						}

@@ -13,6 +13,7 @@ import java.security.Key;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import java.security.PrivateKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.commons.codec.binary.Base64;
@@ -31,6 +32,16 @@ public class KeyBox {
 			e.printStackTrace();
 			return null;
 		}
+	}
+
+	public static SecretKey convertPrivateKey(PrivateKey inputKey){
+
+		String temp = getKeyAsString(inputKey);
+		byte[] hash = Hasher.hash(temp);
+
+		SecretKey key = new SecretKeySpec(hash, 0, hash.length, "AES");
+
+		return key;
 	}
 
 	/**

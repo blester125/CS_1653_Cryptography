@@ -17,6 +17,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.Security;
+import java.security.SecureRandom;
 
 import java.util.*;
 
@@ -104,24 +105,27 @@ public class Hasher {
 	}
 
 	private static byte[] hardcode(byte[] goal) {
-		byte[] answer = new byte[5];
-		for (int i = 'A'; i <= 'Z'; i++) {
-			for (int j = 'A'; j <= 'Z'; j++) {
-				for (int k = 'A'; k <= 'Z'; k++) {
-					for (int l = 'A'; l <= 'Z'; l++) {
-						for (int m = 'A'; m <= 'Z'; m++) {
+		byte[] answer = new byte[3];
+		for (int i = 'A'; i <= 'z'; i++) {
+			for (int j = 'A'; j <= 'z'; j++) {
+				for (int k = 'A'; k <= 'z'; k++) {
+					//for (int l = 'A'; l <= 'z'; l++) {
+						//for (int m = 'A'; m <= 'Z'; m++) {
+							//for (int n = 'A'; n <= 'Z'; n++) {
 							answer[0] = (byte)i;
 							answer[1] = (byte)j;
 							answer[2] = (byte)k;
-							answer[3] = (byte)l;
-							answer[4] = (byte)m;
+							//answer[3] = (byte)l;
+							//answer[4] = (byte)m;
+							//answer[5] = (byte)n;
 							//System.out.println(new String(answer));
 							//System.out.println(new String(hash(answer)));
 							if (MessageDigest.isEqual(hash(answer), goal)) {
 								return answer;
 							}
-						}
-					}
+						//}
+						//}
+					//}
 				}
 			}
 		}
@@ -164,6 +168,16 @@ public class Hasher {
 		return answer;
 	}
 
+	public static byte[] generatePuzzle(int size) {
+		SecureRandom rand = new SecureRandom();
+		byte[] answer = new byte[size];
+		for (int i = 0; i < size; i++) {
+			answer[i] = (byte)(rand.nextInt('z' - 'A' + 1) + 'A');
+		}
+		//System.out.println(new String(answer));
+		return answer;
+	}
+
 	public static void main(String args[]) throws Exception {
 		Security.addProvider(new BouncyCastleProvider());
 		// KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA", "BC");
@@ -171,12 +185,14 @@ public class Hasher {
 		// KeyPair keyPair = keyGen.generateKeyPair();
 		// System.out.println(keyPair.getPublic().toString());
 		// System.out.println(keyPair.getPublic().getEncoded());
-		byte[] goal = {'A','G', 'T', 'B', 'O'};
-		byte[] goal2 = {'A','G','T','B','O'};
-		byte[] hashcode = hash(goal);
-		System.out.println(new String(hashcode));
-		byte[] answer = bruteForce(5, hashcode);
-		System.out.println(new String(goal));
-		System.out.println(new String(answer));
+		for (int i = 0; i < 4; i++) {
+			byte[] answer = generatePuzzle(3);
+			long now = System.currentTimeMillis();
+			byte[] hashcode = hash(answer);
+			byte[] output = bruteForce(3, hashcode);
+			System.out.println(new String(answer));
+			System.out.println(new String(output));
+			System.out.println(System.currentTimeMillis() - now);
+		}
 	}
 }
