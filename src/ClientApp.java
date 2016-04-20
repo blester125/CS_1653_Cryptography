@@ -1072,16 +1072,16 @@ public class ClientApp {
 			JOptionPane.showMessageDialog(null, "Connection failure. Could not connect to FILE server at " + ipAddr + ":" + port + ".", "Connection Failure", JOptionPane.OK_CANCEL_OPTION);
 			return;
 		}
-
-		// if (!RunClient.fileC.solvePuzzle()) {
-		// 			// Error getting the group server key
-		// 			JOptionPane.showMessageDialog(
-		// 							null, 
-		// 							"Unable to solve the Computational puzzle.", 
-		// 							"DoS protection", 
-		// 							JOptionPane.OK_CANCEL_OPTION);
-		// 			return;
-		// 		}
+		Envelope answer = RunClient.fileC.solvePuzzle();
+		if (answer == null) {
+			// Error getting the group server key
+			JOptionPane.showMessageDialog(
+							null, 
+							"Unable to solve the Computational puzzle.", 
+							"DoS protection", 
+							JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
 		// Establish secret key with Diffie-Hellman Protocol
 		/*if(RunClient.fileC.establishSessionKey() == null) {
 			JOptionPane.showMessageDialog(null, "Connection failure. Could not establish a secure connection to FILE server at " + ipAddr + ":" + port + ".", "Connection Failure", JOptionPane.OK_CANCEL_OPTION);
@@ -1090,7 +1090,8 @@ public class ClientApp {
 
 		int result = RunClient.fileC.authenticateFileServerRSA(
 										publicPath, 
-										privatePath);
+										privatePath, 
+										answer);
 		if (result == -1) {
 			String cached = RSA.generateFingerprints(RunClient.fileC.cachedPublicKey);
 			String server = RSA.generateFingerprints(RunClient.fileC.serverPublicKey);
@@ -1122,7 +1123,7 @@ public class ClientApp {
 			if(dialogue == 0){
 
 				RunClient.fileC.addServerToRegistry(new ServerInfo(RunClient.fileC.sock), RunClient.fileC.serverPublicKey);
-				if(RunClient.fileC.signedDiffieHellman(publicPath, privatePath) == null){
+				if(RunClient.fileC.signedDiffieHellman(publicPath, privatePath, answer) == null){
 					JOptionPane.showMessageDialog(null, "Server failed.", "Challenge Failure", JOptionPane.OK_CANCEL_OPTION);
 					RunClient.fileC.disconnect();
 					return;

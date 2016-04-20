@@ -97,10 +97,10 @@ public class Hasher {
 		byte[] answer = new byte[size];
 		answer = hardcode(goal);
 		return answer;
-		// ArrayList<Character> list = new ArrayList<Character>();
-		// bruteForce(size, list, goal);
-		// answer = convertListToByte(list);
-		// return answer;
+		//ArrayList<Character> list = new ArrayList<Character>();
+		//bruteForce(size, list, goal);
+		//answer = convertListToByte(list);
+		//return answer;
 	}
 
 	private static byte[] hardcode(byte[] goal) {
