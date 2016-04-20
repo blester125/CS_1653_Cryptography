@@ -103,6 +103,8 @@ public class GroupClient extends Client implements GroupClientInterface {
 	 *          0 on success. 
 	 */
 	public int authenticateGroupServerRSA(
+					String hostName,
+					int portNumber,
 					String username, 
 					String publicKeyPath, 
 					String privateKeyPath) throws TwoFactorException {
@@ -115,6 +117,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 		}
 		try {
 			Envelope puzzleAnswer = solvePuzzle();
+			System.out.println(puzzleAnswer);
 			if (puzzleAnswer == null) {
 				return -3;
 			}
@@ -127,6 +130,7 @@ public class GroupClient extends Client implements GroupClientInterface {
 			if (puzzleAnswer.getObjContents().get(1) == null) {
 				return -3;
 			}
+			connect(hostName, portNumber);
 			boolean check = establishSessionKeyRSA(
 								username, 
 								keyPair, 

@@ -907,7 +907,12 @@ public class ClientApp {
 			// Establish secure connection with Diffie-Hellman Protocol
 			try {
 				
-				int result = RunClient.groupC.authenticateGroupServerRSA(username, publicPath, privatePath);
+				int result = RunClient.groupC.authenticateGroupServerRSA(
+												ipAddr,
+												port,
+												username, 
+												publicPath, 
+												privatePath);
 				if (result == -1) {
 					// Error getting the group server key
 					JOptionPane.showMessageDialog(
@@ -1082,6 +1087,10 @@ public class ClientApp {
 							JOptionPane.OK_CANCEL_OPTION);
 			return;
 		}
+		if(!RunClient.fileC.connect(ipAddr, port)){
+			JOptionPane.showMessageDialog(null, "Connection failure. Could not connect to FILE server at " + ipAddr + ":" + port + ".", "Connection Failure", JOptionPane.OK_CANCEL_OPTION);
+			return;
+		}
 		// Establish secret key with Diffie-Hellman Protocol
 		/*if(RunClient.fileC.establishSessionKey() == null) {
 			JOptionPane.showMessageDialog(null, "Connection failure. Could not establish a secure connection to FILE server at " + ipAddr + ":" + port + ".", "Connection Failure", JOptionPane.OK_CANCEL_OPTION);
@@ -1089,9 +1098,9 @@ public class ClientApp {
 		}*/
 
 		int result = RunClient.fileC.authenticateFileServerRSA(
-										publicPath, 
-										privatePath, 
-										answer);
+												publicPath, 
+												privatePath, 
+												answer);
 		if (result == -1) {
 			String cached = RSA.generateFingerprints(RunClient.fileC.cachedPublicKey);
 			String server = RSA.generateFingerprints(RunClient.fileC.serverPublicKey);
@@ -1123,7 +1132,10 @@ public class ClientApp {
 			if(dialogue == 0){
 
 				RunClient.fileC.addServerToRegistry(new ServerInfo(RunClient.fileC.sock), RunClient.fileC.serverPublicKey);
-				if(RunClient.fileC.signedDiffieHellman(publicPath, privatePath, answer) == null){
+				if(RunClient.fileC.signedDiffieHellman(
+												publicPath, 
+												privatePath, 
+												answer) == null){
 					JOptionPane.showMessageDialog(null, "Server failed.", "Challenge Failure", JOptionPane.OK_CANCEL_OPTION);
 					RunClient.fileC.disconnect();
 					return;

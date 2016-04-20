@@ -110,6 +110,7 @@ public class GroupThread extends Thread
 					puzzle.addObject(sealedAnswer);
 					System.out.println(puzzle);
 					output.writeObject(puzzle);
+					proceed = false;
 				}
 /*---------------------------------"RSALOGIN"---------------------------------*/	
 				else if (message.getMessage().equals("RSALOGIN")) {
@@ -736,6 +737,8 @@ public class GroupThread extends Thread
 					System.out.println("SENT from INVALID MESSAGE: " + innerResponse);
 					response = Envelope.buildSuper(innerResponse, sessionKey);
 					output.writeObject(response);
+					proceed = false;
+					socket.close();
 				}
 			}while(proceed);	
 		}
@@ -746,6 +749,7 @@ public class GroupThread extends Thread
 			sessionKey = null;
 			isAuthenticated = false;
 			solvePuzzle = false;
+			proceed = false;
 			System.err.println("Error: " + e.getMessage());
 			e.printStackTrace(System.err);
 		}

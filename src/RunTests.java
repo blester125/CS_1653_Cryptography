@@ -43,7 +43,7 @@ public class RunTests {
 			System.out.println("Connection to group server failed.");
 			return;
 		} else {
-			int result = groupC.authenticateGroupServerRSA(username, publicPath, privatePath);
+			int result = groupC.authenticateGroupServerRSA("localhost", 8080, username, publicPath, privatePath);
 
 			if(result == -1){
 				System.out.println("Could not authenticate with group server via RSA.");

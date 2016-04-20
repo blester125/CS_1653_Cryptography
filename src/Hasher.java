@@ -105,27 +105,24 @@ public class Hasher {
 	}
 
 	private static byte[] hardcode(byte[] goal) {
-		byte[] answer = new byte[3];
-		for (int i = 'A'; i <= 'z'; i++) {
-			for (int j = 'A'; j <= 'z'; j++) {
-				for (int k = 'A'; k <= 'z'; k++) {
-					//for (int l = 'A'; l <= 'z'; l++) {
-						//for (int m = 'A'; m <= 'Z'; m++) {
-							//for (int n = 'A'; n <= 'Z'; n++) {
+		byte[] answer = new byte[5];
+		for (int i = 'A'; i <= 'Z'; i++) {
+			for (int j = 'A'; j <= 'Z'; j++) {
+				for (int k = 'A'; k <= 'Z'; k++) {
+					for (int l = 'A'; l <= 'Z'; l++) {
+						for (int m = 'A'; m <= 'Z'; m++) {
 							answer[0] = (byte)i;
 							answer[1] = (byte)j;
 							answer[2] = (byte)k;
-							//answer[3] = (byte)l;
-							//answer[4] = (byte)m;
-							//answer[5] = (byte)n;
+							answer[3] = (byte)l;
+							answer[4] = (byte)m;
 							//System.out.println(new String(answer));
 							//System.out.println(new String(hash(answer)));
 							if (MessageDigest.isEqual(hash(answer), goal)) {
 								return answer;
 							}
-						//}
-						//}
-					//}
+						}
+					}
 				}
 			}
 		}
@@ -172,7 +169,7 @@ public class Hasher {
 		SecureRandom rand = new SecureRandom();
 		byte[] answer = new byte[size];
 		for (int i = 0; i < size; i++) {
-			answer[i] = (byte)(rand.nextInt('z' - 'A' + 1) + 'A');
+			answer[i] = (byte)(rand.nextInt('Z' - 'A' + 1) + 'A');
 		}
 		//System.out.println(new String(answer));
 		return answer;

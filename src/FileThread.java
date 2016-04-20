@@ -113,6 +113,7 @@ public class FileThread extends Thread
 					puzzle.addObject(sealedAnswer);
 					System.out.println(puzzle);
 					output.writeObject(puzzle);
+					proceed = false;
 				}
 				else if (e.getMessage().equals("REQUEST")) {
 					response = new Envelope("REQ-RESPONSE");
@@ -766,6 +767,7 @@ public class FileThread extends Thread
 			isSecureConnection = false;
 			isAuthenticated = false;
 			solvePuzzle = false;
+			proceed = false;
 		}
 	}
 
