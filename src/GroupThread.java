@@ -37,7 +37,7 @@ public class GroupThread extends Thread
 	private SecretKey sessionKey;
 	private String username;
 	private boolean solvePuzzle;
-	private final int puzzleSize = 5;
+	private final int puzzleSize = 4;
 
 	public GroupThread(Socket _socket, GroupServer _gs)
 	{

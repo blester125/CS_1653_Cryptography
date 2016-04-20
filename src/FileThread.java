@@ -44,7 +44,7 @@ public class FileThread extends Thread
 	public PublicKey serverPublicKey = null;
 	private String groupServerPath = "groupserverpublic.key";
 	private int sequenceNumber;
-	private final int puzzleSize = 5;
+	private final int puzzleSize = 4;
 
 	public FileThread (Socket _socket, KeyPair _rsaPair) {
 		socket = _socket;
