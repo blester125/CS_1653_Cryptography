@@ -21,6 +21,13 @@ public class BenchMark {
 	protected static FileClient fileC;
 
 	public static void main(String[] args) throws Exception {
+
+		String hostname = args[0];
+		int port = Integer.parseInt(args[1]);
+		String publicKeyPath = args[2];
+		String privateKeyPath = args[3];
+		String username = args[4];
+
 		Security.addProvider(new BouncyCastleProvider());
 		try {
 			Field field = Class.forName("javax.crypto.JceSecurity").getDeclaredField("isRestricted");
@@ -33,10 +40,10 @@ public class BenchMark {
 		fileC = new FileClient();
 		PublicKey serverPublicKey = RSA.loadServerKey("groupserverpublic.key");
 		long start = System.currentTimeMillis();
-		groupC.connect("192.168.1.219", 8080);
-		groupC.authenticateGroupServerRSA("localhost", 8080, "test", "adminpublic.key", "adminprivate.key");
-		UserToken t = groupC.getToken("test", serverPublicKey);
-		groupC.createGroup("test", t);
+		groupC.connect(hostname, port);
+		groupC.authenticateGroupServerRSA(hostname, port, username, publicKeyPath, privateKeyPath);
+		UserToken t = groupC.getToken(username, serverPublicKey);
+		groupC.createGroup(username, t);
 		groupC.disconnect();
 		System.out.println("Connection, Login, Create Group, and Logout took: " 
 							+ (System.currentTimeMillis() - start)

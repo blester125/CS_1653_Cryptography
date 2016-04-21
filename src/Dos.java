@@ -32,15 +32,21 @@ import org.apache.commons.codec.binary.Base32;
 
 public class Dos {
 
-	 static GroupClient groupC;
-	 static FileClient fileC;
-	 static KeyPair keyPair;
+	static GroupClient groupC;
+	static FileClient fileC;
+	static KeyPair keyPair;
+
+	static String publicKeyPath;
+	static String privateKeyPath;
+	static String username;
+	static String hostname;
+	static int port;
 
 	public static class LoginDoS implements Runnable{
 
 		public void run(){
 			try{
-				Socket sock = new Socket("localhost", 8080);
+				Socket sock = new Socket(hostname, port);
 				ObjectOutputStream out = new ObjectOutputStream(sock.getOutputStream());
 			
 				login(out);
@@ -55,6 +61,12 @@ public class Dos {
 	}
 
 	public static void main(String[] args) throws Exception {
+		hostname = args[0];
+		port = Integer.parseInt(args[1]);
+		publicKeyPath = args[2];
+		privateKeyPath = args[3];
+		username = args[4];
+
 		Security.addProvider(new BouncyCastleProvider());
 		try {
 	        Field field = Class.forName("javax.crypto.JceSecurity").getDeclaredField("isRestricted");
@@ -64,7 +76,7 @@ public class Dos {
 	    	ex.printStackTrace();
 	    }
 		
-		keyPair = RSA.loadRSA("dospublic.key", "dosprivate.key");
+		keyPair = RSA.loadRSA(publicKeyPath, privateKeyPath);
 		PublicKey serverPublicKey = RSA.loadServerKey("groupserverpublic.key");
 		while (true) {
 
@@ -86,7 +98,7 @@ public class Dos {
 		// System.out.println(keyPair.getPrivate());
 		SealedObject sealedKey = CipherBox.encrypt(hashedPublicKey, keyPair.getPrivate());
 		Envelope message = new Envelope("RSALOGIN");
-		message.addObject("test");
+		message.addObject(username);
 		message.addObject(sealedKey);
 		message.addObject(dhKeyPair.getPublic());
 		out.writeObject(message);
