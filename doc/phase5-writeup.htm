@@ -109,7 +109,7 @@ on unshared machines.</p>
     </section>
 
     <section id="threat9">
-      <h2>Threat T9: Theft of the server's private key</h2>
+      <h2>Threat T9: Theft of the Server's Private Key</h2>
 <!-- BEGIN CHANGES HERE -->
 <p>This threat is that since keys are currently trusted to be stored as plaintext
 files on the machine, that they may be stolen by another user or a system admin,
@@ -155,7 +155,7 @@ should only be known to members of said group.
 <p>
 Many users connecting to the server will create a flood of requests that utilize 
 server state, leaving the server borderline unusable by legitimate users. This 
-may also bring the server completely down or severely cripple it.
+may also bring the server completely down.
 </p>
 
 <!-- <p>
@@ -188,44 +188,60 @@ Phase 4 via the Leslie-Lamport one-time password scheme).
       <h2>Attacks</h2>
 <!-- BEGIN CHANGES HERE -->
 
-<h3>Attack leveraged via Threat 8</h3>
-An attacker could load up the GroupList, FileList and/or the UserList into their own
-server implementation (this is possible because the GroupList, FileList, and UserList are unencrypted and the implementation of the objects that underlying these lists is known due to transparency of mechanism) and start maliciously modify these files. The attacker could add a new account and then add that new user to each group. This is dangerous because they could access any sensitive files in the groups they add themselves too. They could even add themselves to the admin group. Modifying the FileList also allows them
-to grant themselves access to a group's files. While the files are all encrypted,
-the file names are still leaked. With access to these file lists and by impersonating
-a server, an attacker effectively gains free reign over the entire system. 
+<h3>Attack leveraged via Threat 8</h3> 
+An attacker could load up the GroupList,
+FileList and/or the UserList into their own server implementation (this is
+possible because the GroupList, FileList, and UserList are unencrypted and the
+implementation of the objects that are underlying these lists is known due to
+transparency of mechanism) and start maliciously modifying these files. The
+attacker could add a new account and then add that new user to each group. This
+is dangerous because they could access any sensitive files in the groups they
+add themselves too. They could even add themselves to the admin group. Modifying
+the FileList also allows them to grant themselves access to a group's files.
+While the files are all encrypted, the file names are still leaked. With access
+to these file lists and by impersonating a server, an attacker effectively gains
+free reign over the entire system.  
 <h3>Attack leveraged via Threat 9</h3>
-"groupserverprivate.key" is unencrypted on the disk so if a user on that machine were to steal that file they would have the group servers private key. This could be used to create fake tokens. These fake tokens could then be signed with this key which would cause them to be accepted. "fileserverprivate.key" is unencrypted on the disk so if a user steals the private key for the file server they can impersonate the file server. This can lead to the clients uploading a sensitive file to the fake server.
-<h3>Attack leveraged via Threat 10</h3> 
-Files on the disk for the file server could be modified. This modification would not be detected so any changes could junk the file or worse they could be changed and the changes would not be noticed which could lead to incorrect information. An attack via modification is more important to 
-protect against than deletion because deletion will be known as soon as a file is 
-requested, with nothing being returned. Deletion also serves no purpose as an 
-attack other than messing with the users, which could also be done by just 
-cutting the cord. Modification, on the other hand, could be used as an actual 
-attack. Modification could also be carried out by swapping blocks of the real 
-file with blocks from an older version of the file where the key has yet to be 
-evolved. This can cause legible changes outside of small errors at block 
-boundaries.
-<h3>Attack leveraged via Threat 11</h3>
-There are two manifestations of this attack: the first being a user choosing a 
-group name that is already in use on the system. This causes an error to be 
-returned and the group is not created. This leaks information in that the user 
-trying to create a group knows the name of another group known on the system, 
-which goes against the privacy of the system.
-<br><br>
-The second attack is the user choosing the name of a group that had previously 
-been deleted. When logging in to a file server that this group used, this new 
-group could access files that belonged to the old group. This threat is slightly 
-mitigated due to the backwards secrecy provided by group keys, however 
-information is still leaked in file names and file sizes.
-<h3>Attack leveraged via Threat 12</h3>
-A DoS attack on the system causes a build-up of state and excessive resource 
-consumption on the server. This slows down the speed of real requests to the 
-server. Using our own DoS and benchmarking programs (Dos.java and BenchMark.java 
-respectively), we have shown that our server processed 1/40th of the speed 
-during a simple DoS attack (27,000ms vs. 700ms). This increased slowdown is an 
-attack on availability, which is an attack on a part of the  CIA triad that we 
-have not yet considered.
+"groupserverprivate.key" is unencrypted on the disk so if a user on that machine
+were to steal that file they would have the group server's private key. This
+could be used to create fake tokens. These fake tokens could then be signed with
+this key which would cause them to be accepted. "fileserverprivate.key" is
+unencrypted on the disk so if a user steals the private key for the file server
+they can impersonate the file server. This can lead to the clients uploading a
+sensitive file to the fake server. 
+<h3>Attack leveraged via Threat 10</h3>
+Files on the disk for the file server could be modified. This modification would
+not be detected so any changes could junk the file or worse they could be
+changed and the changes would not be noticed which could lead to incorrect
+information. An attack via modification is more important to protect against
+than deletion because deletion will be known as soon as a file is requested,
+with nothing being returned. Deletion also serves no purpose as an attack other
+than messing with the users, which could also be done by just cutting the cord.
+Modification, on the other hand, could be used as an actual attack.
+Modification could also be carried out by swapping blocks of the real file with
+blocks from an older version of the file where the key has yet to be evolved.
+This can cause legible changes outside of small errors at block boundaries.
+<h3>Attack leveraged via Threat 11</h3> 
+There are two manifestations of this
+attack: the first being a user choosing a group name that is already in use on
+the system. This causes an error to be returned and the group is not created.
+This leaks information in that the user trying to create a group knows the name
+of another group known on the system  which goes against the privacy of the
+system. 
+<br><br> 
+The second attack is the user choosing the name of a group that
+had previously been deleted. When logging in to a file server that this group
+used, this new group could access files that belonged to the old group. This
+threat is slightly mitigated due to the backwards secrecy provided by group
+keys, however information is still leaked in file names and file sizes.
+<h3>Attack leveraged via Threat 12</h3> 
+A DoS attack on the system causes a
+build-up of state and excessive resource consumption on the server. This slows
+down the speed of real requests to the server. Using our own DoS and
+benchmarking programs (Dos.java and BenchMark.java respectively), we have shown
+that our server processed 1/40th of the speed during a simple DoS attack
+(27,000ms vs. 700ms). This increased slowdown is an attack on availability,
+which is an attack on a part of the CIA triad that we have not yet considered.
 
 <!-- <p>Write a clear and concise description of the attacks against your
 implementation. Describe each step of the attack, and include protocol diagrams
@@ -261,11 +277,11 @@ SHA-256, which is then used to generate an AES secret key, as we would not want
 to encrypt potentially large server state files to disk using RSA. This secret 
 key is then used to generate a 
 confidentiality and integrity key that will be used to encrypt and verify the 
-server's state files when it is loaded from disk. 
+server's state files when they are loaded from disk. 
 The two keys are <b>k<sub>c</sub></b>, used for encryption, 
 and <b>k<sub>i</sub></b> which is used for integrity checks. The keys are 
-generated by hashing, using SHA-256, the starter's private RSA key concatenated 
-with "confidentiality" and "integrity" respectively. After the server 
+generated by hashing, using SHA-256, the converted secret key concatenated 
+with "Confidentiality" and "Integrity" respectively. After the server 
 server state files are successfully loaded and verified, they are used as normal 
 throughout the system as outlined in our previous phases. 
 </p>
@@ -275,7 +291,7 @@ The server administrator (starter) is tasked with the responsibility
 of keeping his/her private RSA key (used to create <b>k<sub>c</sub></b> and 
 <b>k<sub>i</sub></b> to protect the server private RSA key) safe from 
 compromise. It is safe to create these keys from the private key due to 
-our cryptographically secure hash functions which has preimage resistance.
+our cryptographically secure hash functions which have preimage resistance.
 The compromise of one key will reveal nothing about another key. 
 This means that the key used to protect the server state files 
 is not present on the system, and the state files will not be stolen in the result of a machine 
@@ -284,7 +300,7 @@ server to type in a full RSA key as both servers are assumed to have long
 uptimes, and this operation only needs to occur once on server startup. This 
 administrator is also tasked with verifying the server's public key out-of-band with 
 users, therefore he can be trusted to do this too. By entering the starter's key 
-manually rather than loading it from a file, the key used to allow use of the 
+manually rather than loading it from a file, the key utilized to allow use of the 
 state files never exists outside of memory while the server is running. With 
 the possibilitiy of multiple users using the same machines, this makes it much 
 harder for an attacker to recover the starter's private key both during an 
@@ -305,8 +321,8 @@ confidentiality and integrity key that will be used to encrypt and verify the
 server's private RSA key when it is loaded from disk. 
 The two keys are <b>k<sub>c</sub></b>, used for encryption, 
 and <b>k<sub>i</sub></b> which is used for integrity checks. The keys are 
-generated by hashing, using SHA-256, the starter's private RSA key concatenated 
-with "confidentiality" and "integrity" respectively. After the server 
+generated by hashing, using SHA-256, the converted secret key concatenated 
+with "Confidentiality" and "Integrity" respectively. After the server 
 private key is successfully loaded and verified, it is used as normal throughout 
 the system as outlined in our previous phases.
 </p>
@@ -333,8 +349,12 @@ private key exist as a file.
 <h3>Mechanism to Defend Against Threat 10</h3> 
 <p>
 When users upload a file to the file server, they create a confidentiality and 
-integrity key from the evolving key that they are provided by the group server. 
-The confidentiality key is used to encrypt  the file, while the integrity key is 
+integrity key from the evolving key that they are provided by the group server.
+The two keys are <b>k<sub>c</sub></b>, used for encryption, 
+and <b>k<sub>i</sub></b> which is used for integrity checks. The keys are 
+generated by hashing, using SHA-256, the evolving key concatenated 
+with "Confidentiality" and "Integrity" respectively. 
+The confidentiality key is used to encrypt the file, while the integrity key is 
 used to key an HMAC based on SHA-256. This HMAC is then uploaded to the file 
 server along with the file.
 </p>
@@ -369,18 +389,33 @@ the connection process. When a client tries to connect to a group server, they
 will be given a hash of <b>n</b> bits along with the solution of the puzzle 
 concatenated with a timestamp, encrypted with the server's public key. They 
 must solve this puzzle and include the answer and the encrypted chunk with their 
-login request. 
+login request. The server disconnects from the client after sending this data. 
+Currently, the hash function being used is SHA-256 and the puzzle is to find a 
+matching hash such that the preimage is 4 bytes long and made up of characters 
+between uppercase "A" and lowercase "l" (ASCII encoding). This way, a space of 
+48^4 must be brute-forced before access to the system is granted.  
+The key used to encrypt 
+the answer is created by taking the server's private key and converting it to an 
+AES secret key via hashing with SHA-256. From this key, the confidentiality and 
+integrity key are generated and used to encrypt and verify the integrity of the 
+computational puzzles.
 </p>
 <p>
 This mechanism is sufficient to address this threat because very little state is 
-used on the server-side while a adequate of computational resources are used on 
+used on the server-side while an adequate amount of computational resources are used on 
 the client side. The encrypted answer is sent to the user (forcing them to keep 
 track of the state) to minimize the resource disparity between the client and 
 server. Due to the setting where this system will be deployed in (a business 
 environment where all computers are pretty much the same and also decently 
 powerful), a computational puzzle such as this is reasonable to have a client 
 solve. While this sort of defense does not adequately stop an attack by large 
-nation-states and motivated attackers, some defense is far greater than none.
+nation-states and motivated attackers, some defense is far greater than none. 
+Average testing on an Intel i5 processor has an average computational puzzle 
+solve time of 3 seconds. This implemented DoS protection provided an ample 
+defense against our same simple DoS program we tested with previously 
+(DoS.java), showing increases of only one second during a benchmark 
+(BenchMark.java) during an attack as opposed to 
+the 40-fold increase observed before implementing the puzzles.
 </p>
 
 
@@ -402,7 +437,7 @@ off your hard work!</p> -->
 Our threat model is overly ambitious for even the most secure-minded environments
 and users. Many reasonable assumptions for a file sharing system that may be
 applied for such a system to be considered secure must fail for some of our
-protection mechanisms to come into play. Such as the extremely weak assumptions
+protection mechanisms to come into play, such as the extremely weak assumptions
 made on the ability for a server to keep its own files isolated on its local machine. Furthermore,
 all of the security measures implemented for our system makes it inconvenient
 for use by both the users and the administrators. Our design process was that
@@ -416,7 +451,7 @@ on an encrypted Diffie-Hellman protocol and outlined it before realizing we had 
 plausible deniability. The one attack we are unable to fully defend against is DoS, as
 there are really no 100% guaranteed protections against such an attack at the moment, or even
 mostly correct defenses that do not require a fair bit of sophistication. We can only
-stop small-scale DoS and DDoS attacks with our countermeasures. 
+stop small-scale DoS attacks with our countermeasures. 
 </p>
 
 <!-- <p>Finally, spend a paragraph discussing the interplay between the
@@ -428,8 +463,7 @@ threats?</p> -->
 <p>
 There was no overlap between the threats for P5 and the past phases. The private asymmetric keys
 are now split into confidentiallity and integrity keys. The DoS threat is entirely separate from all
-past protocols and counter-measures. The only change that affect the previous phases deals with fixing an oversight from the previous
-phases in the information leakage from group naming. No past threats were reintroduced.
+past protocols and counter-measures. The only change that affects the previous phases deals with fixing an oversight in the information leakage from group naming. No past threats were reintroduced.
 </p>
 
 <!-- <p>If your group implemented the countermeasures or did any extra credit, please
@@ -442,10 +476,10 @@ outlined above. In addition, we developed a simple denial-of-service attack
 the effectiveness of our countermeasure for Threat 12.
 </p>
 
-<h3>Extra stuff</h3>
+<!-- <h3>Extra stuff</h3>
 - DDoS, write a program that does this. <br>
 - Group name collisions that I discuss in the TODO.
-
+ -->
 <!-- END CHANGES HERE -->
     </section>
   </body>
