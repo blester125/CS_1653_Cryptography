@@ -143,7 +143,7 @@ public class Hasher {
 		if (answer.size() == size) {
 			byte[] test = new byte[size];
 			test = convertListToByte(answer);
-			System.out.println(new String(test));
+			//System.out.println(new String(test));
 			if (MessageDigest.isEqual(hash(test), goal)) {
 				return true;
 			}
