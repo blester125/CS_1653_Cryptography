@@ -18,3 +18,4 @@ clean
 !src/adminprivate.key
 !src/textprivate.txt
 !src/groupserverpublic.key
+!src/groupserverprivate.key
