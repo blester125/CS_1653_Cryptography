@@ -17,8 +17,5 @@ clean
 !src/adminpublic.key
 !src/adminprivate.key
 !src/textprivate.txt
-<<<<<<< HEAD
 !src/groupserverpublic.key
 !src/groupserverprivate.key
-=======
->>>>>>> origin/master
