@@ -117,6 +117,7 @@ public class Hasher {
 							answer[1] = (byte)j;
 							answer[2] = (byte)k;
 							answer[3] = (byte)l;
+							System.out.println(new String(answer));
 						//	answer[4] = (byte)m;
 							//System.out.println(new String(answer));
 							//System.out.println(new String(hash(answer)));
