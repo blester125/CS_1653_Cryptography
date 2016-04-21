@@ -17,3 +17,4 @@ clean
 !src/adminpublic.key
 !src/adminprivate.key
 !src/textprivate.txt
+!src/groupserverpublic.key

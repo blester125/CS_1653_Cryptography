@@ -98,12 +98,12 @@ public class Hasher {
 
 	public static byte[] bruteForce(int size, byte[] goal) {
 		byte[] answer = new byte[size];
-		answer = hardcode(goal);
-		return answer;
-		//ArrayList<Character> list = new ArrayList<Character>();
-		//bruteForce(size, list, goal);
-		//answer = convertListToByte(list);
+		//answer = hardcode(goal);
 		//return answer;
+		ArrayList<Character> list = new ArrayList<Character>();
+		bruteForce(size, list, goal);
+		answer = convertListToByte(list);
+		return answer;
 	}
 
 	private static byte[] hardcode(byte[] goal) {
@@ -135,23 +135,25 @@ public class Hasher {
 								int size,
 								ArrayList<Character> answer, 
 								byte[] goal) {
-		for (Character c : answer) {
-			System.out.print(c);
-		}
-		System.out.println("------------------\n");
-		if (answer.size() >= size) {
+		// for (Character c : answer) {
+		// 	System.out.print(c);
+		// }
+		//System.out.println("------------------\n");
+		if (answer.size() == size) {
 			byte[] test = new byte[size];
 			test = convertListToByte(answer);
+			//System.out.println(new String(test));
 			if (MessageDigest.isEqual(hash(test), goal)) {
 				return true;
 			}
+			return false;
 		}
-		for (int i = 65; i <= 65+26; i++) {
-			answer.add(new Character((char)i));
+		for (int i = 'A'; i <= 'l'; i++) {
+			answer.add((char)i);
 			if (bruteForce(size, answer, goal)) {
 				return true;
 			} else {
-				answer.remove(answer.size());
+				answer.remove(answer.size() - 1);
 			}
 		}
 		return false;
@@ -185,20 +187,20 @@ public class Hasher {
 		// System.out.println(keyPair.getPublic().toString());
 		// System.out.println(keyPair.getPublic().getEncoded());
 		//for (int i = 0; i < 4; i++) {
-			byte[] answer = {'A','A','A','A'};
+			byte[] answer = {'A','B','C','X', 'l', 'e'};
 			long now = System.currentTimeMillis();
 			byte[] hashcode = hash(answer);
-			byte[] output = bruteForce(4, hashcode);
+			byte[] output = bruteForce(6, hashcode);
 			System.out.println(new String(answer));
 			System.out.println(new String(output));
 			System.out.println(System.currentTimeMillis() - now);
-			byte[] answer2 = {'l','l','l','l'};
-			now = System.currentTimeMillis();
-			hashcode = hash(answer2);
-			output = bruteForce(4, hashcode);
-			System.out.println(new String(answer2));
-			System.out.println(new String(output));
-			System.out.println(System.currentTimeMillis() - now);
+			// byte[] answer2 = {'l','l','l','l'};
+			// now = System.currentTimeMillis();
+			// hashcode = hash(answer2);
+			// output = bruteForce(4, hashcode);
+			// System.out.println(new String(answer2));
+			// System.out.println(new String(output));
+			// System.out.println(System.currentTimeMillis() - now);
 		//}
 	}
 }
