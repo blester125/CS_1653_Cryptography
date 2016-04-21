@@ -11,6 +11,13 @@ header {
   text-align: center;
 }
 
+img.image {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+
 /* END CHANGES HERE */
   </style>
   <body>
@@ -242,6 +249,8 @@ benchmarking programs (Dos.java and BenchMark.java respectively), we have shown
 that our server processed 1/40th of the speed during a simple DoS attack
 (27,000ms vs. 700ms). This increased slowdown is an attack on availability,
 which is an attack on a part of the CIA triad that we have not yet considered.
+<br><img src="images/crash.jpg" class="image">
+<br>This picture shows that even a small single computer DoS can cause a huge spike in how much processing power is consumed. You can also see the increasing memory usage and the huge number of threads created.
 
 <!-- <p>Write a clear and concise description of the attacks against your
 implementation. Describe each step of the attack, and include protocol diagrams
@@ -399,6 +408,9 @@ the answer is created by taking the server's private key and converting it to an
 AES secret key via hashing with SHA-256. From this key, the confidentiality and 
 integrity key are generated and used to encrypt and verify the integrity of the 
 computational puzzles.
+<br>The puzzle protocol looks like so:<br>
+<img src="images/phase5-puzzle.png" class="image">
+
 </p>
 <p>
 This mechanism is sufficient to address this threat because very little state is 
