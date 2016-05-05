@@ -143,7 +143,6 @@ public class GroupThread extends Thread
 																	} else {
 																		answerQueue.add(Hasher.convertToString(answer));
 																		solvePuzzle = true;
-											
 																		System.out.println("-----SIGNED-DIFFIE-HELLMAN - Receiving user Diffie Hellman Public Key-----");
 																		System.out.println("Received: \n" + message + "\n");
 																		String user = (String)message.getObjContents().get(0);
