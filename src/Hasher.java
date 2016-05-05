@@ -96,6 +96,14 @@ public class Hasher {
 		return arr3;
 	}
 
+	public static String convertToString(byte[] a) {
+		StringBuilder s = new StringBuilder();
+		for (int i = 0; i < a.length; i++) {
+			s.append(a[i]);
+		}
+		return s.toString();
+	}
+
 	public static byte[] bruteForce(int size, byte[] goal) {
 		byte[] answer = new byte[size];
 		//answer = hardcode(goal);
