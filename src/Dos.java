@@ -30,6 +30,8 @@ import javax.crypto.SecretKey;
 import java.io.*;
 import org.apache.commons.codec.binary.Base32;
 
+//TODO write Dos that solves one puzzle and then sends it again and again
+
 public class Dos {
 
 	static GroupClient groupC;
